@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.lifecycle.LifecycleEvent;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -21,7 +22,7 @@ public class MainActivity extends ActionBarActivity {
 
     @Nonnull
     private final BehaviorSubject<LifecycleEvent> lifecycleSubject = BehaviorSubject.create();
-    private final MainPresenter presenter = new MainPresenter(Schedulers.io());
+    private final MainPresenter presenter = new MainPresenter(Schedulers.io(), AndroidSchedulers.mainThread());
     private final LifecycleMainObservable lifecycleMainObservable = new LifecycleMainObservable(
             new LifecycleMainObservable.LifecycleProviderActivity(lifecycleSubject, this));
 

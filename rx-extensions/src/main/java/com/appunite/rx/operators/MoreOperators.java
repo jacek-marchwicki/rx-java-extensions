@@ -153,13 +153,18 @@ public class MoreOperators {
         });
     }
 
+    public static final int FRAME_PERIOD = 16;
+
     @Nonnull
     public static <T> Observable.Transformer<T, T> animatorCompose(
             @Nonnull final Scheduler scheduler,
+            final long period, final TimeUnit timeUnit,
             @Nonnull final TypeEvaluator<T> evaluator) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> integerObservable) {
+                final long l = TimeUnit.MILLISECONDS.toNanos(FRAME_PERIOD);
+                final int frames = (int)(timeUnit.toNanos(period) / l);
                 return Observable.create(new Observable.OnSubscribe<T>() {
                     T prevValue;
                     @Override
@@ -172,7 +177,6 @@ public class MoreOperators {
 
                             @Override
                             public void onCompleted() {
-                                child.onCompleted();
                             }
 
                             @Override
@@ -197,16 +201,16 @@ public class MoreOperators {
                                         @Override
                                         public void call() {
                                             i++;
-                                            prevValue = evaluator.evaluate((float) i / 10f, startValue, endValue);
+                                            prevValue = evaluator.evaluate((float) i / (float)frames, startValue, endValue);
                                             child.onNext(prevValue);
-                                            if (i >= 10) {
+                                            if (i >= frames) {
                                                 if (subscription != null) {
                                                     subscription.unsubscribe();
                                                     subscription = null;
                                                 }
                                             }
                                         }
-                                    }, 0, 16, TimeUnit.MILLISECONDS);
+                                    }, FRAME_PERIOD, FRAME_PERIOD, TimeUnit.MILLISECONDS);
                                 }
                             }
                         });
