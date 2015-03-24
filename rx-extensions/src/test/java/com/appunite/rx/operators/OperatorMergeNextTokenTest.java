@@ -22,8 +22,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 
@@ -31,6 +33,8 @@ import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.schedulers.Schedulers;
+import rx.schedulers.TestScheduler;
 import rx.subjects.PublishSubject;
 
 import static org.mockito.Matchers.any;
@@ -46,15 +50,38 @@ public class OperatorMergeNextTokenTest {
     private PublishSubject<Object> downloadNext;
 
     private Observable<Data> dataObservable;
+    private TestScheduler scheduler;
     @Mock
     Observer<? super Data> dataObserver;
+    @Spy
+    Downloader downloader = new Downloader();
+
+    class Downloader {
+        public Observable<Data> downloadData(int page) {
+            switch (page) {
+                case 0:
+                    return Observable.just(new Data(ImmutableList.of("data1", "data2"), 1))
+                            .delay(1, TimeUnit.SECONDS, scheduler);
+                case 1:
+                    return Observable.just(new Data(ImmutableList.of("data3", "data4"), 2))
+                            .delay(1, TimeUnit.SECONDS, scheduler);
+                case 2:
+                    return Observable.just(new Data(ImmutableList.of("data5", "data6"), -1))
+                            .delay(1, TimeUnit.SECONDS, scheduler);
+                default:
+                    return Observable.<Data>error(new IOException("Wrong token"))
+                            .delay(1, TimeUnit.SECONDS, scheduler);
+            }
+        }
+
+    }
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
+        scheduler = Schedulers.test();
         downloadNext = PublishSubject.create();
-
 
         dataObservable = downloadNext.startWith((Object) null)
                 .lift(OperatorMergeNextToken.create(new Data(ImmutableList.<String>of(), 0),
@@ -62,10 +89,10 @@ public class OperatorMergeNextTokenTest {
                     @Override
                     public Observable<Data> call(final Data data) {
                         if (data.nextPage < 0) {
-                            return Observable.empty();
+                            return Observable.never();
                         }
                         return Observable.just(data)
-                                .zipWith(downloadData(data.nextPage), new Func2<Data, Data, Data>() {
+                                .zipWith(downloader.downloadData(data.nextPage), new Func2<Data, Data, Data>() {
                                     @Override
                                     public Data call(final Data data, final Data data2) {
                                         return data.mergeWith(data2);
@@ -79,6 +106,7 @@ public class OperatorMergeNextTokenTest {
     @Test
     public void testSubscribe_getData() throws Exception {
         dataObservable.subscribe(dataObserver);
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS);
 
         verify(dataObserver).onNext(new Data(ImmutableList.of("data1", "data2"), 1));
         verifyNoMoreInteractions(dataObserver);
@@ -87,10 +115,12 @@ public class OperatorMergeNextTokenTest {
     @Test
     public void testLoadMore_mergeData() throws Exception {
         dataObservable.subscribe(dataObserver);
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS);
         verify(dataObserver).onNext(new Data(ImmutableList.of("data1", "data2"), 1));
         reset(dataObserver);
 
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS);
 
         verify(dataObserver).onNext(new Data(ImmutableList.of("data1", "data2", "data3", "data4"), 2));
         verifyNoMoreInteractions(dataObserver);
@@ -100,14 +130,30 @@ public class OperatorMergeNextTokenTest {
     public void testAfterLastMethod_noMoreData() throws Exception {
         dataObservable.subscribe(dataObserver);
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
         reset(dataObserver);
 
-
         downloadNext.onNext(null);
+        scheduler.advanceTimeBy(5, TimeUnit.SECONDS);
+
         verifyZeroInteractions(dataObserver);
+    }
+
+    @Test
+    public void testWhileDownloading_onNextDoNothing() throws Exception {
+        dataObservable.subscribe(dataObserver);
+        downloadNext.onNext(null);
+        scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
+
+        verify(downloader).downloadData(0);
+        verify(dataObserver).onNext(new Data(ImmutableList.of("data1", "data2"), 1));
+        verifyNoMoreInteractions(dataObserver);
     }
 
     @Test
@@ -130,19 +176,6 @@ public class OperatorMergeNextTokenTest {
         downloadNext.onError(error);
 
         verify(dataObserver).onError(error);
-    }
-
-    public Observable<Data> downloadData(int page) {
-        switch (page) {
-            case 0:
-                return Observable.just(new Data(ImmutableList.of("data1", "data2"), 1));
-            case 1:
-                return Observable.just(new Data(ImmutableList.of("data3", "data4"), 2));
-            case 2:
-                return Observable.just(new Data(ImmutableList.of("data5", "data6"), -1));
-            default:
-                return Observable.error(new IOException("Wrong token"));
-        }
     }
 
     private static class Data {
