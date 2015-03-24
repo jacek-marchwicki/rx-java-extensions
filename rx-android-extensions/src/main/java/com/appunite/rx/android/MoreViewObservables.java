@@ -3,6 +3,7 @@ package com.appunite.rx.android;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.view.ViewTreeObserver;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,12 @@ import rx.android.internal.Assertions;
 import rx.functions.Action0;
 
 public class MoreViewObservables {
+
+    @Nonnull
+    public static Observable<Integer> viewWidth(@Nonnull final View view) {
+        return Observable.create(new OnViewWidth(view))
+                .distinctUntilChanged();
+    }
 
     @Nonnull
     public static Observable<Integer> onPageSelected(@Nonnull final ViewPager viewPager) {
@@ -226,6 +233,47 @@ public class MoreViewObservables {
 
                 return listener;
             }
+        }
+    }
+
+    private static class OnViewWidth implements Observable.OnSubscribe<Integer> {
+        private View view;
+
+        public OnViewWidth(@Nonnull View view) {
+            this.view = view;
+        }
+
+        @Override
+        public void call(final Subscriber<? super Integer> subscriber) {
+            Assertions.assertUiThread();
+            final int width = view.getWidth();
+            if (hasValidWidth(width)) {
+                subscriber.onNext(width);
+            }
+
+            final ViewTreeObserver.OnPreDrawListener listener = new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    final int width = view.getWidth();
+                    if (hasValidWidth(width)) {
+                        subscriber.onNext(width);
+                    }
+                    return true;
+                }
+            };
+            view.getViewTreeObserver().addOnPreDrawListener(listener);
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    view.getViewTreeObserver().removeOnPreDrawListener(listener);
+                }
+            });
+            subscriber.add(subscription);
+        }
+
+        private boolean hasValidWidth(int width) {
+            return width > 0 && !view.isLayoutRequested();
         }
     }
 }
