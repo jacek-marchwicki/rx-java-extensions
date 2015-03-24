@@ -163,8 +163,7 @@ public class MoreOperators {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> integerObservable) {
-                final long l = TimeUnit.MILLISECONDS.toNanos(FRAME_PERIOD);
-                final int frames = (int)(timeUnit.toNanos(period) / l);
+                final long periodInMillis = timeUnit.toMillis(period);
                 return Observable.create(new Observable.OnSubscribe<T>() {
                     T prevValue;
                     @Override
@@ -193,17 +192,17 @@ public class MoreOperators {
                                 if (prevValue == null) {
                                     prevValue = endValue;
                                     child.onNext(endValue);
-                                } else {
+                                } else if (!prevValue.equals(endValue)) {
                                     subscription = worker.schedulePeriodically(new Action0() {
-                                        int i = 0;
+                                        long startTime = scheduler.now();
                                         final T startValue = prevValue;
 
                                         @Override
                                         public void call() {
-                                            i++;
-                                            prevValue = evaluator.evaluate((float) i / (float)frames, startValue, endValue);
+                                            float percent = (scheduler.now() - startTime) / (float)periodInMillis;
+                                            prevValue = evaluator.evaluate(Math.min(percent, 1.0f), startValue, endValue);
                                             child.onNext(prevValue);
-                                            if (i >= frames) {
+                                            if (percent >= 1.0f) {
                                                 if (subscription != null) {
                                                     subscription.unsubscribe();
                                                     subscription = null;
