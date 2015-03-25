@@ -28,7 +28,6 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
 
     private final T initialValue;
     private final Func2<T, K, Observable<T>> merge;
-    private boolean skip = false;
 
     private OperatorMergeNextToken(final T initialValue, final Func2<T, K, Observable<T>> merge) {
         this.initialValue = initialValue;
@@ -56,6 +55,7 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
         return new Subscriber<K>() {
             private final ReentrantLock lock = new ReentrantLock();
             private T previous = initialValue;
+            private boolean skip = false;
 
             @Override
             public void onCompleted() {
