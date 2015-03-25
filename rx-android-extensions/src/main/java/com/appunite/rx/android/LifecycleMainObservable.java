@@ -84,12 +84,23 @@ public class LifecycleMainObservable {
     }
 
     @Nonnull
+    @Deprecated
     public <T> Observable<T> bindLifecycle(@Nonnull Observable<T> source) {
-        checkNotNull(source);
-        final Observable<LifecycleEvent> lifecycle = lifecycleProvider.lifecycle();
-        final Observable<T> autoUnsubscribeObservable = LifecycleObservable
-                .bindFragmentLifecycle(lifecycle, source)
-                .observeOn(AndroidSchedulers.mainThread());
-        return lifecycleProvider.bindLifecycle(autoUnsubscribeObservable);
+        return source.compose(this.<T>bindLifecycle());
+    }
+
+    @Nonnull
+    public <T> Observable.Transformer<T, T> bindLifecycle() {
+        return new Observable.Transformer<T, T>() {
+            @Override
+            public Observable<T> call(Observable<T> source) {
+                checkNotNull(source);
+                final Observable<LifecycleEvent> lifecycle = lifecycleProvider.lifecycle();
+                final Observable<T> autoUnsubscribeObservable = LifecycleObservable
+                        .bindFragmentLifecycle(lifecycle, source)
+                        .observeOn(AndroidSchedulers.mainThread());
+                return lifecycleProvider.bindLifecycle(autoUnsubscribeObservable);
+            }
+        };
     }
 }
