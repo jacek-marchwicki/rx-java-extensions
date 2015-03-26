@@ -1,6 +1,7 @@
 package com.appunite.rx.android;
 
 import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Checkable;
 
@@ -52,6 +53,16 @@ public class MoreViewActions {
             @Override
             public void call(final Number number) {
                 ViewCompat.setAlpha(view, number.floatValue());
+            }
+        };
+    }
+
+    public static Action1<? super String> setTitle(@Nonnull final Toolbar toolbar) {
+        checkNotNull(toolbar);
+        return new Action1<String>() {
+            @Override
+            public void call(String title) {
+                toolbar.setTitle(title);
             }
         };
     }

@@ -77,4 +77,12 @@ public class Functions1 {
         };
     }
 
+    public static Func1<? super Boolean, Boolean> isFalse() {
+        return new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                return !aBoolean;
+            }
+        };
+    }
 }

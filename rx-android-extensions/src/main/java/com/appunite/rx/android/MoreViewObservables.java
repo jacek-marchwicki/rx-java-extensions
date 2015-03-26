@@ -2,6 +2,7 @@ package com.appunite.rx.android;
 
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
@@ -275,5 +276,84 @@ public class MoreViewObservables {
         private boolean hasValidWidth(int width) {
             return width > 0 && !view.isLayoutRequested();
         }
+    }
+
+    private static class OnNavigationClick implements Observable.OnSubscribe<View> {
+        @Nonnull
+        private final Toolbar toolbar;
+
+        public OnNavigationClick(@Nonnull final Toolbar toolbar) {
+            this.toolbar = toolbar;
+        }
+
+        @Override
+        public void call(final Subscriber<? super View> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(toolbar);
+
+            final View.OnClickListener listener = new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    subscriber.onNext(v);
+                }
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnScrollListener(listener);
+                }
+            });
+
+            composite.addOnScrollListener(listener);
+            subscriber.add(subscription);
+        }
+
+
+
+        private static class CompositeListener implements View.OnClickListener {
+            private final List<View.OnClickListener> listeners = new ArrayList<>();
+
+            public boolean addOnScrollListener(final View.OnClickListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnScrollListener(final View.OnClickListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public void onClick(@Nonnull View v) {
+                for (final View.OnClickListener listener : listeners) {
+                    listener.onClick(v);
+                }
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<View, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final Toolbar view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setNavigationOnClickListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
+    @Nonnull
+    public static Observable<View> navigationClick(@Nonnull Toolbar toolbar) {
+        return Observable.create(new OnNavigationClick(toolbar))
+                .distinctUntilChanged();
     }
 }
