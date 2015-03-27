@@ -98,7 +98,7 @@ public class LifecycleMainObservable {
                 final Observable<LifecycleEvent> lifecycle = lifecycleProvider.lifecycle();
                 final Observable<T> autoUnsubscribeObservable = LifecycleObservable
                         .bindFragmentLifecycle(lifecycle, source)
-                        .observeOn(AndroidSchedulers.mainThread());
+                        .observeOn(MyAndroidSchedulers.mainThread());
                 return lifecycleProvider.bindLifecycle(autoUnsubscribeObservable);
             }
         };
