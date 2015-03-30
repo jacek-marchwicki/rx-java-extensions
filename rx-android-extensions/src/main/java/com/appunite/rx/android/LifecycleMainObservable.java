@@ -10,7 +10,6 @@ import rx.Observable;
 import rx.android.app.AppObservable;
 import rx.android.lifecycle.LifecycleEvent;
 import rx.android.lifecycle.LifecycleObservable;
-import rx.android.schedulers.AndroidSchedulers;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
@@ -81,12 +80,6 @@ public class LifecycleMainObservable {
     @Inject
     public LifecycleMainObservable(@Nonnull LifecycleProvider lifecycleProvider) {
         this.lifecycleProvider = checkNotNull(lifecycleProvider);
-    }
-
-    @Nonnull
-    @Deprecated
-    public <T> Observable<T> bindLifecycle(@Nonnull Observable<T> source) {
-        return source.compose(this.<T>bindLifecycle());
     }
 
     @Nonnull

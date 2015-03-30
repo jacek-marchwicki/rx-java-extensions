@@ -38,9 +38,11 @@ public class MainActivity extends ActionBarActivity {
 
         ButterKnife.inject(this);
 
-        lifecycleMainObservable.bindLifecycle(presenter.titleObservable())
+        presenter.titleObservable()
+                .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(ViewActions.setText(titleTextView));
-        lifecycleMainObservable.bindLifecycle(presenter.titleAlpha())
+        presenter.titleAlpha()
+                .compose(lifecycleMainObservable.<Number>bindLifecycle())
                 .subscribe(MoreViewActions.setAlpha(titleTextView));
     }
 
