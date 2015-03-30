@@ -17,19 +17,22 @@
     <FrameLayout
         android:layout_marginTop="?attr/actionBarSize"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:transitionGroup="false">
 
         <ProgressBar
             android:id="@+id/main_activity_progress"
             style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:transitionName="@string/transition_progress"
             android:layout_gravity="center" />
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/main_activity_recycler_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:transitionGroup="false"/>
 
         <TextView
             android:id="@+id/main_activity_error"
