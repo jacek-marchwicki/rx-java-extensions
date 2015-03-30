@@ -6,13 +6,10 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.dao.ItemsDao;
 import com.appunite.rx.example.model.model.Item;
 import com.appunite.rx.example.model.model.Response;
-import com.appunite.rx.functions.FunctionsN;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-
-import java.util.Arrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,8 +19,6 @@ import rx.Observer;
 import rx.Scheduler;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.functions.Func2;
-import rx.functions.FuncN;
 import rx.observers.Observers;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -87,19 +82,17 @@ public class MainPresenter {
 
     @Nonnull
     public Observable<Throwable> errorObservable() {
-        return Observable.combineLatest(Arrays.asList(
-                        itemsObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null),
-                        titleObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null)
-                ),
-                FunctionsN.combineFirstThrowable())
-                .startWith((Throwable) null)
-                .distinctUntilChanged();
+        return ResponseOrError.combineErrorsObservable(ImmutableList.of(
+                ResponseOrError.transform(titleObservable),
+                ResponseOrError.transform(itemsObservable)));
+
     }
 
     @Nonnull
     public Observable<Boolean> progressObservable() {
-        return Observable.combineLatest(Arrays.asList(titleObservable, itemsObservable), FunctionsN.returnFalse())
-                .startWith(true);
+        return ResponseOrError.combineProgressObservable(ImmutableList.of(
+                ResponseOrError.transform(titleObservable),
+                ResponseOrError.transform(itemsObservable)));
     }
 
     public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {

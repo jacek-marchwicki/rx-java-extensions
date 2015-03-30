@@ -2,8 +2,11 @@ package com.appunite.rx;
 
 import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.functions.FunctionsN;
+import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 
 import java.util.Arrays;
 import java.util.List;
@@ -272,8 +275,34 @@ public class ResponseOrError<T> {
         });
     }
 
-    public static Observable<Boolean> progressObservable(List<Observable<ResponseOrError<?>>> observables) {
+    public static Observable<Boolean> combineProgressObservable(ImmutableList<Observable<ResponseOrError<?>>> observables) {
         return Observable.combineLatest(observables, FunctionsN.returnFalse())
                 .startWith(true);
+    }
+
+    public static <T> Observable<ResponseOrError<?>> transform(Observable<ResponseOrError<T>> observable) {
+        return observable
+                .map(new Func1<ResponseOrError<T>, ResponseOrError<?>>() {
+                    @Override
+                    public ResponseOrError<?> call(ResponseOrError<T> tResponseOrError) {
+                        return tResponseOrError;
+                    }
+                });
+    }
+
+    public static Observable<Throwable> combineErrorsObservable(ImmutableList<Observable<ResponseOrError<?>>> observables) {
+        final ImmutableList<Observable<Throwable>> ob = FluentIterable
+                .from(observables)
+                .transform(new Function<Observable<ResponseOrError<?>>, Observable<Throwable>>() {
+                    @Nonnull
+                    @Override
+                    public Observable<Throwable> apply(Observable<ResponseOrError<?>> input) {
+                        return input.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null);
+                    }
+                })
+                .toList();
+        return Observable.combineLatest(ob,
+                FunctionsN.combineFirstThrowable())
+                .startWith((Throwable) null);
     }
 }
