@@ -3,6 +3,7 @@ package com.appunite.rx.example;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
@@ -10,7 +11,6 @@ import android.widget.TextView;
 import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.example.model.dao.ItemsDao;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
-import com.appunite.rx.example.model.dao.ItemsDao;
 
 import javax.annotation.Nonnull;
 
@@ -18,6 +18,7 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
@@ -44,6 +45,8 @@ public class DetailsActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.details_activity);
 
+        ActivityCompat.postponeEnterTransition(this);
+
         final String id = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
 
         ButterKnife.inject(this);
@@ -66,6 +69,15 @@ public class DetailsActivity extends BaseActivity {
                 .map(mapThrowableToStringError())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(ViewActions.setText(error));
+
+        presenter.startPostponedEnterTransitionObservable()
+                .compose(lifecycleMainObservable.bindLifecycle())
+                .subscribe(new Action1<Object>() {
+                    @Override
+                    public void call(Object o) {
+                        ActivityCompat.startPostponedEnterTransition(DetailsActivity.this);
+                    }
+                });
     }
 
     private Func1<Throwable, String> mapThrowableToStringError() {

@@ -95,7 +95,6 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         @Override
         public void recycle() {
             subscription.unsubscribe();
-
         }
 
     }

@@ -1,6 +1,8 @@
 package com.appunite.rx.example;
 
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -69,7 +71,10 @@ public class MainActivity extends BaseActivity {
                 .subscribe(new Action1<MainPresenter.AdapterItem>() {
                     @Override
                     public void call(MainPresenter.AdapterItem adapterItem) {
-                        startActivity(DetailsActivity.getIntent(MainActivity.this, adapterItem.id()));
+                        ActivityCompat.startActivity(MainActivity.this,
+                                DetailsActivity.getIntent(MainActivity.this, adapterItem.id()),
+                                ActivityOptionsCompat.makeSceneTransitionAnimation(MainActivity.this)
+                                        .toBundle());
                     }
                 });
     }

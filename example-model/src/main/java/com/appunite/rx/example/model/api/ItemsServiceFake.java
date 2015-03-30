@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import rx.Observable;
+import rx.functions.Func1;
 
 public class ItemsServiceFake implements ItemsService {
 
@@ -32,14 +33,20 @@ public class ItemsServiceFake implements ItemsService {
         final Observable<Item> apiCall;
         switch (id) {
             case "1":
-                apiCall = Observable.just(new Item("1", "title")).delay(2, TimeUnit.SECONDS);
+                apiCall = Observable.just(new Item("1", "title")).delay(200, TimeUnit.MILLISECONDS);
                 break;
             case "2":
-                apiCall = Observable.just(new Item("2", "title2")).delay(3, TimeUnit.SECONDS);
+                apiCall = Observable.just(new Item("2", "title2")).delay(1000, TimeUnit.MILLISECONDS);
                 break;
             default:
-                apiCall = Observable.<Item>error(new IOException("error")).delay(4, TimeUnit.SECONDS);
-
+                apiCall = Observable.just("")
+                        .delay(2, TimeUnit.SECONDS)
+                        .flatMap(new Func1<String, Observable<Item>>() {
+                            @Override
+                            public Observable<Item> call(String s) {
+                                return Observable.error(new IOException("error"));
+                            }
+                        });
                 break;
         }
         return apiCall;
