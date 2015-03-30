@@ -3,6 +3,9 @@ package com.appunite.rx.example.model.presenter;
 import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.example.model.dao.ItemsDao;
+import com.appunite.rx.example.model.model.Item;
+import com.appunite.rx.example.model.model.Response;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.FluentIterable;
@@ -14,25 +17,32 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import rx.Observable;
+import rx.Observer;
 import rx.Scheduler;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.FuncN;
+import rx.observers.Observers;
+import rx.subjects.PublishSubject;
+import rx.subjects.Subject;
 
 public class MainPresenter {
 
     @Nonnull
-    private final Observable<ResponseOrError<String>> compose;
+    private final Observable<ResponseOrError<String>> titleObservable;
     @Nonnull
-    private final Observable<ResponseOrError<ImmutableList<AdapterItem>>> items;
+    private final Observable<ResponseOrError<ImmutableList<AdapterItem>>> itemsObservable;
+    @Nonnull
+    private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull Scheduler networkScheduler,
                          @Nonnull Scheduler uiScheduler,
-                         @Nonnull NetworkDao networkDao) {
-        compose = networkDao.getData()
-                .compose(ResponseOrError.map(new Func1<NetworkDao.Response, String>() {
+                         @Nonnull ItemsDao itemsDao) {
+        titleObservable = itemsDao.dataObservable()
+                .compose(ResponseOrError.map(new Func1<Response, String>() {
                     @Override
-                    public String call(NetworkDao.Response response) {
+                    public String call(Response response) {
                         return response.title();
                     }
                 }))
@@ -40,15 +50,15 @@ public class MainPresenter {
                 .observeOn(uiScheduler)
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        items = networkDao.getData()
-                .compose(ResponseOrError.map(new Func1<NetworkDao.Response, ImmutableList<AdapterItem>>() {
+        itemsObservable = itemsDao.dataObservable()
+                .compose(ResponseOrError.map(new Func1<Response, ImmutableList<AdapterItem>>() {
                     @Override
-                    public ImmutableList<AdapterItem> call(NetworkDao.Response response) {
-                        final ImmutableList<NetworkDao.Items> items = response.items();
-                        return FluentIterable.from(items).transform(new Function<NetworkDao.Items, AdapterItem>() {
+                    public ImmutableList<AdapterItem> call(Response response) {
+                        final ImmutableList<Item> items = response.items();
+                        return FluentIterable.from(items).transform(new Function<Item, AdapterItem>() {
                             @Nonnull
                             @Override
-                            public AdapterItem apply(NetworkDao.Items input) {
+                            public AdapterItem apply(Item input) {
                                 return new AdapterItem(input.id(), input.name());
                             }
                         }).toList();
@@ -59,24 +69,33 @@ public class MainPresenter {
                 .compose(ObservableExtensions.<ResponseOrError<ImmutableList<AdapterItem>>>behaviorRefCount());
     }
 
+    @Nonnull
+    public Observable<AdapterItem> openDetailsObservable() {
+        return openDetailsSubject;
+    }
+
+    @Nonnull
     public Observable<String> titleObservable() {
-        return compose.compose(ResponseOrError.<String>onlySuccess());
+        return titleObservable.compose(ResponseOrError.<String>onlySuccess());
     }
 
-    public Observable<ImmutableList<AdapterItem>> items() {
-        return items.compose(ResponseOrError.<ImmutableList<AdapterItem>>onlySuccess());
+    @Nonnull
+    public Observable<ImmutableList<AdapterItem>> itemsObservable() {
+        return itemsObservable.compose(ResponseOrError.<ImmutableList<AdapterItem>>onlySuccess());
     }
 
-    public Observable<Throwable> error() {
+    @Nonnull
+    public Observable<Throwable> errorObservable() {
         return Observable.combineLatest(Arrays.asList(
-                        items.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null),
-                        compose.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null)
+                        itemsObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null),
+                        titleObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null)
                 ),
                 combineFirstThrowable())
                 .startWith((Throwable) null)
                 .distinctUntilChanged();
     }
 
+    @Nonnull
     private FuncN<Throwable> combineFirstThrowable() {
         return new FuncN<Throwable>() {
             @Override
@@ -92,8 +111,9 @@ public class MainPresenter {
         };
     }
 
-    public Observable<Boolean> progress() {
-        return Observable.combineLatest(compose, items,
+    @Nonnull
+    public Observable<Boolean> progressObservable() {
+        return Observable.combineLatest(titleObservable, itemsObservable,
                 new Func2<ResponseOrError<String>, ResponseOrError<ImmutableList<AdapterItem>>, Boolean>() {
                     @Override
                     public Boolean call(ResponseOrError<String> stringResponseOrError, ResponseOrError<ImmutableList<AdapterItem>> immutableListResponseOrError) {
@@ -103,7 +123,7 @@ public class MainPresenter {
                 .startWith(true);
     }
 
-    public static class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {
+    public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {
 
         @Nonnull
         private final String id;
@@ -114,6 +134,11 @@ public class MainPresenter {
                            @Nullable String text) {
             this.id = id;
             this.text = text;
+        }
+
+        @Nonnull
+        public String id() {
+            return id;
         }
 
         @Nullable
@@ -146,6 +171,16 @@ public class MainPresenter {
         @Override
         public boolean same(@Nonnull AdapterItem item) {
             return equals(item);
+        }
+
+        @Nonnull
+        public Observer<Object> clickObserver() {
+            return Observers.create(new Action1<Object>() {
+                @Override
+                public void call(Object o) {
+                    openDetailsSubject.onNext(AdapterItem.this);
+                }
+            });
         }
     }
 }

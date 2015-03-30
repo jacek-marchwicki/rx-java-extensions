@@ -6,7 +6,7 @@
     android:orientation="vertical">
 
     <android.support.v7.widget.Toolbar
-        android:id="@+id/main_activity_toolbar"
+        android:id="@+id/details_activity_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
@@ -19,19 +19,14 @@
         android:layout_weight="1">
 
         <ProgressBar
-            android:id="@+id/main_activity_progress"
+            android:id="@+id/details_activity_progress"
             style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center" />
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/main_activity_recycler_view"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
         <TextView
-            android:id="@+id/main_activity_error"
+            android:id="@+id/details_activity_error"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 

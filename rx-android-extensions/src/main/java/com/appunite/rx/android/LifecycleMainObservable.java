@@ -19,9 +19,6 @@ public class LifecycleMainObservable {
     private final LifecycleProvider lifecycleProvider;
 
     public static interface LifecycleProvider {
-        @Nonnull
-        Observable<LifecycleEvent> lifecycle();
-
         @Nonnull <T> Observable<T> bindLifecycle(@Nonnull Observable<T> observable);
     }
 
@@ -38,16 +35,14 @@ public class LifecycleMainObservable {
             this.fragment = checkNotNull(fragment);
         }
 
-        @Nonnull
-        @Override
-        public Observable<LifecycleEvent> lifecycle() {
-            return lifecycle;
-        }
 
         @Nonnull
         @Override
         public <T> Observable<T> bindLifecycle(@Nonnull Observable<T> observable) {
-            return AppObservable.bindFragment(fragment, observable);
+            final Observable<T> autoUnsubscribeObservable = LifecycleObservable
+                    .bindFragmentLifecycle(lifecycle, observable)
+                    .observeOn(MyAndroidSchedulers.mainThread());
+            return AppObservable.bindFragment(fragment, autoUnsubscribeObservable);
         }
     }
 
@@ -66,14 +61,11 @@ public class LifecycleMainObservable {
 
         @Nonnull
         @Override
-        public Observable<LifecycleEvent> lifecycle() {
-            return lifecycle;
-        }
-
-        @Nonnull
-        @Override
         public <T> Observable<T> bindLifecycle(@Nonnull Observable<T> observable) {
-            return AppObservable.bindActivity(activity, observable);
+            final Observable<T> autoUnsubscribeObservable = LifecycleObservable
+                    .bindActivityLifecycle(lifecycle, observable)
+                    .observeOn(MyAndroidSchedulers.mainThread());
+            return AppObservable.bindActivity(activity, autoUnsubscribeObservable);
         }
     }
 
@@ -88,11 +80,7 @@ public class LifecycleMainObservable {
             @Override
             public Observable<T> call(Observable<T> source) {
                 checkNotNull(source);
-                final Observable<LifecycleEvent> lifecycle = lifecycleProvider.lifecycle();
-                final Observable<T> autoUnsubscribeObservable = LifecycleObservable
-                        .bindFragmentLifecycle(lifecycle, source)
-                        .observeOn(MyAndroidSchedulers.mainThread());
-                return lifecycleProvider.bindLifecycle(autoUnsubscribeObservable);
+                return lifecycleProvider.bindLifecycle(source);
             }
         };
     }

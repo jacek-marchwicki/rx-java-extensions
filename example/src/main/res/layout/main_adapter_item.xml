@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/main_adapter_item_text"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:minHeight="56dp"
     android:padding="16dp"
+    android:textColor="@color/black_87"
     android:textSize="16sp"
-    android:textColor="@color/black_87">
-
-</TextView>
+    android:background="?android:selectableItemBackground"/>

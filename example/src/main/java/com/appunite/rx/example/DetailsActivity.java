@@ -1,59 +1,62 @@
 package com.appunite.rx.example;
 
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
 
 import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.example.model.dao.ItemsDao;
-import com.appunite.rx.example.model.presenter.MainPresenter;
-import com.google.common.collect.ImmutableList;
+import com.appunite.rx.example.model.presenter.DetailsPresenters;
+import com.appunite.rx.example.model.dao.ItemsDao;
+
+import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
-public class MainActivity extends BaseActivity {
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
-    @InjectView(R.id.main_activity_toolbar)
+public class DetailsActivity extends BaseActivity {
+
+    public static final String EXTRA_ID = "EXTRA_ID";
+
+    public static Intent getIntent(@Nonnull Context context, @Nonnull String id) {
+        return new Intent(context, DetailsActivity.class)
+                .putExtra(EXTRA_ID, checkNotNull(id));
+    }
+
+    @InjectView(R.id.details_activity_toolbar)
     Toolbar toolbar;
-    @InjectView(R.id.main_activity_recycler_view)
-    RecyclerView recyclerView;
-    @InjectView(R.id.main_activity_progress)
+    @InjectView(R.id.details_activity_progress)
     View progress;
-    @InjectView(R.id.main_activity_error)
+    @InjectView(R.id.details_activity_error)
     TextView error;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main_activity);
+        setContentView(R.layout.details_activity);
 
-        final MainAdapter mainAdapter = new MainAdapter();
+        final String id = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
 
         ButterKnife.inject(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        recyclerView.setAdapter(mainAdapter);
 
         // Normally use dagger
-        final MainPresenter presenter = new MainPresenter(Schedulers.io(),
+        final DetailsPresenters.DetailsPresenter presenter = new DetailsPresenters(Schedulers.io(),
                 AndroidSchedulers.mainThread(),
-                ItemsDao.getInstance(Schedulers.io()));
+                ItemsDao.getInstance(Schedulers.io()))
+                .getPresenter(id);
 
         presenter.titleObservable()
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(MoreViewActions.setTitle(toolbar));
-
-        presenter.itemsObservable()
-                .compose(lifecycleMainObservable.<ImmutableList<MainPresenter.AdapterItem>>bindLifecycle())
-                .subscribe(mainAdapter);
 
         presenter.progressObservable()
                 .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
@@ -63,15 +66,6 @@ public class MainActivity extends BaseActivity {
                 .map(mapThrowableToStringError())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(ViewActions.setText(error));
-
-        presenter.openDetailsObservable()
-                .compose(lifecycleMainObservable.<MainPresenter.AdapterItem>bindLifecycle())
-                .subscribe(new Action1<MainPresenter.AdapterItem>() {
-                    @Override
-                    public void call(MainPresenter.AdapterItem adapterItem) {
-                        startActivity(DetailsActivity.getIntent(MainActivity.this, adapterItem.id()));
-                    }
-                });
     }
 
     private Func1<Throwable, String> mapThrowableToStringError() {

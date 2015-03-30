@@ -16,6 +16,8 @@
 
 package com.appunite.rx.functions;
 
+import com.appunite.rx.ResponseOrError;
+
 import javax.annotation.Nonnull;
 
 import rx.functions.Func1;
@@ -82,6 +84,24 @@ public class Functions1 {
             @Override
             public Boolean call(Boolean aBoolean) {
                 return !aBoolean;
+            }
+        };
+    }
+
+    public static Func1<Object, Boolean> returnFalse() {
+        return new Func1<Object, Boolean>() {
+            @Override
+            public Boolean call(Object o) {
+                return false;
+            }
+        };
+    }
+
+    public static Func1<Object, Boolean> returnTrue() {
+        return new Func1<Object, Boolean>() {
+            @Override
+            public Boolean call(Object o) {
+                return true;
             }
         };
     }

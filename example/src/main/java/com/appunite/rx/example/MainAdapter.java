@@ -14,7 +14,9 @@ import com.google.common.collect.ImmutableList;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import rx.android.view.ViewObservable;
 import rx.functions.Action1;
+import rx.subscriptions.CompositeSubscription;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -71,12 +73,13 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         changesDetector.newData(this, items, false);
     }
 
-    class MainViewHolder extends BaseViewHolder {
+    private class MainViewHolder extends BaseViewHolder {
 
         @Nonnull
         private final TextView text;
+        private CompositeSubscription subscription;
 
-        MainViewHolder(@Nonnull View itemView) {
+        public MainViewHolder(@Nonnull View itemView) {
             super(itemView);
             text = checkNotNull((TextView) itemView.findViewById(R.id.main_adapter_item_text));
         }
@@ -84,12 +87,17 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         @Override
         public void bind(@Nonnull MainPresenter.AdapterItem item) {
             text.setText(item.text());
+            subscription = new CompositeSubscription(
+                    ViewObservable.clicks(text).subscribe(item.clickObserver())
+            );
         }
 
         @Override
         public void recycle() {
+            subscription.unsubscribe();
 
         }
+
     }
 
 }
