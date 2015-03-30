@@ -31,9 +31,14 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:id="@+id/details_activity_error"
+            android:id="@+id/details_activity_body"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"/>
+
+        <TextView
+            android:id="@+id/details_activity_error"
+            style="@style/ErrorTextView" />
 
     </FrameLayout>
 

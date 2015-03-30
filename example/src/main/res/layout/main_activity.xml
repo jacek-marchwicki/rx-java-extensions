@@ -36,8 +36,7 @@
 
         <TextView
             android:id="@+id/main_activity_error"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            style="@style/ErrorTextView" />
 
     </FrameLayout>
 

@@ -17,4 +17,12 @@
         <item name="android:textColorPrimary">@color/abc_primary_text_material_dark</item>
         <item name="android:background">#F44336</item>
     </style>
+
+    <style name="ErrorTextView">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_margin">48dp</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:gravity">center</item>
+    </style>
 </resources>

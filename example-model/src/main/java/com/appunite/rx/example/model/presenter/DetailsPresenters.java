@@ -5,9 +5,11 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.NetworkScheduler;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.ItemsDao;
-import com.appunite.rx.example.model.model.Item;
+import com.appunite.rx.example.model.model.ItemWithBody;
 import com.appunite.rx.functions.Functions1;
+import com.appunite.rx.functions.FunctionsN;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
@@ -46,20 +48,37 @@ public class DetailsPresenters {
 
         private final ItemsDao.ItemDao itemDao;
         private final Observable<ResponseOrError<String>> nameObservable;
+        private final Observable<ResponseOrError<String>> bodyObservable;
 
         public DetailsPresenter(@Nonnull String id) {
             itemDao = itemsDao.itemDao(id);
 
             nameObservable = itemDao.dataObservable()
-                    .compose(ResponseOrError.map(new Func1<Item, String>() {
+                    .compose(ResponseOrError.map(new Func1<ItemWithBody, String>() {
                         @Override
-                        public String call(Item item) {
+                        public String call(ItemWithBody item) {
                             return item.name();
                         }
                     }))
                     .subscribeOn(networkScheduler)
                     .observeOn(uiScheduler)
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+
+            bodyObservable = itemDao.dataObservable()
+                    .compose(ResponseOrError.map(new Func1<ItemWithBody, String>() {
+                        @Override
+                        public String call(ItemWithBody item) {
+                            return item.body();
+                        }
+                    }))
+                    .subscribeOn(networkScheduler)
+                    .observeOn(uiScheduler)
+                    .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+        }
+
+        public Observable<String> bodyObservable() {
+            return bodyObservable
+                    .compose(ResponseOrError.<String>onlySuccess());
         }
 
         public Observable<String> titleObservable() {
@@ -68,13 +87,20 @@ public class DetailsPresenters {
         }
 
         public Observable<Boolean> progressObservable() {
-            return nameObservable
-                    .map(Functions1.returnFalse())
+            return Observable.combineLatest(
+                    Arrays.asList(nameObservable, bodyObservable),
+                    FunctionsN.returnFalse())
                     .startWith(true);
         }
 
         public Observable<Throwable> errorObservable() {
-            return nameObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null);
+            return Observable.combineLatest(Arrays.asList(
+                            nameObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null),
+                            bodyObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null)
+                    ),
+                    FunctionsN.combineFirstThrowable())
+                    .startWith((Throwable) null)
+                    .distinctUntilChanged();
         }
 
 

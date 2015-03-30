@@ -4,6 +4,7 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.ItemsService;
 import com.appunite.rx.example.model.api.ItemsServiceFake;
 import com.appunite.rx.example.model.model.Item;
+import com.appunite.rx.example.model.model.ItemWithBody;
 import com.appunite.rx.example.model.model.Response;
 import com.appunite.rx.operators.MoreOperators;
 import com.google.common.cache.CacheBuilder;
@@ -90,19 +91,19 @@ public class ItemsDao {
         @Nonnull
         private final PublishSubject<Object> refreshSubject = PublishSubject.create();
         @Nonnull
-        private final Observable<ResponseOrError<Item>> data;
+        private final Observable<ResponseOrError<ItemWithBody>> data;
 
         public ItemDao(@Nonnull String id) {
 
             data = itemsService.getItem(id)
-                    .compose(ResponseOrError.<Item>toResponseOrErrorObservable())
-                    .compose(MoreOperators.<Item>repeatOnError(networkScheduler))
-                    .compose(MoreOperators.<ResponseOrError<Item>>refresh(refreshSubject))
-                    .compose(MoreOperators.<ResponseOrError<Item>>cacheWithTimeout(networkScheduler));
+                    .compose(ResponseOrError.<ItemWithBody>toResponseOrErrorObservable())
+                    .compose(MoreOperators.<ItemWithBody>repeatOnError(networkScheduler))
+                    .compose(MoreOperators.<ResponseOrError<ItemWithBody>>refresh(refreshSubject))
+                    .compose(MoreOperators.<ResponseOrError<ItemWithBody>>cacheWithTimeout(networkScheduler));
         }
 
         @Nonnull
-        public Observable<ResponseOrError<Item>> dataObservable() {
+        public Observable<ResponseOrError<ItemWithBody>> dataObservable() {
             return data;
         }
 

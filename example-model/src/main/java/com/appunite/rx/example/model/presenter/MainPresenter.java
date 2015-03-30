@@ -6,6 +6,7 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.dao.ItemsDao;
 import com.appunite.rx.example.model.model.Item;
 import com.appunite.rx.example.model.model.Response;
+import com.appunite.rx.functions.FunctionsN;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.FluentIterable;
@@ -90,36 +91,14 @@ public class MainPresenter {
                         itemsObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null),
                         titleObservable.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null)
                 ),
-                combineFirstThrowable())
+                FunctionsN.combineFirstThrowable())
                 .startWith((Throwable) null)
                 .distinctUntilChanged();
     }
 
     @Nonnull
-    private FuncN<Throwable> combineFirstThrowable() {
-        return new FuncN<Throwable>() {
-            @Override
-            public Throwable call(final Object... args) {
-                for (Object arg : args) {
-                    final Throwable throwable = (Throwable) arg;
-                    if (throwable != null) {
-                        return throwable;
-                    }
-                }
-                return null;
-            }
-        };
-    }
-
-    @Nonnull
     public Observable<Boolean> progressObservable() {
-        return Observable.combineLatest(titleObservable, itemsObservable,
-                new Func2<ResponseOrError<String>, ResponseOrError<ImmutableList<AdapterItem>>, Boolean>() {
-                    @Override
-                    public Boolean call(ResponseOrError<String> stringResponseOrError, ResponseOrError<ImmutableList<AdapterItem>> immutableListResponseOrError) {
-                        return false;
-                    }
-                })
+        return Observable.combineLatest(Arrays.asList(titleObservable, itemsObservable), FunctionsN.returnFalse())
                 .startWith(true);
     }
 

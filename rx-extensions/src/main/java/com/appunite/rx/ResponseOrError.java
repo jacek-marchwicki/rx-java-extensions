@@ -1,8 +1,12 @@
 package com.appunite.rx;
 
 import com.appunite.rx.functions.Functions1;
+import com.appunite.rx.functions.FunctionsN;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
+
+import java.util.Arrays;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -266,5 +270,10 @@ public class ResponseOrError<T> {
                 return ResponseOrError.fromData(builder.build());
             }
         });
+    }
+
+    public static Observable<Boolean> progressObservable(List<Observable<ResponseOrError<?>>> observables) {
+        return Observable.combineLatest(observables, FunctionsN.returnFalse())
+                .startWith(true);
     }
 }

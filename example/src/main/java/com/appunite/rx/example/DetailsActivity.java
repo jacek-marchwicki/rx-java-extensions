@@ -39,6 +39,8 @@ public class DetailsActivity extends BaseActivity {
     View progress;
     @InjectView(R.id.details_activity_error)
     TextView error;
+    @InjectView(R.id.details_activity_body)
+    TextView body;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +62,10 @@ public class DetailsActivity extends BaseActivity {
         presenter.titleObservable()
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(MoreViewActions.setTitle(toolbar));
+
+        presenter.bodyObservable()
+                .compose(lifecycleMainObservable.<String>bindLifecycle())
+                .subscribe(ViewActions.setText(body));
 
         presenter.progressObservable()
                 .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
