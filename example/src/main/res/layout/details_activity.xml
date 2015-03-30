@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -35,9 +35,13 @@
             android:layout_margin="16dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:lineSpacingMultiplier="1.5"
-            android:textSize="16sp"
-            android:layout_gravity="top"/>
+            android:textSize="14sp"
+            android:lineSpacingExtra="10sp"
+            android:textColor="@color/black_87"
+            android:layout_gravity="top"
+            tools:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus sed maximus eros, maximus volutpat metus. Quisque venenatis tempor diam in fringilla. Maecenas purus odio, feugiat vitae mi ut, commodo ultricies magna. Aenean gravida dui a ultrices bibendum. Sed malesuada nunc eget luctus mattis. Quisque tincidunt nibh tortor, fermentum consequat quam tincidunt non. Nunc nisl nunc, venenatis id dignissim nec, ultrices ut elit. Morbi vel imperdiet ante. Aenean non venenatis nisl. Donec in ultrices ante. Suspendisse consectetur commodo libero non vehicula. Donec cursus at mi non egestas. Ut at tortor dignissim, cursus felis vel, eleifend erat. Morbi imperdiet turpis id dignissim pellentesque. Fusce quis libero nec nisi aliquam sollicitudin.
+
+Mauris hendrerit ante vel nisi imperdiet, id porttitor felis porta. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Quisque faucibus, tellus sodales consequat pellentesque, nisi ipsum fermentum justo, quis aliquam erat nibh nec ligula. Morbi ac purus non tortor hendrerit pharetra. Sed aliquam eu tortor vestibulum interdum. Nullam porta, ante quis pulvinar posuere, diam ex lobortis mauris, sit amet euismod neque mauris gravida orci. Maecenas ac elit ut mauris fringilla mollis. Etiam purus mi, iaculis vel porttitor non, accumsan a leo. Quisque ac congue arcu. In fermentum ipsum quis mauris maximus aliquam. Sed nisi nisl, dictum id felis a, tempus ultricies augue. Nunc egestas sapien non nunc dapibus, scelerisque lobortis lorem dictum. Cras a volutpat ipsum. Nullam ac nisl a eros cursus sollicitudin."/>
 
         <TextView
             android:id="@+id/details_activity_error"
