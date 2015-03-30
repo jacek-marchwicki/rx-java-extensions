@@ -275,12 +275,14 @@ public class ResponseOrError<T> {
         });
     }
 
-    public static Observable<Boolean> combineProgressObservable(ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    @Nonnull
+    public static Observable<Boolean> combineProgressObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         return Observable.combineLatest(observables, FunctionsN.returnFalse())
                 .startWith(true);
     }
 
-    public static <T> Observable<ResponseOrError<?>> transform(Observable<ResponseOrError<T>> observable) {
+    @Nonnull
+    public static <T> Observable<ResponseOrError<?>> transform(@Nonnull Observable<ResponseOrError<T>> observable) {
         return observable
                 .map(new Func1<ResponseOrError<T>, ResponseOrError<?>>() {
                     @Override
@@ -290,7 +292,8 @@ public class ResponseOrError<T> {
                 });
     }
 
-    public static Observable<Throwable> combineErrorsObservable(ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    @Nonnull
+    public static Observable<Throwable> combineErrorsObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         final ImmutableList<Observable<Throwable>> ob = FluentIterable
                 .from(observables)
                 .transform(new Function<Observable<ResponseOrError<?>>, Observable<Throwable>>() {
