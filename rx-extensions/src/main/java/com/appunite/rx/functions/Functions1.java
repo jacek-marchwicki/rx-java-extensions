@@ -16,8 +16,6 @@
 
 package com.appunite.rx.functions;
 
-import com.appunite.rx.ResponseOrError;
-
 import javax.annotation.Nonnull;
 
 import rx.functions.Func1;

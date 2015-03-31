@@ -16,8 +16,6 @@
 
 package com.appunite.rx.internal;
 
-import java.util.NoSuchElementException;
-
 import javax.annotation.Nullable;
 
 /**
