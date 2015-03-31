@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+    <style name="AppTheme_" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">#F44336</item>
         <item name="colorPrimaryDark">#B71C1C</item>
         <item name="colorAccent">#2196F3</item>
+    </style>
 
-        <item name="android:windowActivityTransitions">true</item>
-        <item name="android:windowSharedElementEnterTransition">@transition/move</item>
-        <item name="android:windowSharedElementExitTransition">@transition/move</item>
-        <item name="android:windowEnterTransition">@transition/explode</item>
-        <item name="android:windowExitTransition">@transition/explode</item>
+    <style name="AppTheme" parent="AppTheme_">
     </style>
 
     <style name="Toolbar" parent="ThemeOverlay.AppCompat.ActionBar" >
