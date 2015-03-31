@@ -1,5 +1,6 @@
 package com.appunite.rx.example;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -15,12 +16,13 @@ import com.appunite.rx.example.model.dao.ItemsDao;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
 
+import javax.annotation.Nonnull;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
 import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends BaseActivity {
@@ -64,21 +66,13 @@ public class MainActivity extends BaseActivity {
                 .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
 
         presenter.errorObservable()
-                .map(mapThrowableToStringError())
+                .map(ErrorHelper.mapThrowableToStringError())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(ViewActions.setText(error));
 
         presenter.openDetailsObservable()
                 .compose(lifecycleMainObservable.<MainPresenter.AdapterItem>bindLifecycle())
-                .subscribe(new Action1<MainPresenter.AdapterItem>() {
-                    @Override
-                    public void call(MainPresenter.AdapterItem adapterItem) {
-                        ActivityCompat.startActivity(MainActivity.this,
-                                DetailsActivity.getIntent(MainActivity.this, adapterItem.id()),
-                                ActivityOptionsCompat.makeSceneTransitionAnimation(MainActivity.this)
-                                        .toBundle());
-                    }
-                });
+                .subscribe(startDetailsActivityAction(this));
 
         MoreViewObservables.scroll(recyclerView)
                 .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
@@ -86,14 +80,17 @@ public class MainActivity extends BaseActivity {
                 .subscribe(presenter.loadMoreObserver());
     }
 
-    private Func1<Throwable, String> mapThrowableToStringError() {
-        return new Func1<Throwable, String>() {
+    @Nonnull
+    private static Action1<MainPresenter.AdapterItem> startDetailsActivityAction(final Activity activity) {
+        return new Action1<MainPresenter.AdapterItem>() {
             @Override
-            public String call(Throwable throwable) {
-                if (throwable == null) {
-                    return null;
-                }
-                return "Some error: " + throwable.getMessage();
+            public void call(MainPresenter.AdapterItem adapterItem) {
+                //noinspection unchecked
+                final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
+                        .toBundle();
+                ActivityCompat.startActivity(activity,
+                        DetailsActivity.getIntent(activity, adapterItem.id()),
+                        bundle);
             }
         };
     }

@@ -19,7 +19,6 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
-import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
@@ -70,7 +69,7 @@ public class DetailsActivity extends BaseActivity {
                 .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
 
         presenter.errorObservable()
-                .map(mapThrowableToStringError())
+                .map(ErrorHelper.mapThrowableToStringError())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(ViewActions.setText(error));
 
@@ -79,18 +78,6 @@ public class DetailsActivity extends BaseActivity {
         presenter.startPostponedEnterTransitionObservable()
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(MoreActivityActions.startPostponedEnterTransition(this));
-    }
-
-    private Func1<Throwable, String> mapThrowableToStringError() {
-        return new Func1<Throwable, String>() {
-            @Override
-            public String call(Throwable throwable) {
-                if (throwable == null) {
-                    return null;
-                }
-                return "Some error: " + throwable.getMessage();
-            }
-        };
     }
 
 }
