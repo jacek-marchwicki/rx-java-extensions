@@ -7,13 +7,11 @@ import com.appunite.rx.example.model.model.Item;
 import com.appunite.rx.example.model.model.ItemWithBody;
 import com.appunite.rx.example.model.model.Response;
 import com.appunite.rx.operators.MoreOperators;
+import com.appunite.rx.operators.OperatorMergeNextToken;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -22,6 +20,7 @@ import javax.inject.Singleton;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Singleton
@@ -38,8 +37,13 @@ public class ItemsDao {
          */
     private static final Object LOCK = new Object();
     private static ItemsDao itemsDao;
+
+    @Nonnull
     private Scheduler networkScheduler;
+    @Nonnull
     private ItemsService itemsService;
+    @Nonnull
+    private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
 
     public static ItemsDao getInstance(@Nonnull Scheduler networkScheduler) {
         synchronized (LOCK) {
@@ -51,13 +55,33 @@ public class ItemsDao {
         }
     }
 
-    public ItemsDao(@Nonnull Scheduler networkScheduler,
-                    @Nonnull ItemsService itemsService) {
+    public ItemsDao(@Nonnull final Scheduler networkScheduler,
+                    @Nonnull final ItemsService itemsService) {
         this.networkScheduler = networkScheduler;
         this.itemsService = itemsService;
 
+        final OperatorMergeNextToken<Response, Object> mergeNextToken = OperatorMergeNextToken
+                .create(new Func1<Response, Observable<Response>>() {
+                    @Override
+                    public Observable<Response> call(@Nullable final Response response) {
+                        if (response == null) {
+                            return itemsService.listItems(null)
+                                    .subscribeOn(networkScheduler);
+                        } else {
+                            final String nextToken = response.nextToken();
+                            if (nextToken == null) {
+                                return Observable.never();
+                            }
+                            final Observable<Response> apiRequest = itemsService.listItems(nextToken)
+                                    .subscribeOn(networkScheduler);
+                            return Observable.just(response).zipWith(apiRequest, new MergeTwoResponses());
+                        }
 
-        data = itemsService.listItems()
+                    }
+                });
+
+        data = loadMoreSubject.startWith((Object) null)
+                .lift(mergeNextToken)
                 .compose(ResponseOrError.<Response>toResponseOrErrorObservable())
                 .compose(MoreOperators.<Response>repeatOnError(networkScheduler))
                 .compose(MoreOperators.<ResponseOrError<Response>>refresh(refreshSubject))
@@ -75,6 +99,11 @@ public class ItemsDao {
     @Nonnull
     public ItemDao itemDao(@Nonnull final String id) {
         return cache.getUnchecked(id);
+    }
+
+    @Nonnull
+    public Observer<Object> loadMoreObserver() {
+        return loadMoreSubject;
     }
 
     @Nonnull
@@ -112,5 +141,17 @@ public class ItemsDao {
             return refreshSubject;
         }
     }
+
+    private static class MergeTwoResponses implements rx.functions.Func2<Response, Response, Response> {
+        @Override
+        public Response call(Response previous, Response moreData) {
+            final ImmutableList<Item> items = ImmutableList.<Item>builder()
+                    .addAll(previous.items())
+                    .addAll(moreData.items())
+                    .build();
+            return new Response(moreData.title(), items, moreData.nextToken());
+        }
+    }
+
 
 }

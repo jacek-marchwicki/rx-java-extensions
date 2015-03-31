@@ -3,27 +3,69 @@ package com.appunite.rx.example.model.api;
 import com.appunite.rx.example.model.model.Item;
 import com.appunite.rx.example.model.model.ItemWithBody;
 import com.appunite.rx.example.model.model.Response;
+import com.google.common.base.Function;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Range;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import rx.Observable;
+import rx.Subscriber;
 import rx.functions.Func1;
 
 public class ItemsServiceFake implements ItemsService {
 
     @Nonnull
     @Override
-    public Observable<Response> listItems() {
-        // This normally would be retrofit
-        return Observable.just(new Response("Title", ImmutableList.of(
-                new Item("1", "title"),
-                new Item("2", "title2"),
-                new Item("3", "not_existing_item")
-                )))
+    public Observable<Response> listItems(@Nullable final String nextToken) {
+        return Observable
+                .create(new Observable.OnSubscribe<Response>() {
+                    public static final int ITEMS_AT_ONCE = 100;
+                    public static final int MAX_ITEMS = 500;
+
+                    @Override
+                    public void call(Subscriber<? super Response> subscriber) {
+                        try {
+                            final int start = nextToken == null ? 1 : Integer.parseInt(nextToken);
+                            final String next;
+                            final int end;
+
+                            if (start > MAX_ITEMS) {
+                                end = MAX_ITEMS + ITEMS_AT_ONCE / 2;
+                                next = null;
+                            } else {
+                                end = start + ITEMS_AT_ONCE;
+                                next = String.valueOf(end);
+                            }
+
+                            subscriber.onNext(new Response("Title", getItemsBetween(start, end), next));
+                            subscriber.onCompleted();
+                        } catch (Exception e) {
+                            subscriber.onError(e);
+                        }
+                    }
+
+                    private ImmutableList<Item> getItemsBetween(int start, int end) {
+                        final Range<Integer> integerRange = Range.closedOpen(start, end);
+                        return FluentIterable
+                                .from(ContiguousSet.create(integerRange, DiscreteDomain.integers()))
+                                .transform(new Function<Integer, Item>() {
+                                    @Nullable
+                                    @Override
+                                    public Item apply(Integer input) {
+                                        return new Item(String.valueOf(input), String.format("title - %d", input));
+                                    }
+                                })
+                                .toList();
+                    }
+                })
                 .delay(2, TimeUnit.SECONDS);
     }
 

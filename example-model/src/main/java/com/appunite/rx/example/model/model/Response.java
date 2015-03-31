@@ -3,6 +3,7 @@ package com.appunite.rx.example.model.model;
 import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class Response {
     @Nonnull
@@ -10,11 +11,15 @@ public class Response {
 
     @Nonnull
     private final ImmutableList<Item> items;
+    @Nullable
+    private final String nextToken;
 
     public Response(@Nonnull String title,
-                    @Nonnull ImmutableList<Item> items) {
+                    @Nonnull ImmutableList<Item> items,
+                    @Nullable String nextToken) {
         this.title = title;
         this.items = items;
+        this.nextToken = nextToken;
     }
 
     @Nonnull
@@ -25,5 +30,9 @@ public class Response {
     @Nonnull
     public ImmutableList<Item> items() {
         return items;
+    }
+
+    public String nextToken() {
+        return nextToken;
     }
 }

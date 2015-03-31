@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.appunite.rx.android.MoreViewActions;
+import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.model.dao.ItemsDao;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
@@ -41,7 +42,8 @@ public class MainActivity extends BaseActivity {
         final MainAdapter mainAdapter = new MainAdapter();
 
         ButterKnife.inject(this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
+        final LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(mainAdapter);
 
         // Normally use dagger
@@ -77,6 +79,11 @@ public class MainActivity extends BaseActivity {
                                         .toBundle());
                     }
                 });
+
+        MoreViewObservables.scroll(recyclerView)
+                .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
+                .compose(lifecycleMainObservable.bindLifecycle())
+                .subscribe(presenter.loadMoreObserver());
     }
 
     private Func1<Throwable, String> mapThrowableToStringError() {

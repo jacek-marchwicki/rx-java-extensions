@@ -31,10 +31,13 @@ public class MainPresenter {
     private final Observable<ResponseOrError<ImmutableList<AdapterItem>>> itemsObservable;
     @Nonnull
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
+    @Nonnull
+    private final ItemsDao itemsDao;
 
     public MainPresenter(@Nonnull Scheduler networkScheduler,
                          @Nonnull Scheduler uiScheduler,
                          @Nonnull ItemsDao itemsDao) {
+        this.itemsDao = itemsDao;
         titleObservable = itemsDao.dataObservable()
                 .compose(ResponseOrError.map(new Func1<Response, String>() {
                     @Override
@@ -93,6 +96,11 @@ public class MainPresenter {
         return ResponseOrError.combineProgressObservable(ImmutableList.of(
                 ResponseOrError.transform(titleObservable),
                 ResponseOrError.transform(itemsObservable)));
+    }
+
+    @Nonnull
+    public Observer<Object> loadMoreObserver() {
+        return itemsDao.loadMoreObserver();
     }
 
     public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {
