@@ -21,26 +21,50 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * Class that represents data or error
+ * @param <T> type of data
+ */
 public class ResponseOrError<T> {
     @Nullable
     private final T data;
     @Nullable
     private final Throwable error;
 
-    public ResponseOrError(@Nullable T data, @Nullable Throwable error) {
+    private ResponseOrError(@Nullable T data, @Nullable Throwable error) {
         checkArgument(data != null ^ error != null);
         this.data = data;
         this.error = error;
     }
 
+    /**
+     * Returns error response from throwable
+     * @param t throwable
+     * @param <T> type of possible data
+     * @return representation of throwable
+     */
     public static <T> ResponseOrError<T> fromError(@Nonnull Throwable t) {
         return new ResponseOrError<>(null, checkNotNull(t));
     }
 
+    /**
+     * Returns data response from data
+     * @param data data
+     * @param <T> type of data
+     * @return representation of data
+     */
     public static <T> ResponseOrError<T> fromData(@Nonnull T data) {
         return new ResponseOrError<>(checkNotNull(data), null);
     }
 
+    /**
+     * Returns data
+     *
+     * You need to check {@link #isData()}
+     *
+     * @return data
+     * @throws java.lang.IllegalStateException when response is error
+     */
     @Nonnull
     public T data() {
         checkState(data != null);
@@ -48,14 +72,31 @@ public class ResponseOrError<T> {
         return data;
     }
 
+    /**
+     * Returns if response contains data
+     * @return true if contains data
+     */
     public boolean isData() {
         return data != null;
     }
 
+    /**
+     * Returns if response contains error
+     *
+     * Helper for negation of {@link #isData()}
+     * @return true if contains error
+     */
     public boolean isError() {
         return !isData();
     }
 
+    /**
+     * Returns error
+     *
+     * You need to check {@link #isError()}
+     * @return error throwable
+     * @throws java.lang.IllegalStateException when response is data
+     */
     @Nonnull
     public Throwable error() {
         checkState(error != null);
@@ -63,6 +104,10 @@ public class ResponseOrError<T> {
         return error;
     }
 
+    /**
+     * Function that converts ResponseOrError to Boolean containing {@link #isData()}
+     * @return function
+     */
     @Nonnull
     public static Func1<? super ResponseOrError<?>, Boolean> funcIsData() {
         return new Func1<ResponseOrError<?>, Boolean>() {
@@ -73,12 +118,19 @@ public class ResponseOrError<T> {
         };
     }
 
+    /**
+     * Function that converts ResponseOrError to Boolean containing {@link #isError()} ()}
+     * @return function
+     */
     @Nonnull
     public static Func1<? super ResponseOrError<?>, Boolean> funcIsError() {
         return Functions1.neg(funcIsData());
     }
 
-
+    /**
+     * Function that converts ResponseOrError to null if {@link #isData()} or {@link #error()} Throwable
+     * @return function
+     */
     @Nonnull
     public static Func1<? super ResponseOrError<?>, Throwable> toNullableThrowable() {
         return new Func1<ResponseOrError<?>, Throwable>() {
@@ -97,6 +149,11 @@ public class ResponseOrError<T> {
                 : ResponseOrError.<W>fromError(error());
     }
 
+    /**
+     * Parameters are equals using {@link Object#equals(Object)} on data or error
+     * @param o object
+     * @return true if equals
+     */
     @Override
     public boolean equals(final Object o) {
         if (this == o) return true;
@@ -108,7 +165,10 @@ public class ResponseOrError<T> {
                 && !(error != null ? !error.equals(that.error) : that.error != null);
 
     }
-
+    /**
+     * Hash code using {@link Object#hashCode()} on data or error
+     * @return hash code
+     */
     @Override
     public int hashCode() {
         int result = data != null ? data.hashCode() : 0;
@@ -124,6 +184,15 @@ public class ResponseOrError<T> {
                 .toString();
     }
 
+    /**
+     * Convert {@link Observable} that can throw error to {@link Observable<ResponseOrError>}
+     *
+     * If source Observable returns obj, result observable will return ResponseOrError.fromData(obj)
+     * If source Observable throws err, result observable will return ResponseOrError.fromError(err)
+     *
+     * @param <T> type of data
+     * @return observable
+     */
     @Nonnull
     public static <T> Observable.Transformer<T, ResponseOrError<T>> toResponseOrErrorObservable() {
         return new Observable.Transformer<T, ResponseOrError<T>>() {
@@ -153,6 +222,26 @@ public class ResponseOrError<T> {
 
     }
 
+    /**
+     * Map only success response ignoring error
+     *
+     * <pre>
+     * {@code
+     *  Observable<ResponseOrError<Boolean>> output =
+     *      Observable.just(ResponseOrError.fromData("text")
+     *      .compose(ResponseOrError.map(new Func<String, Boolean) {
+     *          Boolean call(String in) {
+     *             return in != null;
+     *          }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param func that maps data of ResponseOrError to another data
+     * @param <T> type of source object
+     * @param <K> type of destination object
+     * @return observable
+     */
     @Nonnull
     public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> map(@Nonnull final Func1<T, K> func) {
         return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
@@ -179,7 +268,26 @@ public class ResponseOrError<T> {
             }
         });
     }
-
+    /**
+     * Flat map only success response ignoring error
+     *
+     * <pre>
+     * {@code
+     *  Observable<ResponseOrError<Boolean>> output =
+     *      Observable.just(ResponseOrError.fromData("text")
+     *      .compose(ResponseOrError.map(new Func<String, Observable<Boolean>) {
+     *          Observable<Boolean> call(String in) {
+     *             return Observable.just(in != null);
+     *          }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param func that maps data of ResponseOrError to Observable
+     * @param <T> type of source object
+     * @param <K> type of destination object
+     * @return observable
+     */
     @Nonnull
     public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> flatMap(@Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
         return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
@@ -207,6 +315,11 @@ public class ResponseOrError<T> {
         });
     }
 
+    /**
+     * Returns only success response of observable of {@link ResponseOrError} and convert to {@link #data()}
+     * @param <T> type ResponseOrError
+     * @return observable
+     */
     @Nonnull
     public static <T> Observable.Transformer<ResponseOrError<T>, T> onlySuccess() {
         return new Observable.Transformer<ResponseOrError<T>, T>() {
@@ -227,6 +340,11 @@ public class ResponseOrError<T> {
         });
     }
 
+    /**
+     * Returns only error response of observable of {@link ResponseOrError} and convert to {@link #error()}
+     * @param <T> type of ResponseOrError
+     * @return observable
+     */
     @Nonnull
     public static <T> Observable.Transformer<ResponseOrError<T>, Throwable> onlyError() {
         return new Observable.Transformer<ResponseOrError<T>, Throwable>() {
@@ -247,6 +365,13 @@ public class ResponseOrError<T> {
         });
     }
 
+    /**
+     * Converts lists of ResponseOrError to ResponseOrError with list
+     *
+     * If there will be error only first will be returned
+     * @param <T> type of element
+     * @return observable
+     */
     @Nonnull
     public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>> fromListObservable() {
         return new Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
@@ -275,12 +400,27 @@ public class ResponseOrError<T> {
         });
     }
 
+    /**
+     * Returns true unit all observables will returns some value
+     *
+     * @param observables observables that returns some data
+     * @return observable
+     */
     @Nonnull
     public static Observable<Boolean> combineProgressObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         return Observable.combineLatest(observables, FunctionsN.returnFalse())
                 .startWith(true);
     }
 
+    /**
+     * Converts {@code ResponseOrError<T>} to {@code ResponseOrError<?>}
+     *
+     * @param observable to transform
+     * @param <T> type of source observable
+     * @return observable
+     * @see #combineErrorsObservable(com.google.common.collect.ImmutableList)
+     * @see #combineProgressObservable(com.google.common.collect.ImmutableList)
+     */
     @Nonnull
     public static <T> Observable<ResponseOrError<?>> transform(@Nonnull Observable<ResponseOrError<T>> observable) {
         return observable
@@ -292,6 +432,12 @@ public class ResponseOrError<T> {
                 });
     }
 
+    /**
+     * Returns throwable if some observable returned {@link #error()} otherwise null
+     *
+     * @param observables source observables
+     * @return observable
+     */
     @Nonnull
     public static Observable<Throwable> combineErrorsObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         final ImmutableList<Observable<Throwable>> ob = FluentIterable
