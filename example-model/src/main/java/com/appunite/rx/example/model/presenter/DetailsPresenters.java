@@ -5,7 +5,7 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.NetworkScheduler;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.ItemsDao;
-import com.appunite.rx.example.model.model.ItemWithBody;
+import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.functions.Functions1;
 import com.google.common.collect.ImmutableList;
 
@@ -53,9 +53,9 @@ public class DetailsPresenters {
             itemDao = itemsDao.itemDao(id);
 
             nameObservable = itemDao.dataObservable()
-                    .compose(ResponseOrError.map(new Func1<ItemWithBody, String>() {
+                    .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
-                        public String call(ItemWithBody item) {
+                        public String call(PostWithBody item) {
                             return item.name();
                         }
                     }))
@@ -64,9 +64,9 @@ public class DetailsPresenters {
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
             bodyObservable = itemDao.dataObservable()
-                    .compose(ResponseOrError.map(new Func1<ItemWithBody, String>() {
+                    .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
-                        public String call(ItemWithBody item) {
+                        public String call(PostWithBody item) {
                             return item.body();
                         }
                     }))

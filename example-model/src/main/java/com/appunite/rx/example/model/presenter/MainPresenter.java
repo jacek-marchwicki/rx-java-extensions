@@ -4,10 +4,11 @@ import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.dao.ItemsDao;
-import com.appunite.rx.example.model.model.Item;
+import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.Response;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 
@@ -42,7 +43,7 @@ public class MainPresenter {
                 .compose(ResponseOrError.map(new Func1<Response, String>() {
                     @Override
                     public String call(Response response) {
-                        return response.title();
+                        return Strings.nullToEmpty(response.title());
                     }
                 }))
                 .subscribeOn(networkScheduler)
@@ -53,11 +54,11 @@ public class MainPresenter {
                 .compose(ResponseOrError.map(new Func1<Response, ImmutableList<AdapterItem>>() {
                     @Override
                     public ImmutableList<AdapterItem> call(Response response) {
-                        final ImmutableList<Item> items = response.items();
-                        return FluentIterable.from(items).transform(new Function<Item, AdapterItem>() {
+                        final ImmutableList<Post> posts = response.items();
+                        return FluentIterable.from(posts).transform(new Function<Post, AdapterItem>() {
                             @Nonnull
                             @Override
-                            public AdapterItem apply(Item input) {
+                            public AdapterItem apply(Post input) {
                                 return new AdapterItem(input.id(), input.name());
                             }
                         }).toList();

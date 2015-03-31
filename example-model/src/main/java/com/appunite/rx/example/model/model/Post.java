@@ -3,14 +3,14 @@ package com.appunite.rx.example.model.model;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Item {
+public class Post {
     @Nonnull
     private final String id;
-    @Nullable
+    @Nonnull
     private final String name;
 
-    public Item(@Nonnull String id,
-                @Nullable String name) {
+    public Post(@Nonnull String id,
+                @Nonnull String name) {
         this.id = id;
         this.name = name;
     }
@@ -20,7 +20,7 @@ public class Item {
         return id;
     }
 
-    @Nullable
+    @Nonnull
     public String name() {
         return name;
     }

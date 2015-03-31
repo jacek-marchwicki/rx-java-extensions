@@ -5,6 +5,8 @@ This project is in very-hight development so everything can chenge. Because of t
 
 # Examples
 
+In examples we use [sample rest guestbok python server](python-server/README.md)
+
 ## Get retrofit
 
 * Error managment

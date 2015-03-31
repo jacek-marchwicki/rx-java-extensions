@@ -1,0 +1,40 @@
+application: atlantean-field-90117
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /favicon\.ico
+  static_files: favicon.ico
+  upload: favicon\.ico
+  secure: always
+
+# Endpoints handler
+- url: /_ah/spi/.*
+  script: api.app
+  secure: always
+
+# Static files
+- url: /$
+  static_files: static/index.html
+  upload: static/index.html
+  secure: always
+
+- url: /
+  static_dir: static/
+  secure: always
+
+
+libraries:
+- name: pycrypto
+  version: latest
+
+- name: protorpc
+  version: 1.0
+
+- name: endpoints
+  version: 1.0
+
+- name: ssl
+  version: latest

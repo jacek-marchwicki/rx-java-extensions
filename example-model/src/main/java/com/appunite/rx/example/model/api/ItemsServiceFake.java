@@ -1,7 +1,7 @@
 package com.appunite.rx.example.model.api;
 
-import com.appunite.rx.example.model.model.Item;
-import com.appunite.rx.example.model.model.ItemWithBody;
+import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.Response;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
@@ -52,15 +52,15 @@ public class ItemsServiceFake implements ItemsService {
                         }
                     }
 
-                    private ImmutableList<Item> getItemsBetween(int start, int end) {
+                    private ImmutableList<Post> getItemsBetween(int start, int end) {
                         final Range<Integer> integerRange = Range.closedOpen(start, end);
                         return FluentIterable
                                 .from(ContiguousSet.create(integerRange, DiscreteDomain.integers()))
-                                .transform(new Function<Integer, Item>() {
+                                .transform(new Function<Integer, Post>() {
                                     @Nullable
                                     @Override
-                                    public Item apply(Integer input) {
-                                        return new Item(String.valueOf(input), String.format("title - %d", input));
+                                    public Post apply(Integer input) {
+                                        return new Post(String.valueOf(input), String.format("title - %d", input));
                                     }
                                 })
                                 .toList();
@@ -71,20 +71,20 @@ public class ItemsServiceFake implements ItemsService {
 
     @Nonnull
     @Override
-    public Observable<ItemWithBody> getItem(@Nonnull String id) {
+    public Observable<PostWithBody> getItem(@Nonnull String id) {
         switch (id) {
             case "1":
-                return Observable.just(new ItemWithBody("1", "title", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse ac diam non augue consequat faucibus. Etiam turpis felis, elementum nec laoreet in, commodo nec ligula. Maecenas luctus leo eget laoreet tempor. Quisque sed elit nec urna aliquam commodo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam a ante massa. Nunc tincidunt arcu lorem, eget pharetra tortor venenatis sodales. Vestibulum et blandit mauris."))
+                return Observable.just(new PostWithBody("1", "title", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse ac diam non augue consequat faucibus. Etiam turpis felis, elementum nec laoreet in, commodo nec ligula. Maecenas luctus leo eget laoreet tempor. Quisque sed elit nec urna aliquam commodo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Nam a ante massa. Nunc tincidunt arcu lorem, eget pharetra tortor venenatis sodales. Vestibulum et blandit mauris."))
                         .delay(200, TimeUnit.MILLISECONDS);
             case "2":
-                return Observable.just(new ItemWithBody("2", "title2", "Phasellus placerat ligula erat, nec pellentesque libero rhoncus nec. In euismod leo porttitor sem pulvinar, eu venenatis nisi scelerisque. Ut efficitur fermentum massa a egestas. Morbi at tempus risus, id blandit turpis. Suspendisse sed magna et mauris tristique iaculis nec vel velit. Cras porta diam vitae velit cursus, bibendum venenatis nulla egestas. Aenean molestie magna rutrum nisl aliquet, sit amet lacinia orci feugiat. Quisque placerat quam vitae ultrices cursus."))
+                return Observable.just(new PostWithBody("2", "title2", "Phasellus placerat ligula erat, nec pellentesque libero rhoncus nec. In euismod leo porttitor sem pulvinar, eu venenatis nisi scelerisque. Ut efficitur fermentum massa a egestas. Morbi at tempus risus, id blandit turpis. Suspendisse sed magna et mauris tristique iaculis nec vel velit. Cras porta diam vitae velit cursus, bibendum venenatis nulla egestas. Aenean molestie magna rutrum nisl aliquet, sit amet lacinia orci feugiat. Quisque placerat quam vitae ultrices cursus."))
                         .delay(1000, TimeUnit.MILLISECONDS);
             default:
                 return Observable.just("")
                         .delay(2, TimeUnit.SECONDS)
-                        .flatMap(new Func1<String, Observable<ItemWithBody>>() {
+                        .flatMap(new Func1<String, Observable<PostWithBody>>() {
                             @Override
-                            public Observable<ItemWithBody> call(String s) {
+                            public Observable<PostWithBody> call(String s) {
                                 return Observable.error(new IOException("error"));
                             }
                         });

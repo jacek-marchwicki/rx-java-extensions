@@ -1,10 +1,12 @@
 package com.appunite.rx.example.model.dao;
 
+import com.appunite.gson.AndroidUnderscoreNamingStrategy;
+import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.ItemsService;
 import com.appunite.rx.example.model.api.ItemsServiceFake;
-import com.appunite.rx.example.model.model.Item;
-import com.appunite.rx.example.model.model.ItemWithBody;
+import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.Response;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
@@ -12,11 +14,20 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.squareup.okhttp.OkHttpClient;
+
+import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
+import retrofit.RestAdapter;
+import retrofit.client.OkClient;
+import retrofit.converter.GsonConverter;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
@@ -45,12 +56,32 @@ public class ItemsDao {
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
 
+
+    private static class SyncExecutor implements Executor {
+        @Override
+        public void execute(@Nonnull final Runnable command) {
+            command.run();
+        }
+    }
+
     public static ItemsDao getInstance(@Nonnull Scheduler networkScheduler) {
         synchronized (LOCK) {
             if (itemsDao != null) {
                 return itemsDao;
             }
-            itemsDao = new ItemsDao(networkScheduler, new ItemsServiceFake());
+            final Gson gson = new GsonBuilder()
+                    .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
+                    .setFieldNamingStrategy(new AndroidUnderscoreNamingStrategy())
+                    .create();
+
+            final RestAdapter restAdapter = new RestAdapter.Builder()
+                    .setClient(new OkClient(new OkHttpClient()))
+                    .setEndpoint("https://atlantean-field-90117.appspot.com/_ah/api/guestbook/")
+                    .setExecutors(new SyncExecutor(), new SyncExecutor())
+                    .setConverter(new GsonConverter(gson))
+                    .build();
+            final ItemsService itemsService = restAdapter.create(ItemsService.class);
+            itemsDao = new ItemsDao(networkScheduler, itemsService);
             return itemsDao;
         }
     }
@@ -120,19 +151,19 @@ public class ItemsDao {
         @Nonnull
         private final PublishSubject<Object> refreshSubject = PublishSubject.create();
         @Nonnull
-        private final Observable<ResponseOrError<ItemWithBody>> data;
+        private final Observable<ResponseOrError<PostWithBody>> data;
 
         public ItemDao(@Nonnull String id) {
 
             data = itemsService.getItem(id)
-                    .compose(ResponseOrError.<ItemWithBody>toResponseOrErrorObservable())
-                    .compose(MoreOperators.<ItemWithBody>repeatOnError(networkScheduler))
-                    .compose(MoreOperators.<ResponseOrError<ItemWithBody>>refresh(refreshSubject))
-                    .compose(MoreOperators.<ResponseOrError<ItemWithBody>>cacheWithTimeout(networkScheduler));
+                    .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
+                    .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
+                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
+                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
         }
 
         @Nonnull
-        public Observable<ResponseOrError<ItemWithBody>> dataObservable() {
+        public Observable<ResponseOrError<PostWithBody>> dataObservable() {
             return data;
         }
 
@@ -145,11 +176,11 @@ public class ItemsDao {
     private static class MergeTwoResponses implements rx.functions.Func2<Response, Response, Response> {
         @Override
         public Response call(Response previous, Response moreData) {
-            final ImmutableList<Item> items = ImmutableList.<Item>builder()
+            final ImmutableList<Post> posts = ImmutableList.<Post>builder()
                     .addAll(previous.items())
                     .addAll(moreData.items())
                     .build();
-            return new Response(moreData.title(), items, moreData.nextToken());
+            return new Response(moreData.title(), posts, moreData.nextToken());
         }
     }
 

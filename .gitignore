@@ -3,6 +3,14 @@ bin
 gen
 lint.xml
 
+#Python
+*.pyc
+dist/**
+*.egg-info/**
+build/**
+venv/
+python-server/guestbook/gaenv_lib/**
+
 #Eclipse
 .project
 .classpath

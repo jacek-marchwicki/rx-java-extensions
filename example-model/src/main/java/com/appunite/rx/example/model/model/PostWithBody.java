@@ -3,18 +3,18 @@ package com.appunite.rx.example.model.model;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ItemWithBody extends Item {
-    @Nullable
+public class PostWithBody extends Post {
+    @Nonnull
     private final String body;
 
-    public ItemWithBody(@Nonnull String id,
-                        @Nullable String name,
-                        @Nullable String body) {
+    public PostWithBody(@Nonnull String id,
+                        @Nonnull String name,
+                        @Nonnull String body) {
         super(id, name);
         this.body = body;
     }
 
-    @Nullable
+    @Nonnull
     public String body() {
         return body;
     }
