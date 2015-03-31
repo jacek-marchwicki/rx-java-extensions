@@ -72,7 +72,7 @@ Observable<ResponseOrError<String>> titleObservable = itemsDao.dataObservable()
 	.compose(ResponseOrError.map(new Func1<Response, String>() {
 		@Override
 		public String call(Response response) {
-		return response.title();
+			return response.title();
 		}
 	}))
 	.subscribeOn(networkScheduler)
@@ -99,7 +99,7 @@ Observable<Boolean> progressObservable =
 ```
 
 
-## Bind data to vies
+## Bind data to views
 
 ```java
 presenter.titleObservable()
