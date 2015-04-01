@@ -13,11 +13,11 @@ import rx.Observable;
 
 public interface ItemsService {
 
-    @GET("/v1/posts?limit=50&fields=next_token%2Cposts(id%2Cname)")
+    @GET("/v1/posts?limit=50&fields=next_token%2Cposts(id%2Cname)&prettyPrint=false")
     @Nonnull
     Observable<Response> listItems(@Query("next_token") @Nullable String nextToken);
 
     @Nonnull
-    @GET("/v1/posts/{postId}")
+    @GET("/v1/posts/{postId}?prettyPrint=false")
     Observable<PostWithBody> getItem(@Path("postId") @Nonnull String id);
 }
