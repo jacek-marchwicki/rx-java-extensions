@@ -5,7 +5,9 @@ import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
+import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
@@ -15,15 +17,25 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.squareup.okhttp.Cache;
+import com.squareup.okhttp.Interceptor;
 import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Response;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
+import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
+import retrofit.android.AndroidLog;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
 import rx.Observable;
@@ -35,7 +47,9 @@ import rx.subjects.PublishSubject;
 @Singleton
 public class PostsDao {
     @Nonnull
-    private final Observable<ResponseOrError<PostsResponse>> data;
+    private final Observable<ResponseOrError<PostsResponse>> posts;
+    @Nonnull
+    private final Observable<ResponseOrError<PostsIdsResponse>> postsIds;
     @Nonnull
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
@@ -50,6 +64,8 @@ public class PostsDao {
     @Nonnull
     private Scheduler networkScheduler;
     @Nonnull
+    private Scheduler uiScheduler;
+    @Nonnull
     private GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
@@ -62,7 +78,7 @@ public class PostsDao {
         }
     }
 
-    public static PostsDao getInstance(@Nonnull Scheduler networkScheduler) {
+    public static PostsDao getInstance(@Nonnull File cacheDirectory, @Nonnull Scheduler networkScheduler, @Nonnull Scheduler uiScheduler) {
         synchronized (LOCK) {
             if (postsDao != null) {
                 return postsDao;
@@ -72,36 +88,53 @@ public class PostsDao {
                     .setFieldNamingStrategy(new AndroidUnderscoreNamingStrategy())
                     .create();
 
+            final OkHttpClient client = new OkHttpClient();
+            client.setCache(getCacheOrNull(cacheDirectory));
+
             final RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setClient(new OkClient(new OkHttpClient()))
+                    .setClient(new OkClient(client))
                     .setEndpoint("https://atlantean-field-90117.appspot.com/_ah/api/guestbook/")
                     .setExecutors(new SyncExecutor(), new SyncExecutor())
                     .setConverter(new GsonConverter(gson))
+                    .setLogLevel(RestAdapter.LogLevel.FULL)
+                    .setLog(new AndroidLog("Retrofit"))
                     .build();
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
-            postsDao = new PostsDao(networkScheduler, guestbookService);
+            postsDao = new PostsDao(networkScheduler, uiScheduler, guestbookService);
             return postsDao;
         }
     }
 
+    @Nullable
+    private static Cache getCacheOrNull(@Nonnull File cacheDirectory) {
+        int cacheSize = 10 * 1024 * 1024; // 10 MiB
+        try {
+            return new Cache(cacheDirectory, cacheSize);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     public PostsDao(@Nonnull final Scheduler networkScheduler,
+                    @Nonnull final Scheduler uiScheduler,
                     @Nonnull final GuestbookService guestbookService) {
         this.networkScheduler = networkScheduler;
+        this.uiScheduler = uiScheduler;
         this.guestbookService = guestbookService;
 
-        final OperatorMergeNextToken<PostsResponse, Object> mergeNextToken = OperatorMergeNextToken
+        final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken = OperatorMergeNextToken
                 .create(new Func1<PostsResponse, Observable<PostsResponse>>() {
                     @Override
                     public Observable<PostsResponse> call(@Nullable final PostsResponse response) {
                         if (response == null) {
-                            return guestbookService.listItems(null)
+                            return guestbookService.listPosts(null)
                                     .subscribeOn(networkScheduler);
                         } else {
                             final String nextToken = response.nextToken();
                             if (nextToken == null) {
                                 return Observable.never();
                             }
-                            final Observable<PostsResponse> apiRequest = guestbookService.listItems(nextToken)
+                            final Observable<PostsResponse> apiRequest = guestbookService.listPosts(nextToken)
                                     .subscribeOn(networkScheduler);
                             return Observable.just(response).zipWith(apiRequest, new MergeTwoResponses());
                         }
@@ -109,12 +142,43 @@ public class PostsDao {
                     }
                 });
 
-        data = loadMoreSubject.startWith((Object) null)
-                .lift(mergeNextToken)
+        posts = loadMoreSubject.startWith((Object) null)
+                .lift(mergePostsNextToken)
                 .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
                 .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
+                .subscribeOn(networkScheduler)
+                .observeOn(uiScheduler)
                 .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
+
+        final OperatorMergeNextToken<PostsIdsResponse, Object> mergePostsIdsNextToken = OperatorMergeNextToken
+                .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
+                    @Override
+                    public Observable<PostsIdsResponse> call(@Nullable final PostsIdsResponse response) {
+                        if (response == null) {
+                            return guestbookService.listPostsIds(null)
+                                    .subscribeOn(networkScheduler);
+                        } else {
+                            final String nextToken = response.nextToken();
+                            if (nextToken == null) {
+                                return Observable.never();
+                            }
+                            final Observable<PostsIdsResponse> apiRequest = guestbookService.listPostsIds(nextToken)
+                                    .subscribeOn(networkScheduler);
+                            return Observable.just(response).zipWith(apiRequest, new MergeTwoPostsIdsResponses());
+                        }
+
+                    }
+                });
+
+        postsIds = loadMoreSubject.startWith((Object) null)
+                .lift(mergePostsIdsNextToken)
+                .compose(ResponseOrError.<PostsIdsResponse>toResponseOrErrorObservable())
+                .compose(MoreOperators.<PostsIdsResponse>repeatOnError(networkScheduler))
+                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
+                .subscribeOn(networkScheduler)
+                .observeOn(uiScheduler)
+                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(networkScheduler));
 
         cache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<String, PostDao>() {
@@ -136,8 +200,13 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<PostsResponse>> dataObservable() {
-        return data;
+    public Observable<ResponseOrError<PostsResponse>> postsObservable() {
+        return posts;
+    }
+
+    @Nonnull
+    public Observable<ResponseOrError<PostsIdsResponse>> postsIdsObservable() {
+        return postsIds;
     }
 
     @Nonnull
@@ -149,20 +218,33 @@ public class PostsDao {
         @Nonnull
         private final PublishSubject<Object> refreshSubject = PublishSubject.create();
         @Nonnull
-        private final Observable<ResponseOrError<PostWithBody>> data;
+        private final Observable<ResponseOrError<PostWithBody>> postWithBodyObservable;
 
         public PostDao(@Nonnull String id) {
 
-            data = guestbookService.getItem(id)
+            postWithBodyObservable = guestbookService.getPost(id)
                     .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
+                    .subscribeOn(networkScheduler)
+                    .observeOn(uiScheduler)
                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
         }
 
         @Nonnull
-        public Observable<ResponseOrError<PostWithBody>> dataObservable() {
-            return data;
+        public Observable<ResponseOrError<PostWithBody>> postWithBodyObservable() {
+            return postWithBodyObservable;
+        }
+
+        @Nonnull
+        public Observable<ResponseOrError<Post>> postObservable() {
+            return postWithBodyObservable
+                    .compose(ResponseOrError.map(new Func1<PostWithBody, Post>() {
+                        @Override
+                        public Post call(PostWithBody o) {
+                            return o;
+                        }
+                    }));
         }
 
         @Nonnull
@@ -183,4 +265,14 @@ public class PostsDao {
     }
 
 
+    private class MergeTwoPostsIdsResponses implements rx.functions.Func2<PostsIdsResponse, PostsIdsResponse, PostsIdsResponse> {
+        @Override
+        public PostsIdsResponse call(PostsIdsResponse previous, PostsIdsResponse moreData) {
+            final ImmutableList<PostId> posts = ImmutableList.<PostId>builder()
+                    .addAll(previous.items())
+                    .addAll(moreData.items())
+                    .build();
+            return new PostsIdsResponse(moreData.title(), posts, moreData.nextToken());
+        }
+    }
 }

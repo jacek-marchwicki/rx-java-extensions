@@ -5,7 +5,10 @@ import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.PostId;
+import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
+import com.appunite.rx.operators.MoreOperators;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
@@ -17,7 +20,6 @@ import javax.annotation.Nullable;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.observers.Observers;
@@ -35,22 +37,18 @@ public class MainPresenter {
     @Nonnull
     private final PostsDao postsDao;
 
-    public MainPresenter(@Nonnull Scheduler networkScheduler,
-                         @Nonnull Scheduler uiScheduler,
-                         @Nonnull PostsDao postsDao) {
+    public MainPresenter(@Nonnull PostsDao postsDao) {
         this.postsDao = postsDao;
-        titleObservable = postsDao.dataObservable()
+        titleObservable = postsObservable()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
                     @Override
                     public String call(PostsResponse postsResponse) {
                         return Strings.nullToEmpty(postsResponse.title());
                     }
                 }))
-                .subscribeOn(networkScheduler)
-                .observeOn(uiScheduler)
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        itemsObservable = postsDao.dataObservable()
+        itemsObservable = postsObservable()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, ImmutableList<AdapterItem>>() {
                     @Override
                     public ImmutableList<AdapterItem> call(PostsResponse postsResponse) {
@@ -64,9 +62,36 @@ public class MainPresenter {
                         }).toList();
                     }
                 }))
-                .subscribeOn(networkScheduler)
-                .observeOn(uiScheduler)
                 .compose(ObservableExtensions.<ResponseOrError<ImmutableList<AdapterItem>>>behaviorRefCount());
+    }
+
+    private Observable<ResponseOrError<PostsResponse>> postsObservable() {
+        return this.postsDao.postsObservable();
+    }
+
+    private Observable<ResponseOrError<PostsResponse>> postsObservable2() {
+        return this.postsDao.postsIdsObservable()
+                .compose(ResponseOrError.flatMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
+                    @Override
+                    public Observable<ResponseOrError<PostsResponse>> call(final PostsIdsResponse o) {
+                        return Observable.from(o.items())
+                                .map(new Func1<PostId, Observable<ResponseOrError<Post>>>() {
+                                    @Override
+                                    public Observable<ResponseOrError<Post>> call(PostId postId) {
+                                        return postsDao.postDao(postId.id()).postObservable();
+                                    }
+                                })
+                                .toList()
+                                .compose(MoreOperators.<ResponseOrError<Post>>combineAll())
+                                .compose(ResponseOrError.<Post>fromListObservable())
+                                .compose(ResponseOrError.map(new Func1<ImmutableList<Post>, PostsResponse>() {
+                                    @Override
+                                    public PostsResponse call(ImmutableList<Post> posts) {
+                                        return new PostsResponse(o.title(), posts, o.nextToken());
+                                    }
+                                }));
+                    }
+                }));
     }
 
     @Nonnull

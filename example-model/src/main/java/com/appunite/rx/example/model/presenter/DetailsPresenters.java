@@ -7,6 +7,7 @@ import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.functions.Functions1;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 
 import java.util.concurrent.TimeUnit;
@@ -22,17 +23,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class DetailsPresenters {
 
     @Nonnull
-    private final Scheduler networkScheduler;
-    @Nonnull
     private final Scheduler uiScheduler;
     @Nonnull
     private final PostsDao postsDao;
 
-    public DetailsPresenters(@Nonnull @NetworkScheduler Scheduler networkScheduler,
-                             @Nonnull @UiScheduler Scheduler uiScheduler,
+    public DetailsPresenters(@Nonnull @UiScheduler Scheduler uiScheduler,
                              @Nonnull PostsDao postsDao) {
 
-        this.networkScheduler = networkScheduler;
         this.uiScheduler = uiScheduler;
         this.postsDao = postsDao;
     }
@@ -52,26 +49,22 @@ public class DetailsPresenters {
         public DetailsPresenter(@Nonnull String id) {
             postDao = postsDao.postDao(id);
 
-            nameObservable = postDao.dataObservable()
+            nameObservable = postDao.postWithBodyObservable()
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {
-                            return item.name();
+                            return Strings.nullToEmpty(item.name());
                         }
                     }))
-                    .subscribeOn(networkScheduler)
-                    .observeOn(uiScheduler)
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-            bodyObservable = postDao.dataObservable()
+            bodyObservable = postDao.postWithBodyObservable()
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {
-                            return item.body();
+                            return Strings.nullToEmpty(item.body());
                         }
                     }))
-                    .subscribeOn(networkScheduler)
-                    .observeOn(uiScheduler)
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
         }
 

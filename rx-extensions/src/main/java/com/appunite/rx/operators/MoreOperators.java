@@ -19,6 +19,7 @@ package com.appunite.rx.operators;
 import com.appunite.rx.ResponseOrError;
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
@@ -120,7 +121,23 @@ public class MoreOperators {
         }
     }
 
-    public static <T> Observable<ImmutableList<T>> combineAll(ImmutableList<Observable<T>> observables) {
+    @Nonnull
+    public static <T> Observable.Transformer<List<Observable<T>>, ImmutableList<T>> combineAll() {
+        return new Observable.Transformer<List<Observable<T>>, ImmutableList<T>>() {
+            @Override
+            public Observable<ImmutableList<T>> call(Observable<List<Observable<T>>> listObservable) {
+                return listObservable.switchMap(new Func1<List<Observable<T>>, Observable<? extends ImmutableList<T>>>() {
+                    @Override
+                    public Observable<? extends ImmutableList<T>> call(List<Observable<T>> observables) {
+                        return combineAll(observables);
+                    }
+                });
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
             return Observable.just(ImmutableList.<T>of());
         }

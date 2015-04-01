@@ -10,8 +10,11 @@ import android.widget.TextView;
 
 import com.appunite.rx.android.MoreActivityActions;
 import com.appunite.rx.android.MoreViewActions;
+import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
+
+import java.io.File;
 
 import javax.annotation.Nonnull;
 
@@ -51,9 +54,8 @@ public class DetailsActivity extends BaseActivity {
         ButterKnife.inject(this);
 
         // Normally use dagger
-        final DetailsPresenters.DetailsPresenter presenter = new DetailsPresenters(Schedulers.io(),
-                AndroidSchedulers.mainThread(),
-                PostsDao.getInstance(Schedulers.io()))
+        final DetailsPresenters.DetailsPresenter presenter = new DetailsPresenters(AndroidSchedulers.mainThread(),
+                PostsDao.getInstance(new File(this.getCacheDir(), "ok-http"), MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread()))
                 .getPresenter(id);
 
         presenter.titleObservable()

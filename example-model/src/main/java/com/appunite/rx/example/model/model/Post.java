@@ -3,21 +3,14 @@ package com.appunite.rx.example.model.model;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class Post {
-    @Nonnull
-    private final String id;
+public class Post extends PostId {
     @Nonnull
     private final String name;
 
     public Post(@Nonnull String id,
                 @Nonnull String name) {
-        this.id = id;
+        super(id);
         this.name = name;
-    }
-
-    @Nonnull
-    public String id() {
-        return id;
     }
 
     @Nonnull
