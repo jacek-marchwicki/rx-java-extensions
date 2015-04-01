@@ -3,6 +3,7 @@ version: 1
 runtime: python27
 api_version: 1
 threadsafe: yes
+instance_class: F4
 
 handlers:
 - url: /favicon\.ico
@@ -38,3 +39,6 @@ libraries:
 
 - name: ssl
   version: latest
+
+builtins:
+- remote_api: on

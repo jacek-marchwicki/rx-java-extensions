@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 #
 # Copyright 2014 Jacek Marchwicki <jacek.marchwicki@gmail.com>
-from google.appengine.ext import ndb
-from google.appengine.ext.ndb import Cursor
 
+MAX_LIMIT = 1000
 
 __author__ = 'Jacek Marchwicki <jacek.marchwicki@gmail.com>'
 
+from google.appengine.ext import ndb
+from google.appengine.ext.ndb import Cursor
+
 from guestbook.messages.post import *
 from guestbook.model.post import Post
+from google.appengine.api import memcache
 
 from protorpc import remote
 import endpoints
@@ -40,6 +43,10 @@ class GuestBookApi(remote.Service):
                            body=post.body)
 
     @staticmethod
+    def _post_id_from_db(key):
+        return PostIdMessage(id=key.urlsafe())
+
+    @staticmethod
     def _get_post_or_raise(post_id):
         try:
             key = ndb.Key(urlsafe=post_id)
@@ -60,15 +67,36 @@ class GuestBookApi(remote.Service):
         """
         List posts
         """
-        query = Post.query()
+        limit = min(request.limit, MAX_LIMIT)
+        start_cursor = Cursor(urlsafe=request.next_token)
 
-        cursor = Cursor(urlsafe=request.next_token)
-        posts, next_cursor, more = query.fetch_page(request.limit, start_cursor=cursor)
+        query = Post.query()
+        posts, next_cursor, more = query.fetch_page(limit, start_cursor=start_cursor, batch_size=limit)
 
         next_token = next_cursor.urlsafe() if next_cursor and more else None
         resp_posts = [self._post_from_db(post) for post in posts]
 
         return PostsCollection(posts=resp_posts, next_token=next_token)
+
+    @endpoints.method(PostsRequest, PostsIdsCollection,
+                      path='posts_ids', http_method='GET',
+                      name='listPostsIds')
+    def posts_ids_list(self, request):
+        """
+        List posts
+        """
+        limit = min(request.limit, MAX_LIMIT)
+
+        start_cursor = Cursor(urlsafe=request.next_token)
+
+        query = Post.query()
+        posts, next_cursor, more = query.fetch_page(limit, start_cursor=start_cursor, batch_size=limit, keys_only=True)
+
+        next_token = next_cursor.urlsafe() if next_cursor and more else None
+        resp_posts = [self._post_id_from_db(post) for post in posts]
+
+        collection = PostsIdsCollection(posts=resp_posts, next_token=next_token)
+        return collection
 
     @endpoints.method(ID_RESOURCE, PostMessage,
                       path='posts/{id}', http_method='GET',

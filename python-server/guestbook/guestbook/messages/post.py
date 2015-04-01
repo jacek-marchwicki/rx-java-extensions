@@ -32,10 +32,19 @@ class PostsRequest(messages.Message):
     limit = messages.IntegerField(2, required=False, default=10)
 
 
+class PostIdMessage(messages.Message):
+    id = messages.StringField(1, required=True)
+
+
 class PostMessage(messages.Message):
     id = messages.StringField(1, required=True)
     name = messages.StringField(2, required=True)
     body = messages.StringField(3, required=True)
+
+
+class PostsIdsCollection(messages.Message):
+    posts = messages.MessageField(PostIdMessage, 1, repeated=True)
+    next_token = messages.StringField(2)
 
 
 class PostsCollection(messages.Message):
