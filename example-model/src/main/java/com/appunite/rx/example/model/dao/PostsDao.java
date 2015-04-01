@@ -41,6 +41,7 @@ import retrofit.converter.GsonConverter;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -62,11 +63,11 @@ public class PostsDao {
     private static PostsDao postsDao;
 
     @Nonnull
-    private Scheduler networkScheduler;
+    private final Scheduler networkScheduler;
     @Nonnull
-    private Scheduler uiScheduler;
+    private final Scheduler uiScheduler;
     @Nonnull
-    private GuestbookService guestbookService;
+    private final GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
 
@@ -122,7 +123,8 @@ public class PostsDao {
         this.uiScheduler = uiScheduler;
         this.guestbookService = guestbookService;
 
-        final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken = OperatorMergeNextToken
+        final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken =
+                OperatorMergeNextToken
                 .create(new Func1<PostsResponse, Observable<PostsResponse>>() {
                     @Override
                     public Observable<PostsResponse> call(@Nullable final PostsResponse response) {
@@ -134,9 +136,12 @@ public class PostsDao {
                             if (nextToken == null) {
                                 return Observable.never();
                             }
-                            final Observable<PostsResponse> apiRequest = guestbookService.listPosts(nextToken)
+                            final Observable<PostsResponse> apiRequest = guestbookService
+                                    .listPosts(nextToken)
                                     .subscribeOn(networkScheduler);
-                            return Observable.just(response).zipWith(apiRequest, new MergeTwoResponses());
+                            return Observable.just(response)
+                                    .zipWith(apiRequest,
+                                            new MergeTwoResponses());
                         }
 
                     }
@@ -149,7 +154,7 @@ public class PostsDao {
                 .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
                 .subscribeOn(networkScheduler)
                 .observeOn(uiScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
+                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(uiScheduler));
 
         final OperatorMergeNextToken<PostsIdsResponse, Object> mergePostsIdsNextToken = OperatorMergeNextToken
                 .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
@@ -178,7 +183,7 @@ public class PostsDao {
                 .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
                 .subscribeOn(networkScheduler)
                 .observeOn(uiScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(networkScheduler));
+                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(uiScheduler));
 
         cache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<String, PostDao>() {
@@ -221,14 +226,13 @@ public class PostsDao {
         private final Observable<ResponseOrError<PostWithBody>> postWithBodyObservable;
 
         public PostDao(@Nonnull String id) {
-
             postWithBodyObservable = guestbookService.getPost(id)
                     .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
                     .subscribeOn(networkScheduler)
                     .observeOn(uiScheduler)
-                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
+                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(uiScheduler));
         }
 
         @Nonnull

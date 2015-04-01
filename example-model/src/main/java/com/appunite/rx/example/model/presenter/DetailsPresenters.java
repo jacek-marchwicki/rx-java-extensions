@@ -95,7 +95,7 @@ public class DetailsPresenters {
             final Observable<Boolean> filter = progressObservable().filter(Functions1.isFalse());
             final Observable<Throwable> error = errorObservable().filter(Functions1.isNotNull());
             final Observable<String> timeout = Observable.just("").delay(500, TimeUnit.MILLISECONDS, uiScheduler);
-            return Observable.<Object>amb(filter, error, timeout);
+            return Observable.<Object>amb(filter, error, timeout).first();
         }
     }
 

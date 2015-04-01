@@ -23,7 +23,7 @@ public interface GuestbookService {
     @Nonnull
     Observable<PostsIdsResponse> listPostsIds(@Query("next_token") @Nullable String nextToken);
 
-    @Nonnull
     @GET("/v1/posts/{postId}?prettyPrint=false")
+    @Nonnull
     Observable<PostWithBody> getPost(@Path("postId") @Nonnull String id);
 }

@@ -54,8 +54,11 @@ public class DetailsActivity extends BaseActivity {
         ButterKnife.inject(this);
 
         // Normally use dagger
-        final DetailsPresenters.DetailsPresenter presenter = new DetailsPresenters(AndroidSchedulers.mainThread(),
-                PostsDao.getInstance(new File(this.getCacheDir(), "ok-http"), MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread()))
+        final DetailsPresenters detailsPresenters = new DetailsPresenters(AndroidSchedulers.mainThread(),
+                PostsDao.getInstance(new File(this.getCacheDir(), "ok-http"), MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread()));
+
+
+        final DetailsPresenters.DetailsPresenter presenter = detailsPresenters
                 .getPresenter(id);
 
         presenter.titleObservable()

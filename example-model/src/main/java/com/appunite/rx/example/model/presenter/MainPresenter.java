@@ -15,6 +15,9 @@ import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 
+import java.io.IOException;
+import java.util.List;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -39,7 +42,7 @@ public class MainPresenter {
 
     public MainPresenter(@Nonnull PostsDao postsDao) {
         this.postsDao = postsDao;
-        titleObservable = postsObservable()
+        titleObservable = postsObservable2()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
                     @Override
                     public String call(PostsResponse postsResponse) {
@@ -48,7 +51,7 @@ public class MainPresenter {
                 }))
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        itemsObservable = postsObservable()
+        itemsObservable = postsObservable2()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, ImmutableList<AdapterItem>>() {
                     @Override
                     public ImmutableList<AdapterItem> call(PostsResponse postsResponse) {
@@ -74,6 +77,7 @@ public class MainPresenter {
                 .compose(ResponseOrError.flatMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
                     @Override
                     public Observable<ResponseOrError<PostsResponse>> call(final PostsIdsResponse o) {
+
                         return Observable.from(o.items())
                                 .map(new Func1<PostId, Observable<ResponseOrError<Post>>>() {
                                     @Override

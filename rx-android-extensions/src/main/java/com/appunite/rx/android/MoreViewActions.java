@@ -73,6 +73,7 @@ public class MoreViewActions {
         };
     }
 
+    @Nonnull
     public static Action1<? super String> setTitle(@Nonnull final Toolbar toolbar) {
         checkNotNull(toolbar);
         return new Action1<String>() {
