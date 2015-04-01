@@ -4,7 +4,7 @@ import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.NetworkScheduler;
 import com.appunite.rx.dagger.UiScheduler;
-import com.appunite.rx.example.model.dao.ItemsDao;
+import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.functions.Functions1;
 import com.google.common.collect.ImmutableList;
@@ -26,15 +26,15 @@ public class DetailsPresenters {
     @Nonnull
     private final Scheduler uiScheduler;
     @Nonnull
-    private final ItemsDao itemsDao;
+    private final PostsDao postsDao;
 
     public DetailsPresenters(@Nonnull @NetworkScheduler Scheduler networkScheduler,
                              @Nonnull @UiScheduler Scheduler uiScheduler,
-                             @Nonnull ItemsDao itemsDao) {
+                             @Nonnull PostsDao postsDao) {
 
         this.networkScheduler = networkScheduler;
         this.uiScheduler = uiScheduler;
-        this.itemsDao = itemsDao;
+        this.postsDao = postsDao;
     }
 
     @Nonnull
@@ -45,14 +45,14 @@ public class DetailsPresenters {
 
     public class DetailsPresenter {
 
-        private final ItemsDao.ItemDao itemDao;
+        private final PostsDao.PostDao postDao;
         private final Observable<ResponseOrError<String>> nameObservable;
         private final Observable<ResponseOrError<String>> bodyObservable;
 
         public DetailsPresenter(@Nonnull String id) {
-            itemDao = itemsDao.itemDao(id);
+            postDao = postsDao.postDao(id);
 
-            nameObservable = itemDao.dataObservable()
+            nameObservable = postDao.dataObservable()
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {
@@ -63,7 +63,7 @@ public class DetailsPresenters {
                     .observeOn(uiScheduler)
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-            bodyObservable = itemDao.dataObservable()
+            bodyObservable = postDao.dataObservable()
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {

@@ -10,7 +10,7 @@ import android.widget.TextView;
 
 import com.appunite.rx.android.MoreActivityActions;
 import com.appunite.rx.android.MoreViewActions;
-import com.appunite.rx.example.model.dao.ItemsDao;
+import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
 
 import javax.annotation.Nonnull;
@@ -53,7 +53,7 @@ public class DetailsActivity extends BaseActivity {
         // Normally use dagger
         final DetailsPresenters.DetailsPresenter presenter = new DetailsPresenters(Schedulers.io(),
                 AndroidSchedulers.mainThread(),
-                ItemsDao.getInstance(Schedulers.io()))
+                PostsDao.getInstance(Schedulers.io()))
                 .getPresenter(id);
 
         presenter.titleObservable()

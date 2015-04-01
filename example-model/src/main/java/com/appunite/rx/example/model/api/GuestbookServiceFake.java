@@ -2,7 +2,8 @@ package com.appunite.rx.example.model.api;
 
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostWithBody;
-import com.appunite.rx.example.model.model.Response;
+import com.appunite.rx.example.model.model.PostsResponse;
+import com.appunite.rx.example.model.model.PostsResponse;
 import com.google.common.base.Function;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
@@ -20,18 +21,18 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
 
-public class ItemsServiceFake implements ItemsService {
+public class GuestbookServiceFake implements GuestbookService {
 
     @Nonnull
     @Override
-    public Observable<Response> listItems(@Nullable final String nextToken) {
+    public Observable<PostsResponse> listItems(@Nullable final String nextToken) {
         return Observable
-                .create(new Observable.OnSubscribe<Response>() {
+                .create(new Observable.OnSubscribe<PostsResponse>() {
                     public static final int ITEMS_AT_ONCE = 100;
                     public static final int MAX_ITEMS = 500;
 
                     @Override
-                    public void call(Subscriber<? super Response> subscriber) {
+                    public void call(Subscriber<? super PostsResponse> subscriber) {
                         try {
                             final int start = nextToken == null ? 1 : Integer.parseInt(nextToken);
                             final String next;
@@ -45,7 +46,7 @@ public class ItemsServiceFake implements ItemsService {
                                 next = String.valueOf(end);
                             }
 
-                            subscriber.onNext(new Response("Title", getItemsBetween(start, end), next));
+                            subscriber.onNext(new PostsResponse("Title", getItemsBetween(start, end), next));
                             subscriber.onCompleted();
                         } catch (Exception e) {
                             subscriber.onError(e);

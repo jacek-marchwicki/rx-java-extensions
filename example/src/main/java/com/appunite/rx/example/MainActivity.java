@@ -12,7 +12,7 @@ import android.widget.TextView;
 
 import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.android.MoreViewObservables;
-import com.appunite.rx.example.model.dao.ItemsDao;
+import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
 
@@ -51,7 +51,7 @@ public class MainActivity extends BaseActivity {
         // Normally use dagger
         final MainPresenter presenter = new MainPresenter(Schedulers.io(),
                 AndroidSchedulers.mainThread(),
-                ItemsDao.getInstance(Schedulers.io()));
+                PostsDao.getInstance(Schedulers.io()));
 
         presenter.titleObservable()
                 .compose(lifecycleMainObservable.<String>bindLifecycle())

@@ -3,9 +3,9 @@ package com.appunite.rx.example.model.presenter;
 import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.example.model.dao.ItemsDao;
+import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
-import com.appunite.rx.example.model.model.Response;
+import com.appunite.rx.example.model.model.PostsResponse;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Strings;
@@ -33,28 +33,28 @@ public class MainPresenter {
     @Nonnull
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
     @Nonnull
-    private final ItemsDao itemsDao;
+    private final PostsDao postsDao;
 
     public MainPresenter(@Nonnull Scheduler networkScheduler,
                          @Nonnull Scheduler uiScheduler,
-                         @Nonnull ItemsDao itemsDao) {
-        this.itemsDao = itemsDao;
-        titleObservable = itemsDao.dataObservable()
-                .compose(ResponseOrError.map(new Func1<Response, String>() {
+                         @Nonnull PostsDao postsDao) {
+        this.postsDao = postsDao;
+        titleObservable = postsDao.dataObservable()
+                .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
                     @Override
-                    public String call(Response response) {
-                        return Strings.nullToEmpty(response.title());
+                    public String call(PostsResponse postsResponse) {
+                        return Strings.nullToEmpty(postsResponse.title());
                     }
                 }))
                 .subscribeOn(networkScheduler)
                 .observeOn(uiScheduler)
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        itemsObservable = itemsDao.dataObservable()
-                .compose(ResponseOrError.map(new Func1<Response, ImmutableList<AdapterItem>>() {
+        itemsObservable = postsDao.dataObservable()
+                .compose(ResponseOrError.map(new Func1<PostsResponse, ImmutableList<AdapterItem>>() {
                     @Override
-                    public ImmutableList<AdapterItem> call(Response response) {
-                        final ImmutableList<Post> posts = response.items();
+                    public ImmutableList<AdapterItem> call(PostsResponse postsResponse) {
+                        final ImmutableList<Post> posts = postsResponse.items();
                         return FluentIterable.from(posts).transform(new Function<Post, AdapterItem>() {
                             @Nonnull
                             @Override
@@ -101,7 +101,7 @@ public class MainPresenter {
 
     @Nonnull
     public Observer<Object> loadMoreObserver() {
-        return itemsDao.loadMoreObserver();
+        return postsDao.loadMoreObserver();
     }
 
     public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {

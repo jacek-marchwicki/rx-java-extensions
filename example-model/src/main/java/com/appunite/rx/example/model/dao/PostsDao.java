@@ -3,11 +3,10 @@ package com.appunite.rx.example.model.dao;
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.example.model.api.ItemsService;
-import com.appunite.rx.example.model.api.ItemsServiceFake;
+import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostWithBody;
-import com.appunite.rx.example.model.model.Response;
+import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
 import com.google.common.cache.CacheBuilder;
@@ -19,7 +18,6 @@ import com.google.gson.GsonBuilder;
 import com.squareup.okhttp.OkHttpClient;
 
 import java.util.concurrent.Executor;
-import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,24 +33,24 @@ import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
 @Singleton
-public class ItemsDao {
+public class PostsDao {
     @Nonnull
-    private final Observable<ResponseOrError<Response>> data;
+    private final Observable<ResponseOrError<PostsResponse>> data;
     @Nonnull
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
-    private final LoadingCache<String, ItemDao> cache;
+    private final LoadingCache<String, PostDao> cache;
 
     /*
         Normally we rather use dagger instead of static, but for testing purposes is ok
          */
     private static final Object LOCK = new Object();
-    private static ItemsDao itemsDao;
+    private static PostsDao postsDao;
 
     @Nonnull
     private Scheduler networkScheduler;
     @Nonnull
-    private ItemsService itemsService;
+    private GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
 
@@ -64,10 +62,10 @@ public class ItemsDao {
         }
     }
 
-    public static ItemsDao getInstance(@Nonnull Scheduler networkScheduler) {
+    public static PostsDao getInstance(@Nonnull Scheduler networkScheduler) {
         synchronized (LOCK) {
-            if (itemsDao != null) {
-                return itemsDao;
+            if (postsDao != null) {
+                return postsDao;
             }
             final Gson gson = new GsonBuilder()
                     .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
@@ -80,30 +78,30 @@ public class ItemsDao {
                     .setExecutors(new SyncExecutor(), new SyncExecutor())
                     .setConverter(new GsonConverter(gson))
                     .build();
-            final ItemsService itemsService = restAdapter.create(ItemsService.class);
-            itemsDao = new ItemsDao(networkScheduler, itemsService);
-            return itemsDao;
+            final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
+            postsDao = new PostsDao(networkScheduler, guestbookService);
+            return postsDao;
         }
     }
 
-    public ItemsDao(@Nonnull final Scheduler networkScheduler,
-                    @Nonnull final ItemsService itemsService) {
+    public PostsDao(@Nonnull final Scheduler networkScheduler,
+                    @Nonnull final GuestbookService guestbookService) {
         this.networkScheduler = networkScheduler;
-        this.itemsService = itemsService;
+        this.guestbookService = guestbookService;
 
-        final OperatorMergeNextToken<Response, Object> mergeNextToken = OperatorMergeNextToken
-                .create(new Func1<Response, Observable<Response>>() {
+        final OperatorMergeNextToken<PostsResponse, Object> mergeNextToken = OperatorMergeNextToken
+                .create(new Func1<PostsResponse, Observable<PostsResponse>>() {
                     @Override
-                    public Observable<Response> call(@Nullable final Response response) {
+                    public Observable<PostsResponse> call(@Nullable final PostsResponse response) {
                         if (response == null) {
-                            return itemsService.listItems(null)
+                            return guestbookService.listItems(null)
                                     .subscribeOn(networkScheduler);
                         } else {
                             final String nextToken = response.nextToken();
                             if (nextToken == null) {
                                 return Observable.never();
                             }
-                            final Observable<Response> apiRequest = itemsService.listItems(nextToken)
+                            final Observable<PostsResponse> apiRequest = guestbookService.listItems(nextToken)
                                     .subscribeOn(networkScheduler);
                             return Observable.just(response).zipWith(apiRequest, new MergeTwoResponses());
                         }
@@ -113,22 +111,22 @@ public class ItemsDao {
 
         data = loadMoreSubject.startWith((Object) null)
                 .lift(mergeNextToken)
-                .compose(ResponseOrError.<Response>toResponseOrErrorObservable())
-                .compose(MoreOperators.<Response>repeatOnError(networkScheduler))
-                .compose(MoreOperators.<ResponseOrError<Response>>refresh(refreshSubject))
-                .compose(MoreOperators.<ResponseOrError<Response>>cacheWithTimeout(networkScheduler));
+                .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
+                .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
+                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
+                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
 
         cache = CacheBuilder.newBuilder()
-                .build(new CacheLoader<String, ItemDao>() {
+                .build(new CacheLoader<String, PostDao>() {
                     @Override
-                    public ItemDao load(@Nonnull final String id) throws Exception {
-                        return new ItemDao(id);
+                    public PostDao load(@Nonnull final String id) throws Exception {
+                        return new PostDao(id);
                     }
                 });
     }
 
     @Nonnull
-    public ItemDao itemDao(@Nonnull final String id) {
+    public PostDao postDao(@Nonnull final String id) {
         return cache.getUnchecked(id);
     }
 
@@ -138,7 +136,7 @@ public class ItemsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<Response>> dataObservable() {
+    public Observable<ResponseOrError<PostsResponse>> dataObservable() {
         return data;
     }
 
@@ -147,15 +145,15 @@ public class ItemsDao {
         return refreshSubject;
     }
 
-    public class ItemDao {
+    public class PostDao {
         @Nonnull
         private final PublishSubject<Object> refreshSubject = PublishSubject.create();
         @Nonnull
         private final Observable<ResponseOrError<PostWithBody>> data;
 
-        public ItemDao(@Nonnull String id) {
+        public PostDao(@Nonnull String id) {
 
-            data = itemsService.getItem(id)
+            data = guestbookService.getItem(id)
                     .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
@@ -173,14 +171,14 @@ public class ItemsDao {
         }
     }
 
-    private static class MergeTwoResponses implements rx.functions.Func2<Response, Response, Response> {
+    private static class MergeTwoResponses implements rx.functions.Func2<PostsResponse, PostsResponse, PostsResponse> {
         @Override
-        public Response call(Response previous, Response moreData) {
+        public PostsResponse call(PostsResponse previous, PostsResponse moreData) {
             final ImmutableList<Post> posts = ImmutableList.<Post>builder()
                     .addAll(previous.items())
                     .addAll(moreData.items())
                     .build();
-            return new Response(moreData.title(), posts, moreData.nextToken());
+            return new PostsResponse(moreData.title(), posts, moreData.nextToken());
         }
     }
 
