@@ -16,10 +16,13 @@
 
 package com.appunite.rx.functions;
 
+import javax.annotation.Nonnull;
+
 import rx.functions.Func2;
 
 public class Functions2 {
 
+    @Nonnull
     public static <T> Func2<T, Object, T> firstParam() {
         return new Func2<T, Object, T>() {
             @Override
@@ -29,6 +32,7 @@ public class Functions2 {
         };
     }
 
+    @Nonnull
     public static <T> Func2<Object, T, T> secondParam() {
         return new Func2<Object, T, T>() {
             @Override

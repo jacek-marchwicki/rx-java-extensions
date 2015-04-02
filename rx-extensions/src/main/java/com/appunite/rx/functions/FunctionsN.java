@@ -30,6 +30,7 @@ public class FunctionsN {
         };
     }
 
+    @Nonnull
     public static FuncN<Boolean> returnFalse() {
         return new FuncN<Boolean>() {
             @Override

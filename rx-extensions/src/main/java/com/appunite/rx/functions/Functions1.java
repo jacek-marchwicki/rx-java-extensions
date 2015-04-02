@@ -77,6 +77,7 @@ public class Functions1 {
         };
     }
 
+    @Nonnull
     public static Func1<? super Boolean, Boolean> isFalse() {
         return new Func1<Boolean, Boolean>() {
             @Override
@@ -86,6 +87,7 @@ public class Functions1 {
         };
     }
 
+    @Nonnull
     public static Func1<Object, Boolean> returnFalse() {
         return new Func1<Object, Boolean>() {
             @Override
@@ -95,6 +97,7 @@ public class Functions1 {
         };
     }
 
+    @Nonnull
     public static Func1<Object, Boolean> returnTrue() {
         return new Func1<Object, Boolean>() {
             @Override
