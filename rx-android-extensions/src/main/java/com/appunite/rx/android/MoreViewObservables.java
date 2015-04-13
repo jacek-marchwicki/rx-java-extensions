@@ -16,9 +16,13 @@
 
 package com.appunite.rx.android;
 
+import android.support.annotation.IdRes;
+import android.support.annotation.MenuRes;
 import android.support.v4.view.ViewPager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
@@ -35,6 +39,7 @@ import rx.Subscription;
 import rx.android.AndroidSubscriptions;
 import rx.android.internal.Assertions;
 import rx.functions.Action0;
+import rx.functions.Func1;
 
 public class MoreViewObservables {
 
@@ -372,4 +377,120 @@ public class MoreViewObservables {
         return Observable.create(new OnNavigationClick(toolbar))
                 .distinctUntilChanged();
     }
+
+    public static class PopupMenuEvent {
+
+        @Nonnull
+        private final PopupMenu popupMenu;
+        @Nonnull
+        private final MenuItem menuItem;
+
+        public PopupMenuEvent(@Nonnull PopupMenu popupMenu, @Nonnull MenuItem menuItem) {
+
+            this.popupMenu = popupMenu;
+            this.menuItem = menuItem;
+        }
+
+        @Nonnull
+        public PopupMenu popupMenu() {
+            return popupMenu;
+        }
+
+        @Nonnull
+        public MenuItem menuItem() {
+            return menuItem;
+        }
+    }
+
+    @Nonnull
+    public static Observable<PopupMenuEvent> popupMenuClick(@Nonnull PopupMenu popupMenu) {
+        return Observable.create(new OnSubscribePopupMenuClick(popupMenu));
+    }
+
+    @Nonnull
+    public static Observable<PopupMenuEvent> popupMenuClick(@Nonnull PopupMenu popupMenu, @IdRes final int menuId) {
+        return popupMenuClick(popupMenu)
+                .filter(new Func1<PopupMenuEvent, Boolean>() {
+                    @Override
+                    public Boolean call(PopupMenuEvent popupMenuEvent) {
+                        return popupMenuEvent.menuItem().getItemId() == menuId;
+                    }
+                });
+    }
+
+    private static class OnSubscribePopupMenuClick implements Observable.OnSubscribe<PopupMenuEvent> {
+        @Nonnull
+        private final PopupMenu popupMenu;
+
+        public OnSubscribePopupMenuClick(@Nonnull final PopupMenu popupMenu) {
+            this.popupMenu = popupMenu;
+        }
+
+        @Override
+        public void call(final Subscriber<? super PopupMenuEvent> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(popupMenu);
+
+            final PopupMenu.OnMenuItemClickListener listener = new PopupMenu.OnMenuItemClickListener() {
+
+                @Override
+                public boolean onMenuItemClick(MenuItem menuItem) {
+                    subscriber.onNext(new PopupMenuEvent(popupMenu, menuItem));
+                    return true;
+                }
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnScrollListener(listener);
+                }
+            });
+
+            composite.addOnScrollListener(listener);
+            subscriber.add(subscription);
+        }
+
+
+        private static class CompositeListener implements PopupMenu.OnMenuItemClickListener  {
+            private final List<PopupMenu.OnMenuItemClickListener> listeners = new ArrayList<>();
+
+            public boolean addOnScrollListener(final PopupMenu.OnMenuItemClickListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnScrollListener(final PopupMenu.OnMenuItemClickListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                boolean ret = false;
+                for (final PopupMenu.OnMenuItemClickListener listener : listeners) {
+                    ret |= listener.onMenuItemClick(menuItem);
+                }
+                return ret;
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<PopupMenu, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final PopupMenu view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnMenuItemClickListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
 }
