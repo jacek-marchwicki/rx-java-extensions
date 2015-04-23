@@ -86,10 +86,21 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>> repeatOnError(
             @Nonnull final Scheduler scheduler) {
-        return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
+        return
+                new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
             @Override
             public Observable<ResponseOrError<T>> call(final Observable<ResponseOrError<T>> responseOrErrorObservable) {
                 return repeatOnError(responseOrErrorObservable, scheduler);
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(final Observable<T2> observable, final Func2<T1, T2, R> func) {
+        return new Observable.Transformer<T1, R>() {
+            @Override
+            public Observable<R> call(Observable<T1> t1Observable) {
+                return Observable.combineLatest(t1Observable, observable, func);
             }
         };
     }
