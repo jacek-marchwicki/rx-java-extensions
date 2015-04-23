@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 
 import rx.Observable;
 import rx.functions.Func1;
+import rx.functions.Func2;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -469,5 +470,19 @@ public class ResponseOrError<T> {
         return Observable.combineLatest(ob,
                 FunctionsN.combineFirstThrowable())
                 .startWith((Throwable) null);
+    }
+
+    @Nonnull
+    public static <T1, T2, R> Func2<ResponseOrError<T1>, T2, ResponseOrError<R>> toErrorFunc2(@Nonnull final Func2<T1, T2, R> func) {
+        return new Func2<ResponseOrError<T1>, T2, ResponseOrError<R>>() {
+            @Override
+            public ResponseOrError<R> call(ResponseOrError<T1> t1ResponseOrError, T2 t2) {
+                if (t1ResponseOrError.isData()) {
+                    return ResponseOrError.fromData(func.call(t1ResponseOrError.data(), t2));
+                } else {
+                    return ResponseOrError.fromError(t1ResponseOrError.error());
+                }
+            }
+        };
     }
 }
