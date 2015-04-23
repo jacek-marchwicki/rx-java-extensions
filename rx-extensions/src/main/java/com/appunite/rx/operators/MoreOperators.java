@@ -96,7 +96,8 @@ public class MoreOperators {
     }
 
     @Nonnull
-    public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(final Observable<T2> observable, final Func2<T1, T2, R> func) {
+    public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(@Nonnull final Observable<T2> observable,
+                                                                        @Nonnull final Func2<T1, T2, R> func) {
         return new Observable.Transformer<T1, R>() {
             @Override
             public Observable<R> call(Observable<T1> t1Observable) {
