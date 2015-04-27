@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import rx.Observable;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.functions.Func3;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -481,6 +482,23 @@ public class ResponseOrError<T> {
                     return ResponseOrError.fromData(func.call(t1ResponseOrError.data(), t2));
                 } else {
                     return ResponseOrError.fromError(t1ResponseOrError.error());
+                }
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T1, T2, T3, R> Func3<ResponseOrError<T1>, ResponseOrError<T2>, T3, ResponseOrError<R>> toErrorFunc3(@Nonnull final Func3<T1, T2, T3, R> func) {
+        return new Func3<ResponseOrError<T1>, ResponseOrError<T2>, T3, ResponseOrError<R>>() {
+            @Override
+            public ResponseOrError<R> call(ResponseOrError<T1> t1ResponseOrError,
+                                           ResponseOrError<T2> t2ResponseOrError, T3 t3) {
+                if (t1ResponseOrError.isData() && t2ResponseOrError.isData()) {
+                    return ResponseOrError.fromData(func.call(t1ResponseOrError.data(), t2ResponseOrError.data, t3));
+                } else if (t1ResponseOrError.isError()){
+                    return ResponseOrError.fromError(t1ResponseOrError.error());
+                } else {
+                    return ResponseOrError.fromError(t2ResponseOrError.error());
                 }
             }
         };
