@@ -33,6 +33,7 @@ import rx.Subscription;
 import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.functions.Func3;
 import rx.functions.FuncN;
 import rx.subscriptions.Subscriptions;
 
@@ -102,6 +103,18 @@ public class MoreOperators {
             @Override
             public Observable<R> call(Observable<T1> t1Observable) {
                 return Observable.combineLatest(t1Observable, observable, func);
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T1, T2, T3, R> Observable.Transformer<T1, R> combineWith(@Nonnull final Observable<T2> observable2,
+                                                                            @Nonnull final Observable<T3> observable3,
+                                                                        @Nonnull final Func3<T1, T2, T3, R> func) {
+        return new Observable.Transformer<T1, R>() {
+            @Override
+            public Observable<R> call(Observable<T1> t1Observable) {
+                return Observable.combineLatest(t1Observable, observable2, observable3, func);
             }
         };
     }
