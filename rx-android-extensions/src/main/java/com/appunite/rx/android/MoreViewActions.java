@@ -95,4 +95,15 @@ public class MoreViewActions {
             }
         };
     }
+
+    @Nonnull
+    public static Action1<? super Boolean> setDisableSwipeRefreshView(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+        checkNotNull(swipeRefreshLayout);
+        return new Action1<Boolean>() {
+            @Override
+            public void call(final Boolean isEnable) {
+                swipeRefreshLayout.setEnabled(!isEnable);
+            }
+        };
+    }
 }
