@@ -17,8 +17,8 @@
 package com.appunite.rx.android;
 
 import android.support.annotation.IdRes;
-import android.support.annotation.MenuRes;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -116,8 +116,6 @@ public class MoreViewObservables {
             subscriber.add(subscription);
         }
 
-
-
         private static class CompositeListener extends RecyclerView.OnScrollListener {
             private final List<RecyclerView.OnScrollListener> listeners = new ArrayList<>();
 
@@ -163,6 +161,83 @@ public class MoreViewObservables {
             }
         }
     }
+
+    @Nonnull
+    public static Observable<Object> pullToRefresh(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+        return Observable.create(new OnSubscribePullToRefresh(swipeRefreshLayout));
+    }
+
+    private static class OnSubscribePullToRefresh implements Observable.OnSubscribe<Object> {
+        @Nonnull
+        private final SwipeRefreshLayout swipeRefreshLayout;
+
+        public OnSubscribePullToRefresh(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+            this.swipeRefreshLayout = swipeRefreshLayout;
+        }
+
+        @Override
+        public void call(final Subscriber<? super Object> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(swipeRefreshLayout);
+
+            final SwipeRefreshLayout.OnRefreshListener listener = new SwipeRefreshLayout.OnRefreshListener(){
+
+                @Override
+                public void onRefresh() {
+                    subscriber.onNext(null);
+                }
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnRefreshListener(listener);
+                }
+            });
+
+            composite.addOnRefreshListener(listener);
+            subscriber.add(subscription);
+        }
+
+        private static class CompositeListener implements SwipeRefreshLayout.OnRefreshListener {
+            private final List<SwipeRefreshLayout.OnRefreshListener> listeners = new ArrayList<>();
+
+            public boolean addOnRefreshListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnRefreshListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public void onRefresh() {
+                for (final SwipeRefreshLayout.OnRefreshListener listener : listeners) {
+                    listener.onRefresh();
+                }
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<View, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final SwipeRefreshLayout view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnRefreshListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
 
     private static class OnSubscribePageSelected implements Observable.OnSubscribe<Integer> {
         @Nonnull
