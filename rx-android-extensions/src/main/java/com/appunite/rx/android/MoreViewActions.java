@@ -17,6 +17,7 @@
 package com.appunite.rx.android;
 
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Checkable;
@@ -80,6 +81,17 @@ public class MoreViewActions {
             @Override
             public void call(String title) {
                 toolbar.setTitle(title);
+            }
+        };
+    }
+
+    @Nonnull
+    public static Action1<? super Boolean> setSwipeViewRefreshing(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+        checkNotNull(swipeRefreshLayout);
+        return new Action1<Boolean>() {
+            @Override
+            public void call(final Boolean refreshing) {
+                swipeRefreshLayout.setRefreshing(refreshing);
             }
         };
     }
