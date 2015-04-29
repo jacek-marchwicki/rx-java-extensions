@@ -17,8 +17,8 @@
 package com.appunite.rx.android;
 
 import android.support.annotation.IdRes;
-import android.support.annotation.MenuRes;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -487,6 +487,103 @@ public class MoreViewObservables {
 
                 sCachedListeners.put(view, listener);
                 view.setOnMenuItemClickListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
+
+    public static class SwipeRefreshLayoutRefreshEvent {
+
+        @Nonnull
+        private final SwipeRefreshLayout swipeRefreshLayout;
+
+        public SwipeRefreshLayoutRefreshEvent(@Nonnull SwipeRefreshLayout swipeRefreshLayout) {
+
+            this.swipeRefreshLayout = swipeRefreshLayout;
+        }
+
+        @Nonnull
+        public SwipeRefreshLayout swipeRefreshLayout() {
+            return swipeRefreshLayout;
+        }
+
+    }
+
+
+    @Nonnull
+    public static Observable<SwipeRefreshLayoutRefreshEvent> swipeRefreshLayoutRefresh(@Nonnull SwipeRefreshLayout swipeRefreshLayout) {
+        return Observable.create(new OnSubscribeSwipeRefreshLayoutRefresh(swipeRefreshLayout));
+    }
+
+    private static class OnSubscribeSwipeRefreshLayoutRefresh implements Observable.OnSubscribe<SwipeRefreshLayoutRefreshEvent> {
+        @Nonnull
+        private final SwipeRefreshLayout swipeRefreshLayout;
+
+        public OnSubscribeSwipeRefreshLayoutRefresh(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+            this.swipeRefreshLayout = swipeRefreshLayout;
+        }
+
+        @Override
+        public void call(final Subscriber<? super SwipeRefreshLayoutRefreshEvent> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(swipeRefreshLayout);
+
+            final SwipeRefreshLayout.OnRefreshListener listener = new SwipeRefreshLayout.OnRefreshListener() {
+
+                @Override
+                public void onRefresh() {
+                    subscriber.onNext(new SwipeRefreshLayoutRefreshEvent(swipeRefreshLayout));
+                }
+
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnScrollListener(listener);
+                }
+            });
+
+            composite.addOnScrollListener(listener);
+            subscriber.add(subscription);
+        }
+
+
+        private static class CompositeListener implements SwipeRefreshLayout.OnRefreshListener  {
+            private final List<SwipeRefreshLayout.OnRefreshListener> listeners = new ArrayList<>();
+
+            public boolean addOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public void onRefresh() {
+                for (final SwipeRefreshLayout.OnRefreshListener listener : listeners) {
+                    listener.onRefresh();
+                }
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<SwipeRefreshLayout, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final SwipeRefreshLayout view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnRefreshListener(listener);
 
                 return listener;
             }
