@@ -334,6 +334,53 @@ public class ResponseOrError<T> {
     }
 
     /**
+     * Switch map only success response ignoring error
+     *
+     * <pre>
+     * {@code
+     *  Observable<ResponseOrError<Boolean>> output =
+     *      Observable.just(ResponseOrError.fromData("text")
+     *      .compose(ResponseOrError.switchMap(new Func<String, Observable<Boolean>) {
+     *          Observable<Boolean> call(String in) {
+     *             return Observable.just(in != null);
+     *          }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param func that maps data of ResponseOrError to Observable
+     * @param <T> type of source object
+     * @param <K> type of destination object
+     * @return observable
+     */
+    @Nonnull
+    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> switchMap(@Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+        return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
+            @Override
+            public Observable<ResponseOrError<K>> call(final Observable<ResponseOrError<T>> observableObservable) {
+                return switchMap(observableObservable, func);
+            }
+        };
+    }
+
+    @Nonnull
+    private static <T, K> Observable<ResponseOrError<K>> switchMap(@Nonnull final Observable<ResponseOrError<T>> observable,
+                                                                 @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+        checkNotNull(observable);
+        checkNotNull(func);
+        return observable.switchMap(new Func1<ResponseOrError<T>, Observable<ResponseOrError<K>>>() {
+            @Override
+            public Observable<ResponseOrError<K>> call(final ResponseOrError<T> response) {
+                if (response.isError()) {
+                    return Observable.just(ResponseOrError.<K>fromError(response.error()));
+                } else {
+                    return func.call(response.data());
+                }
+            }
+        });
+    }
+
+    /**
      * Returns only success response of observable of {@link ResponseOrError} and convert to {@link #data()}
      * @param <T> type ResponseOrError
      * @return observable
