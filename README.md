@@ -3,6 +3,8 @@ This library allow simple implementation for some tasks in android
 
 This project is in very-hight development so everything can chenge. Because of this is not distributed as stand alone project, rather like submodule for your project.
 
+[![Build Status](https://travis-ci.org/jacek-marchwicki/rx-java-extensions.svg?branch=master)](https://travis-ci.org/jacek-marchwicki/rx-java-extensions)
+
 # Examples
 
 In examples we use [sample rest guestbok python server](python-server/README.md)
