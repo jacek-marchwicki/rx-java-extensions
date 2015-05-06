@@ -17,6 +17,7 @@
 package com.appunite.rx.operators;
 
 import com.appunite.rx.ResponseOrError;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -31,6 +32,7 @@ import rx.Scheduler;
 import rx.Subscriber;
 import rx.Subscription;
 import rx.functions.Action0;
+import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
@@ -57,7 +59,7 @@ public class MoreOperators {
     @Nonnull
     private static <T> Observable<T> refresh(@Nonnull Observable<Object> refreshSubject,
                                              @Nonnull final Observable<T> toRefresh) {
-        return refreshSubject.startWith((Object)null).flatMap(new Func1<Object, Observable<T>>() {
+        return refreshSubject.startWith((Object)null).switchMap(new Func1<Object, Observable<T>>() {
             @Override
             public Observable<T> call(final Object o) {
                 return toRefresh;
@@ -126,6 +128,99 @@ public class MoreOperators {
         return repeatOn(from, new RepeatOnError<T>(scheduler));
     }
 
+    @Nonnull
+    public static <T> Observable.Operator<T, T> callOnNext(@Nonnull Observer<? super T> events) {
+        return new OperatorCallOnNext<>(events);
+    }
+
+    @Nonnull
+    public static <T> Observable.Operator<T, T> ignoreNext() {
+        return new Observable.Operator<T, T>() {
+            @Override
+            public Subscriber<? super T> call(final Subscriber<? super T> subscriber) {
+                return new Subscriber<T>(subscriber) {
+                    @Override
+                    public void onCompleted() {
+                        subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        subscriber.onError(e);
+                    }
+
+                    @Override
+                    public void onNext(T obj) {}
+                };
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T> Observable.Transformer<Object, T> filterAndMap(@Nonnull final Class<T> clazz) {
+        return new Observable.Transformer<Object, T>() {
+            @Override
+            public Observable<T> call(Observable<Object> observable) {
+                return observable
+                        .filter(new Func1<Object, Boolean>() {
+                            @Override
+                            public Boolean call(Object o) {
+                                return o != null && clazz.isInstance(o);
+                            }
+                        })
+                        .map(new Func1<Object, T>() {
+                            @Override
+                            public T call(Object o) {
+                                //noinspection unchecked
+                                return (T) o;
+                            }
+                        });
+            }
+        };
+    }
+
+    @Nonnull
+    public static Func1<Throwable, Object> throwableToIgnoreError() {
+        return new Func1<Throwable, Object>() {
+            @Override
+            public Object call(Throwable throwable) {
+                return new Object();
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T> Observable.OnSubscribe<T> fromAction(@Nonnull final Func0<T> call) {
+        return new Observable.OnSubscribe<T>() {
+            @Override
+            public void call(Subscriber<? super T> subscriber) {
+                try {
+                    subscriber.onNext(call.call());
+                } catch (Throwable e) {
+                    subscriber.onError(e);
+                }
+                subscriber.onCompleted();
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T> Observable.Transformer<T, Optional<T>> firstOrAbsent() {
+        return new Observable.Transformer<T, Optional<T>>() {
+            @Override
+            public Observable<Optional<T>> call(Observable<T> observable) {
+                return observable
+                        .map(new Func1<T, Optional<T>>() {
+                            @Override
+                            public Optional<T> call(T item) {
+                                return Optional.of(item);
+                            }
+                        })
+                        .firstOrDefault(Optional.<T>absent());
+            }
+        };
+    }
+
     private static class RepeatOnError<T> implements Func1<Notification<ResponseOrError<T>>, Observable<?>> {
         @Nonnull
         private final Scheduler scheduler;
@@ -167,7 +262,7 @@ public class MoreOperators {
             return Observable.just(ImmutableList.<T>of());
         }
         if (observables.size() > 10) {
-            // RxJava has some limitation that can only handle up to 128 arguments in combineLast
+            // RxJava has some limitagit tion that can only handle up to 128 arguments in combineLast
             // Additionally on android there is a bug so this limit is cut to 16 arguments - on
             // android we will not get any throw so rxjava fail sailent
             final int size = observables.size();
