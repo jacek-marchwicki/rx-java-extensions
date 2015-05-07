@@ -262,7 +262,7 @@ public class MoreOperators {
             return Observable.just(ImmutableList.<T>of());
         }
         if (observables.size() > 10) {
-            // RxJava has some limitagit tion that can only handle up to 128 arguments in combineLast
+            // RxJava has some limitation that can only handle up to 128 arguments in combineLast
             // Additionally on android there is a bug so this limit is cut to 16 arguments - on
             // android we will not get any throw so rxjava fail sailent
             final int size = observables.size();
