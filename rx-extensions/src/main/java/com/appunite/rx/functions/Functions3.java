@@ -19,35 +19,16 @@ package com.appunite.rx.functions;
 import javax.annotation.Nonnull;
 
 import rx.functions.Func2;
+import rx.functions.Func3;
 
-public class Functions2 {
-
-    @Nonnull
-    public static <T> Func2<T, Object, T> firstParam() {
-        return new Func2<T, Object, T>() {
-            @Override
-            public T call(T first, Object second) {
-                return first;
-            }
-        };
-    }
+public class Functions3 {
 
     @Nonnull
-    public static <T> Func2<Object, T, T> secondParam() {
-        return new Func2<Object, T, T>() {
+    public static <T1, T2, T3> Func3<T1, T2, T3, ThreeParams<T1, T2, T3>> threeParams() {
+        return new Func3<T1, T2, T3, ThreeParams<T1, T2, T3>>() {
             @Override
-            public T call(Object first, T second) {
-                return second;
-            }
-        };
-    }
-
-    @Nonnull
-    public static <T, K> Func2<T, K, BoothParams<T, K>> boothParams() {
-        return new Func2<T, K, BoothParams<T, K>>() {
-            @Override
-            public BoothParams<T, K> call(T t, K k) {
-                return new BoothParams<>(t, k);
+            public ThreeParams<T1, T2, T3> call(T1 t1, T2 t2, T3 t3) {
+                return new ThreeParams<>(t1, t2, t3);
             }
         };
     }
