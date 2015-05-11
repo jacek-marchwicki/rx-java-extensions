@@ -4,5 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.appunite.rx.android">
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application tools:ignore="AllowBackup" />
+
 </manifest>
