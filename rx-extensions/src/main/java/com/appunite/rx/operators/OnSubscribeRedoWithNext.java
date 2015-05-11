@@ -146,12 +146,8 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
                             @Override
                             public void onNext(Notification<T> t) {
-                                if (t.isOnError())
-                                    child.onError(t.getThrowable());
-                                else {
-                                    isLocked.set(false);
-                                    filteredTerminals.onNext(t);
-                                }
+                                isLocked.set(false);
+                                filteredTerminals.onNext(t);
                             }
 
                             @Override
