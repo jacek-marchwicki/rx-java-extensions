@@ -26,6 +26,7 @@ import android.telephony.TelephonyManager;
 
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.observables.NetworkObservableProvider;
+import com.appunite.rx.operators.MoreOperators;
 
 import javax.annotation.Nonnull;
 
@@ -48,22 +49,25 @@ public class NetworkObservableProviderImpl implements NetworkObservableProvider 
         final IntentFilter filter = new IntentFilter();
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
 
-        networkStatusObservable = ObservableExtensions.behavior(Observable.create(new Observable.OnSubscribe<NetworkStatus>() {
-            @Override
-            public void call(final Subscriber<? super NetworkStatus> subscriber) {
-                subscriber.onNext(getActiveNetworkStatus());
-
-                final BroadcastReceiver receiver = new NetworkBroadcastReceiver(subscriber);
-                context.registerReceiver(receiver, filter);
-
-                subscriber.add(Subscribers.create(new Action1<Object>() {
+        networkStatusObservable = Observable
+                .create(new Observable.OnSubscribe<NetworkStatus>() {
                     @Override
-                    public void call(final Object o) {
-                        context.unregisterReceiver(receiver);
+                    public void call(final Subscriber<? super NetworkStatus> subscriber) {
+                        subscriber.onNext(getActiveNetworkStatus());
+
+                        final BroadcastReceiver receiver = new NetworkBroadcastReceiver(subscriber);
+                        context.registerReceiver(receiver, filter);
+
+                        subscriber.add(Subscribers.create(new Action1<Object>() {
+                            @Override
+                            public void call(final Object o) {
+                                context.unregisterReceiver(receiver);
+                            }
+                        }));
                     }
-                }));
-            }
-        })).refCount();
+                })
+                .distinctUntilChanged()
+                .compose(ObservableExtensions.<NetworkStatus>behaviorRefCount());
     }
 
     private NetworkStatus getActiveNetworkStatus() {

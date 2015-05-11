@@ -32,6 +32,10 @@ dependencies {
     testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'com.google.truth:truth:0.25'
+
+    androidTestCompile 'com.android.support.test:runner:0.2'
+    androidTestCompile 'com.android.support.test:rules:0.2'
+
 }
 
 android {
@@ -39,7 +43,13 @@ android {
     compileSdkVersion 22
 
     defaultConfig {
-        minSdkVersion 7
+        minSdkVersion 8
         targetSdkVersion 22
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
+    packagingOptions {
+        exclude 'LICENSE.txt'
+    }
+
 }
