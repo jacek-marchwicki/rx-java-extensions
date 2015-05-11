@@ -74,7 +74,7 @@ public class MainPresenter {
 
     private Observable<ResponseOrError<PostsResponse>> postsObservable2() {
         return this.postsDao.postsIdsObservable()
-                .compose(ResponseOrError.flatMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
+                .compose(ResponseOrError.switchMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
                     @Override
                     public Observable<ResponseOrError<PostsResponse>> call(final PostsIdsResponse o) {
 
