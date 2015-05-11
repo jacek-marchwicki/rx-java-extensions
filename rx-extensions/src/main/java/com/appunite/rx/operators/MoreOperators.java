@@ -17,6 +17,7 @@
 package com.appunite.rx.operators;
 
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.observables.NetworkObservableProvider;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
@@ -97,6 +98,19 @@ public class MoreOperators {
     }
 
     @Nonnull
+    public static <T> Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>> repeatOnErrorOrNetwork(
+            @Nonnull final NetworkObservableProvider networkObservableProvider,
+            @Nonnull final Scheduler scheduler) {
+        return
+                new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
+                    @Override
+                    public Observable<ResponseOrError<T>> call(final Observable<ResponseOrError<T>> responseOrErrorObservable) {
+                        return repeatOnErrorOrNetwork(responseOrErrorObservable, networkObservableProvider, scheduler);
+                    }
+                };
+    }
+
+    @Nonnull
     public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(@Nonnull final Observable<T2> observable,
                                                                         @Nonnull final Func2<T1, T2, R> func) {
         return new Observable.Transformer<T1, R>() {
@@ -160,6 +174,66 @@ public class MoreOperators {
                                     return Observable.never();
                                 }
                                 return Observable.timer(integer, TimeUnit.SECONDS, scheduler);
+                            }
+                        });
+            }
+        });
+    }
+
+
+
+    @Nonnull
+    private static <T> Observable<ResponseOrError<T>> repeatOnErrorOrNetwork(
+            @Nonnull final Observable<ResponseOrError<T>> from,
+            @Nonnull final NetworkObservableProvider networkObservableProvider,
+            @Nonnull final Scheduler scheduler) {
+        return OnSubscribeRedoWithNext.repeat(from, new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
+            @Override
+            public Observable<?> call(Observable<? extends Notification<ResponseOrError<T>>> observable) {
+                return observable
+                        .filter(new Func1<Notification<ResponseOrError<T>>, Boolean>() {
+                            @Override
+                            public Boolean call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                                return responseOrErrorNotification.isOnNext();
+                            }
+                        })
+                        .map(new Func1<Notification<ResponseOrError<T>>, ResponseOrError<T>>() {
+                            @Override
+                            public ResponseOrError<T> call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                                return responseOrErrorNotification.getValue();
+                            }
+                        })
+                        .scan(0, new Func2<Integer, ResponseOrError<T>, Integer>() {
+                            @Override
+                            public Integer call(Integer integer, ResponseOrError<T> tResponseOrError) {
+                                if (tResponseOrError.isData()) {
+                                    return 0;
+                                } else {
+                                    if (integer == 0) {
+                                        return 1;
+                                    } else {
+                                        return integer * 2;
+                                    }
+                                }
+                            }
+                        })
+                        .switchMap(new Func1<Integer, Observable<?>>() {
+                            @Override
+                            public Observable<?> call(Integer integer) {
+                                if (integer == 0) {
+                                    return Observable.never();
+                                }
+                                final Observable<NetworkObservableProvider.NetworkStatus> networkBecomeActive = networkObservableProvider
+                                        .networkObservable()
+                                        .skip(1)
+                                        .filter(new Func1<NetworkObservableProvider.NetworkStatus, Boolean>() {
+                                            @Override
+                                            public Boolean call(NetworkObservableProvider.NetworkStatus networkStatus) {
+                                                return networkStatus.isNetowrk();
+                                            }
+                                        });
+                                final Observable<Long> timeout = Observable.timer(integer, TimeUnit.SECONDS, scheduler);
+                                return Observable.amb(networkBecomeActive, timeout);
                             }
                         });
             }
