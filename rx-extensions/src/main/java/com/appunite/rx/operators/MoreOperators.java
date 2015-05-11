@@ -40,8 +40,6 @@ import rx.functions.FuncN;
 import rx.subscriptions.Subscriptions;
 
 import static com.appunite.rx.ObservableExtensions.behavior;
-import static com.appunite.rx.operators.OnSubscribeRedoWithNext.repeatOn;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class MoreOperators {
 
@@ -124,8 +122,48 @@ public class MoreOperators {
     @Nonnull
     private static <T> Observable<ResponseOrError<T>> repeatOnError(
             @Nonnull final Observable<ResponseOrError<T>> from,
-            @Nonnull Scheduler scheduler) {
-        return repeatOn(from, new RepeatOnError<T>(scheduler));
+            @Nonnull final Scheduler scheduler) {
+        return OnSubscribeRedoWithNext.repeat(from, new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
+            @Override
+            public Observable<?> call(Observable<? extends Notification<ResponseOrError<T>>> observable) {
+                return observable
+                        .filter(new Func1<Notification<ResponseOrError<T>>, Boolean>() {
+                            @Override
+                            public Boolean call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                                return responseOrErrorNotification.isOnNext();
+                            }
+                        })
+                        .map(new Func1<Notification<ResponseOrError<T>>, ResponseOrError<T>>() {
+                            @Override
+                            public ResponseOrError<T> call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                                return responseOrErrorNotification.getValue();
+                            }
+                        })
+                        .scan(0, new Func2<Integer, ResponseOrError<T>, Integer>() {
+                            @Override
+                            public Integer call(Integer integer, ResponseOrError<T> tResponseOrError) {
+                                if (tResponseOrError.isData()) {
+                                    return 0;
+                                } else {
+                                    if (integer == 0) {
+                                        return 1;
+                                    } else {
+                                        return integer * 2;
+                                    }
+                                }
+                            }
+                        })
+                        .switchMap(new Func1<Integer, Observable<?>>() {
+                            @Override
+                            public Observable<?> call(Integer integer) {
+                                if (integer == 0) {
+                                    return Observable.never();
+                                }
+                                return Observable.timer(integer, TimeUnit.SECONDS, scheduler);
+                            }
+                        });
+            }
+        });
     }
 
     @Nonnull
@@ -219,26 +257,6 @@ public class MoreOperators {
                         .firstOrDefault(Optional.<T>absent());
             }
         };
-    }
-
-    private static class RepeatOnError<T> implements Func1<Notification<ResponseOrError<T>>, Observable<?>> {
-        @Nonnull
-        private final Scheduler scheduler;
-
-        public RepeatOnError(@Nonnull final Scheduler scheduler) {
-            this.scheduler = checkNotNull(scheduler);
-        }
-
-        @Override
-        public Observable<?> call(final Notification<ResponseOrError<T>> notification) {
-            if (notification.isOnNext()) {
-                return notification.getValue().isError()
-                        ? Observable.timer(10, TimeUnit.SECONDS, scheduler)
-                        : Observable.never();
-            } else {
-                return Observable.never();
-            }
-        }
     }
 
     @Nonnull
