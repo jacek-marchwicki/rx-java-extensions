@@ -114,14 +114,14 @@ public class MoreOperatorsRepeatOnErrorTest {
     }
 
     @Test
-    public void testWhenObservableReturnFail_subscribeAgainAfter10Seconds() throws Exception {
+    public void testWhenObservableReturnFail_subscribeAgainAfter2Seconds() throws Exception {
         returnError.set(true);
         final Observable<ResponseOrError<String>> success = baseObservable
                 .compose(ResponseOrError.<String>toResponseOrErrorObservable())
                 .compose(MoreOperators.<String>repeatOnError(scheduler));
 
         success.subscribe(observable);
-        scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
 
         assert_().that(subscriptions.get()).isEqualTo(2);
         assert_().that(unSubscriptions.get()).isEqualTo(2);
@@ -135,7 +135,7 @@ public class MoreOperatorsRepeatOnErrorTest {
                 .compose(MoreOperators.<String>repeatOnError(scheduler));
 
         success.subscribe(observable);
-        scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
 
         assert_().that(observable.getOnNextEvents())
                 .containsExactly(ResponseOrError.fromError(error), ResponseOrError.fromError(error));
@@ -150,21 +150,47 @@ public class MoreOperatorsRepeatOnErrorTest {
 
         success.subscribe(observable);
         returnError.set(false);
-        scheduler.advanceTimeBy(10, TimeUnit.SECONDS);
+        scheduler.advanceTimeBy(1, TimeUnit.SECONDS);
 
         assert_().that(observable.getOnNextEvents())
                 .containsExactly(ResponseOrError.fromError(error), ResponseOrError.fromData("success"));
     }
 
     @Test
-    public void testErrorConstantlyReturnedThrough30Seconds_returnFourTimes() throws Exception {
+    public void testErrorConstantlyReturnedThrough2Seconds_returnThreeTimes() throws Exception {
         returnError.set(true);
         final Observable<ResponseOrError<String>> success = baseObservable
                 .compose(ResponseOrError.<String>toResponseOrErrorObservable())
                 .compose(MoreOperators.<String>repeatOnError(scheduler));
 
         success.subscribe(observable);
-        scheduler.advanceTimeBy(30, TimeUnit.SECONDS);
+        // 0. at the begging
+        // 1. after 1 second
+        // 2. after 2 second
+        // SUM: 3 seconds
+        scheduler.advanceTimeBy(3, TimeUnit.SECONDS);
+
+        assert_().that(observable.getOnNextEvents())
+                .containsExactly(ResponseOrError.fromError(error),
+                        ResponseOrError.fromError(error),
+                        ResponseOrError.fromError(error));
+
+    }
+
+    @Test
+    public void testErrorConstantlyReturnedThrough4Seconds_returnFourTimes() throws Exception {
+        returnError.set(true);
+        final Observable<ResponseOrError<String>> success = baseObservable
+                .compose(ResponseOrError.<String>toResponseOrErrorObservable())
+                .compose(MoreOperators.<String>repeatOnError(scheduler));
+
+        success.subscribe(observable);
+        // 0. at the begging
+        // 1. after 1 second
+        // 2. after 2 second
+        // 3. after 4 second
+        // SUM: 7 seconds
+        scheduler.advanceTimeBy(7, TimeUnit.SECONDS);
 
         assert_().that(observable.getOnNextEvents())
                 .containsExactly(ResponseOrError.fromError(error),
