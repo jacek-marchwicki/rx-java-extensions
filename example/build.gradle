@@ -39,7 +39,7 @@ dependencies {
 
 android {
     compileSdkVersion 22
-    buildToolsVersion "22"
+    buildToolsVersion "22.0.1"
 
     packagingOptions {
         exclude 'META-INF/services/javax.annotation.processing.Processor'
