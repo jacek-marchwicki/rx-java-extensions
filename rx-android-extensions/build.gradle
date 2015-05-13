@@ -21,9 +21,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.android.support:recyclerview-v7:21.0.0'
 
-    compile 'com.squareup.dagger:dagger-compiler:1.2.1'
-    compile 'com.squareup.dagger:dagger:1.2.1'
-
     compile 'io.reactivex:rxandroid:0.24.0'
     compile "javax.annotation:javax.annotation-api:1.2"
     compile "com.google.code.findbugs:jsr305:2.0.1"
