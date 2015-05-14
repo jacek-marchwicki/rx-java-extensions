@@ -28,7 +28,7 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class DetailsActivity extends BaseActivity {
 
-    public static final String EXTRA_ID = "EXTRA_ID";
+    private static final String EXTRA_ID = "EXTRA_ID";
 
     public static Intent getIntent(@Nonnull Context context, @Nonnull String id) {
         return new Intent(context, DetailsActivity.class)
