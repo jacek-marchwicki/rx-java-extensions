@@ -26,6 +26,10 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
+import com.appunite.rx.Size;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +49,31 @@ public class MoreViewObservables {
 
     @Nonnull
     public static Observable<Integer> viewWidth(@Nonnull final View view) {
-        return Observable.create(new OnViewWidth(view))
+        return viewSize(view)
+                .map(new Func1<ViewSize, Integer>() {
+                    @Override
+                    public Integer call(ViewSize viewSize) {
+                        return viewSize.width();
+                    }
+                })
+                .distinctUntilChanged();
+    }
+
+    @Nonnull
+    public static Observable<Integer> viewHeight(@Nonnull final View view) {
+        return viewSize(view)
+                .map(new Func1<ViewSize, Integer>() {
+                    @Override
+                    public Integer call(ViewSize viewSize) {
+                        return viewSize.height();
+                    }
+                })
+                .distinctUntilChanged();
+    }
+
+    @Nonnull
+    public static Observable<ViewSize> viewSize(@Nonnull final View view) {
+        return Observable.create(new OnViewSize(view))
                 .distinctUntilChanged();
     }
 
@@ -258,28 +286,57 @@ public class MoreViewObservables {
         }
     }
 
-    private static class OnViewWidth implements Observable.OnSubscribe<Integer> {
+    public static class ViewSize extends Size {
+        @Nonnull
+        private final View view;
+
+        public ViewSize(@Nonnull View view, int width, int height) {
+            super(width, height);
+            this.view = view;
+        }
+
+        @Nonnull
+        public View view() {
+            return view;
+        }
+
+        @Override
+        protected MoreObjects.ToStringHelper toStringHelper() {
+            return super.toStringHelper()
+                    .add("view", view);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ViewSize)) return false;
+            if (!super.equals(o)) return false;
+            ViewSize viewSize = (ViewSize) o;
+            return Objects.equal(view, viewSize.view);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(super.hashCode(), view);
+        }
+    }
+
+    private static class OnViewSize implements Observable.OnSubscribe<ViewSize> {
         private View view;
 
-        public OnViewWidth(@Nonnull View view) {
+        public OnViewSize(@Nonnull View view) {
             this.view = view;
         }
 
         @Override
-        public void call(final Subscriber<? super Integer> subscriber) {
+        public void call(final Subscriber<? super ViewSize> subscriber) {
             Assertions.assertUiThread();
-            final int width = view.getWidth();
-            if (hasValidWidth(width)) {
-                subscriber.onNext(width);
-            }
+            sendSizeIfValid(subscriber);
 
             final ViewTreeObserver.OnPreDrawListener listener = new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
-                    final int width = view.getWidth();
-                    if (hasValidWidth(width)) {
-                        subscriber.onNext(width);
-                    }
+                    sendSizeIfValid(subscriber);
                     return true;
                 }
             };
@@ -294,9 +351,14 @@ public class MoreViewObservables {
             subscriber.add(subscription);
         }
 
-        private boolean hasValidWidth(int width) {
-            return width > 0 && !view.isLayoutRequested();
+        protected void sendSizeIfValid(Subscriber<? super ViewSize> subscriber) {
+            final int width = view.getWidth();
+            final int height = view.getHeight();
+            if (width > 0 && height > 0 && !view.isLayoutRequested()) {
+                subscriber.onNext(new ViewSize(view, width, height));
+            }
         }
+
     }
 
     private static class OnNavigationClick implements Observable.OnSubscribe<View> {
