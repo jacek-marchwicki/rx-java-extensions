@@ -568,4 +568,213 @@ public class MoreViewObservables {
         }
     }
 
+    public static class SwipeRefreshLayoutRefreshEvent {
+
+        @Nonnull
+        private final SwipeRefreshLayout swipeRefreshLayout;
+
+        public SwipeRefreshLayoutRefreshEvent(@Nonnull SwipeRefreshLayout swipeRefreshLayout) {
+
+            this.swipeRefreshLayout = swipeRefreshLayout;
+        }
+
+        @Nonnull
+        public SwipeRefreshLayout swipeRefreshLayout() {
+            return swipeRefreshLayout;
+        }
+
+    }
+
+
+    @Nonnull
+    public static Observable<SwipeRefreshLayoutRefreshEvent> swipeRefreshLayoutRefresh(@Nonnull SwipeRefreshLayout swipeRefreshLayout) {
+        return Observable.create(new OnSubscribeSwipeRefreshLayoutRefresh(swipeRefreshLayout));
+    }
+
+    private static class OnSubscribeSwipeRefreshLayoutRefresh implements Observable.OnSubscribe<SwipeRefreshLayoutRefreshEvent> {
+        @Nonnull
+        private final SwipeRefreshLayout swipeRefreshLayout;
+
+        public OnSubscribeSwipeRefreshLayoutRefresh(@Nonnull final SwipeRefreshLayout swipeRefreshLayout) {
+            this.swipeRefreshLayout = swipeRefreshLayout;
+        }
+
+        @Override
+        public void call(final Subscriber<? super SwipeRefreshLayoutRefreshEvent> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(swipeRefreshLayout);
+
+            final SwipeRefreshLayout.OnRefreshListener listener = new SwipeRefreshLayout.OnRefreshListener() {
+
+                @Override
+                public void onRefresh() {
+                    subscriber.onNext(new SwipeRefreshLayoutRefreshEvent(swipeRefreshLayout));
+                }
+
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnScrollListener(listener);
+                }
+            });
+
+            composite.addOnScrollListener(listener);
+            subscriber.add(subscription);
+        }
+
+
+        private static class CompositeListener implements SwipeRefreshLayout.OnRefreshListener  {
+            private final List<SwipeRefreshLayout.OnRefreshListener> listeners = new ArrayList<>();
+
+            public boolean addOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public void onRefresh() {
+                for (final SwipeRefreshLayout.OnRefreshListener listener : listeners) {
+                    listener.onRefresh();
+                }
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<SwipeRefreshLayout, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final SwipeRefreshLayout view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnRefreshListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
+    @Nonnull
+    public static Observable<ToolbarMenuEvent> toolbarMenuClick(@Nonnull Toolbar toolbar) {
+        return Observable.create(new OnSubscribeToolbarMenuClick(toolbar));
+    }
+
+    @Nonnull
+    public static Observable<ToolbarMenuEvent> toolbarMenuClick(@Nonnull Toolbar toolbar, @IdRes final int menuId) {
+        return toolbarMenuClick(toolbar)
+                .filter(new Func1<ToolbarMenuEvent, Boolean>() {
+                    @Override
+                    public Boolean call(ToolbarMenuEvent toolbarMenuEvent) {
+                        return toolbarMenuEvent.menuItem().getItemId() == menuId;
+                    }
+                });
+    }
+
+    private static class OnSubscribeToolbarMenuClick implements Observable.OnSubscribe<ToolbarMenuEvent> {
+        @Nonnull
+        private final Toolbar toolbar;
+
+        public OnSubscribeToolbarMenuClick(@Nonnull final Toolbar toolbar) {
+            this.toolbar = toolbar;
+        }
+
+        @Override
+        public void call(final Subscriber<? super ToolbarMenuEvent> subscriber) {
+            Assertions.assertUiThread();
+            final CompositeListener composite = CachedListeners.getFromViewOrCreate(toolbar);
+
+
+            final Toolbar.OnMenuItemClickListener listener = new Toolbar.OnMenuItemClickListener() {
+                @Override
+                public boolean onMenuItemClick(MenuItem item) {
+                    subscriber.onNext(new ToolbarMenuEvent(toolbar, item));
+                    return true;
+                }
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnMenuItemClickListener(listener);
+                }
+            });
+
+            composite.addOnMenuItemClickListener(listener);
+            subscriber.add(subscription);
+        }
+
+
+        private static class CompositeListener implements Toolbar.OnMenuItemClickListener  {
+            private final List<Toolbar.OnMenuItemClickListener> listeners = new ArrayList<>();
+
+            public boolean addOnMenuItemClickListener(final Toolbar.OnMenuItemClickListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnMenuItemClickListener(final Toolbar.OnMenuItemClickListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                boolean ret = false;
+                for (final Toolbar.OnMenuItemClickListener listener : listeners) {
+                    ret |= listener.onMenuItemClick(menuItem);
+                }
+                return ret;
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<Toolbar, CompositeListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeListener getFromViewOrCreate(final Toolbar view) {
+                final CompositeListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeListener listener = new CompositeListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnMenuItemClickListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
+    public static class ToolbarMenuEvent {
+
+        @Nonnull
+        private final Toolbar toolbar;
+        @Nonnull
+        private final MenuItem menuItem;
+
+        public ToolbarMenuEvent(@Nonnull Toolbar toolbar, @Nonnull MenuItem menuItem) {
+            this.toolbar = toolbar;
+            this.menuItem = menuItem;
+        }
+
+        @Nonnull
+        public Toolbar toolbarMenu() {
+            return toolbar;
+        }
+
+        @Nonnull
+        public MenuItem menuItem() {
+            return menuItem;
+        }
+    }
 }
