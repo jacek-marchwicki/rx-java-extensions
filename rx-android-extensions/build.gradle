@@ -4,7 +4,7 @@ buildscript {
         maven { url 'http://download.crashlytics.com/maven' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:1.1.2'
+        classpath 'com.android.tools.build:gradle:1.2.2'
     }
 }
 
@@ -17,12 +17,9 @@ repositories {
 dependencies {
     compile project(":rx-extensions")
 
-    compile 'com.android.support:support-v4:22.0.0'
-    compile 'com.android.support:appcompat-v7:22.0.0'
+    compile 'com.android.support:support-v4:22.1.1'
+    compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.android.support:recyclerview-v7:21.0.0'
-
-    compile 'com.squareup.dagger:dagger-compiler:1.2.1'
-    compile 'com.squareup.dagger:dagger:1.2.1'
 
     compile 'io.reactivex:rxandroid:0.24.0'
     compile "javax.annotation:javax.annotation-api:1.2"
@@ -32,14 +29,24 @@ dependencies {
     testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'com.google.truth:truth:0.25'
+
+    androidTestCompile 'com.android.support.test:runner:0.2'
+    androidTestCompile 'com.android.support.test:rules:0.2'
+
 }
 
 android {
-    buildToolsVersion "22"
+    buildToolsVersion "22.0.1"
     compileSdkVersion 22
 
     defaultConfig {
-        minSdkVersion 7
+        minSdkVersion 8
         targetSdkVersion 22
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
+    packagingOptions {
+        exclude 'LICENSE.txt'
+    }
+
 }
