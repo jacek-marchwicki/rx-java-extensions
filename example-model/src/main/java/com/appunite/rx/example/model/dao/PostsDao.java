@@ -2,6 +2,7 @@ package com.appunite.rx.example.model.dao;
 
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
+import com.appunite.rx.example.model.helpers.CacheProvider;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
@@ -9,6 +10,7 @@ import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
+import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -46,7 +48,8 @@ public class PostsDao {
 
     public PostsDao(@Nonnull final Scheduler networkScheduler,
                     @Nonnull final Scheduler uiScheduler,
-                    @Nonnull final GuestbookService guestbookService) {
+                    @Nonnull final GuestbookService guestbookService,
+                    @Nonnull final CacheProvider cacheProvider) {
         this.networkScheduler = networkScheduler;
         this.uiScheduler = uiScheduler;
         this.guestbookService = guestbookService;
@@ -77,6 +80,7 @@ public class PostsDao {
 
         posts = loadMoreSubject.startWith((Object) null)
                 .lift(mergePostsNextToken)
+                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
                 .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
                 .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
