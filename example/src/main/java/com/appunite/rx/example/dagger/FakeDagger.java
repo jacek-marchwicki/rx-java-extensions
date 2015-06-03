@@ -8,6 +8,9 @@ import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
+import com.appunite.rx.example.model.helpers.CacheProvider;
+import com.appunite.rx.example.model.helpers.DiskCacheCreator;
+import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -16,6 +19,7 @@ import com.squareup.okhttp.OkHttpClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.util.concurrent.Executor;
 
 import javax.annotation.Nonnull;
@@ -52,7 +56,8 @@ public class FakeDagger {
             final OkHttpClient client = getOkHttpClient(context);
             final RestAdapter restAdapter = getRestAdapter(gson, client);
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
-            postsDao = new PostsDao(MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread(), guestbookService);
+            final CacheProvider cacheProvider = getCacheProvider(context, gson);
+            postsDao = new PostsDao(MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread(), guestbookService, cacheProvider);
             return postsDao;
         }
     }
@@ -73,6 +78,17 @@ public class FakeDagger {
                 .setLogLevel(RestAdapter.LogLevel.FULL)
                 .setLog(new AndroidLog("Retrofit"))
                 .build();
+    }
+
+    @NonNull
+    private static CacheProvider getCacheProvider(@Nonnull final Context context, final Gson gson) {
+        return new CacheProvider() {
+                    @Nonnull
+                    @Override
+                    public <T> CacheSubject.CacheCreator<T> getCacheCreatorForKey(@Nonnull String key, @Nonnull Type type) {
+                        return new DiskCacheCreator<>(gson, type, new File(context.getCacheDir(), key + ".txt"));
+                    }
+                };
     }
 
     @NonNull
