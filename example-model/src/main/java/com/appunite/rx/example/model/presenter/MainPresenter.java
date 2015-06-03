@@ -15,9 +15,6 @@ import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 
-import java.io.IOException;
-import java.util.List;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -42,7 +39,7 @@ public class MainPresenter {
 
     public MainPresenter(@Nonnull PostsDao postsDao) {
         this.postsDao = postsDao;
-        titleObservable = postsObservable2()
+        titleObservable = postsObservable()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
                     @Override
                     public String call(PostsResponse postsResponse) {
@@ -51,7 +48,7 @@ public class MainPresenter {
                 }))
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        itemsObservable = postsObservable2()
+        itemsObservable = postsObservable()
                 .compose(ResponseOrError.map(new Func1<PostsResponse, ImmutableList<AdapterItem>>() {
                     @Override
                     public ImmutableList<AdapterItem> call(PostsResponse postsResponse) {
