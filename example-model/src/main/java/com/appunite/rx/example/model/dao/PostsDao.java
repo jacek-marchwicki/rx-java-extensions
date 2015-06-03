@@ -1,7 +1,5 @@
 package com.appunite.rx.example.model.dao;
 
-import com.appunite.gson.AndroidUnderscoreNamingStrategy;
-import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.model.Post;
@@ -15,33 +13,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.squareup.okhttp.Cache;
-import com.squareup.okhttp.Interceptor;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Response;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
-import retrofit.RequestInterceptor;
-import retrofit.RestAdapter;
-import retrofit.android.AndroidLog;
-import retrofit.client.OkClient;
-import retrofit.converter.GsonConverter;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -56,12 +35,6 @@ public class PostsDao {
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
 
-    /*
-        Normally we rather use dagger instead of static, but for testing purposes is ok
-         */
-    private static final Object LOCK = new Object();
-    private static PostsDao postsDao;
-
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -70,51 +43,6 @@ public class PostsDao {
     private final GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
-
-
-    private static class SyncExecutor implements Executor {
-        @Override
-        public void execute(@Nonnull final Runnable command) {
-            command.run();
-        }
-    }
-
-    public static PostsDao getInstance(@Nonnull File cacheDirectory, @Nonnull Scheduler networkScheduler, @Nonnull Scheduler uiScheduler) {
-        synchronized (LOCK) {
-            if (postsDao != null) {
-                return postsDao;
-            }
-            final Gson gson = new GsonBuilder()
-                    .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
-                    .setFieldNamingStrategy(new AndroidUnderscoreNamingStrategy())
-                    .create();
-
-            final OkHttpClient client = new OkHttpClient();
-            client.setCache(getCacheOrNull(cacheDirectory));
-
-            final RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setClient(new OkClient(client))
-                    .setEndpoint("https://atlantean-field-90117.appspot.com/_ah/api/guestbook/")
-                    .setExecutors(new SyncExecutor(), new SyncExecutor())
-                    .setConverter(new GsonConverter(gson))
-                    .setLogLevel(RestAdapter.LogLevel.FULL)
-                    .setLog(new AndroidLog("Retrofit"))
-                    .build();
-            final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
-            postsDao = new PostsDao(networkScheduler, uiScheduler, guestbookService);
-            return postsDao;
-        }
-    }
-
-    @Nullable
-    private static Cache getCacheOrNull(@Nonnull File cacheDirectory) {
-        int cacheSize = 10 * 1024 * 1024; // 10 MiB
-        try {
-            return new Cache(cacheDirectory, cacheSize);
-        } catch (IOException e) {
-            return null;
-        }
-    }
 
     public PostsDao(@Nonnull final Scheduler networkScheduler,
                     @Nonnull final Scheduler uiScheduler,

@@ -10,11 +10,8 @@ import android.widget.TextView;
 
 import com.appunite.rx.android.MoreActivityActions;
 import com.appunite.rx.android.MoreViewActions;
-import com.appunite.rx.android.MyAndroidSchedulers;
-import com.appunite.rx.example.model.dao.PostsDao;
+import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
-
-import java.io.File;
 
 import javax.annotation.Nonnull;
 
@@ -22,7 +19,6 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.ViewActions;
-import rx.schedulers.Schedulers;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
@@ -55,7 +51,7 @@ public class DetailsActivity extends BaseActivity {
 
         // Normally use dagger
         final DetailsPresenters detailsPresenters = new DetailsPresenters(AndroidSchedulers.mainThread(),
-                PostsDao.getInstance(new File(this.getCacheDir(), "ok-http"), MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread()));
+                FakeDagger.getInstance(getApplicationContext()));
 
 
         final DetailsPresenters.DetailsPresenter presenter = detailsPresenters
