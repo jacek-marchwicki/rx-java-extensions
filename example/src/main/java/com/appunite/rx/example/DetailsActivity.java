@@ -51,7 +51,7 @@ public class DetailsActivity extends BaseActivity {
 
         // Normally use dagger
         final DetailsPresenters detailsPresenters = new DetailsPresenters(AndroidSchedulers.mainThread(),
-                FakeDagger.getInstance(getApplicationContext()));
+                FakeDagger.getPostsDaoInstance(getApplicationContext()));
 
 
         final DetailsPresenters.DetailsPresenter presenter = detailsPresenters

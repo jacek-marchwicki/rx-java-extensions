@@ -42,7 +42,7 @@ public class FakeDagger {
         }
     }
 
-    public static PostsDao getInstance(@Nonnull final Context context) {
+    public static PostsDao getPostsDaoInstance(@Nonnull final Context context) {
         synchronized (LOCK) {
             if (postsDao != null) {
                 return postsDao;

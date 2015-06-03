@@ -47,7 +47,7 @@ public class MainActivity extends BaseActivity {
         recyclerView.setAdapter(mainAdapter);
 
         // Normally use dagger
-        final MainPresenter presenter = new MainPresenter(FakeDagger.getInstance(getApplication()));
+        final MainPresenter presenter = new MainPresenter(FakeDagger.getPostsDaoInstance(getApplication()));
 
         presenter.titleObservable()
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
