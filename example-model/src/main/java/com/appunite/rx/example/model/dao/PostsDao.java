@@ -3,7 +3,6 @@ package com.appunite.rx.example.model.dao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.helpers.CacheProvider;
-import com.appunite.rx.example.model.helpers.DiskCache;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
@@ -11,6 +10,7 @@ import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
+import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -36,8 +36,6 @@ public class PostsDao {
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
-    @Nonnull
-    private final CacheProvider cacheProvider;
 
     @Nonnull
     private final Scheduler networkScheduler;
@@ -55,7 +53,6 @@ public class PostsDao {
         this.networkScheduler = networkScheduler;
         this.uiScheduler = uiScheduler;
         this.guestbookService = guestbookService;
-        this.cacheProvider = cacheProvider;
 
         final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken =
                 OperatorMergeNextToken
@@ -83,7 +80,7 @@ public class PostsDao {
 
         posts = loadMoreSubject.startWith((Object) null)
                 .lift(mergePostsNextToken)
-                .compose(DiskCache.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
+                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
                 .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
                 .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
@@ -113,7 +110,6 @@ public class PostsDao {
 
         postsIds = loadMoreSubject.startWith((Object) null)
                 .lift(mergePostsIdsNextToken)
-                .compose(DiskCache.behaviorRefCount(cacheProvider.<PostsIdsResponse>getCacheCreatorForKey("posts_ids", PostsIdsResponse.class)))
                 .compose(ResponseOrError.<PostsIdsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsIdsResponse>repeatOnError(networkScheduler))
                 .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
@@ -163,7 +159,6 @@ public class PostsDao {
 
         public PostDao(@Nonnull String id) {
             postWithBodyObservable = guestbookService.getPost(id)
-                    .compose(DiskCache.behaviorRefCount(cacheProvider.<PostWithBody>getCacheCreatorForKey("post_"+id, PostWithBody.class)))
                     .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
