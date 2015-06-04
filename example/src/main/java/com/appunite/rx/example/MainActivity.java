@@ -49,6 +49,7 @@ public class MainActivity extends BaseActivity {
         // Normally use dagger
         final MainPresenter presenter = new MainPresenter(FakeDagger.getPostsDaoInstance(getApplication()));
 
+
         presenter.titleObservable()
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(MoreViewActions.setTitle(toolbar));

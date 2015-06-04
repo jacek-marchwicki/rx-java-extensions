@@ -65,10 +65,12 @@ public class MainPresenter {
                 .compose(ObservableExtensions.<ResponseOrError<ImmutableList<AdapterItem>>>behaviorRefCount());
     }
 
+    @Nonnull
     private Observable<ResponseOrError<PostsResponse>> postsObservable() {
         return this.postsDao.postsObservable();
     }
 
+    @Nonnull
     private Observable<ResponseOrError<PostsResponse>> postsObservable2() {
         return this.postsDao.postsIdsObservable()
                 .compose(ResponseOrError.switchMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
@@ -114,7 +116,8 @@ public class MainPresenter {
     public Observable<Throwable> errorObservable() {
         return ResponseOrError.combineErrorsObservable(ImmutableList.of(
                 ResponseOrError.transform(titleObservable),
-                ResponseOrError.transform(itemsObservable)));
+                ResponseOrError.transform(itemsObservable)))
+                .distinctUntilChanged();
 
     }
 

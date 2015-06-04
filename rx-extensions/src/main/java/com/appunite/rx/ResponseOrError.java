@@ -516,8 +516,7 @@ public class ResponseOrError<T> {
                 })
                 .toList();
         return Observable.combineLatest(ob,
-                FunctionsN.combineFirstThrowable())
-                .startWith((Throwable) null);
+                FunctionsN.combineFirstThrowable());
     }
 
     @Nonnull
