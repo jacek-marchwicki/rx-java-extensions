@@ -5,11 +5,11 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
 
-public class BoothParams<T1, T2> {
+public class BothParams<T1, T2> {
     private final T1 param1;
     private final T2 param2;
 
-    public BoothParams(T1 param1, T2 param2) {
+    public BothParams(T1 param1, T2 param2) {
         this.param1 = param1;
         this.param2 = param2;
     }
@@ -25,8 +25,8 @@ public class BoothParams<T1, T2> {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof BoothParams)) return false;
-        BoothParams<?, ?> that = (BoothParams<?, ?>) o;
+        if (!(o instanceof BothParams)) return false;
+        BothParams<?, ?> that = (BothParams<?, ?>) o;
         return Objects.equal(param1, that.param1) &&
                 Objects.equal(param2, that.param2);
     }

@@ -5,7 +5,7 @@ import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
 
-public class ThreeParams<T1, T2, T3> extends BoothParams<T1, T2> {
+public class ThreeParams<T1, T2, T3> extends BothParams<T1, T2> {
     private final T3 param3;
 
     public ThreeParams(T1 param1, T2 param2, T3 param3) {
