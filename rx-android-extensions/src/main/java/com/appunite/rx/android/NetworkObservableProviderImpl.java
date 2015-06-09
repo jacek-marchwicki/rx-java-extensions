@@ -26,7 +26,6 @@ import android.telephony.TelephonyManager;
 
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.observables.NetworkObservableProvider;
-import com.appunite.rx.operators.MoreOperators;
 
 import javax.annotation.Nonnull;
 
@@ -86,17 +85,17 @@ public class NetworkObservableProviderImpl implements NetworkObservableProvider 
         } else if (type == ConnectivityManager.TYPE_MOBILE) {
             switch (subtype) {
                 case TelephonyManager.NETWORK_TYPE_1xRTT:
-                    return NetworkStatus.WEEK; // ~ 50-100 kbps
+                    return NetworkStatus.WEAK; // ~ 50-100 kbps
                 case TelephonyManager.NETWORK_TYPE_CDMA:
-                    return NetworkStatus.WEEK; // ~ 14-64 kbps
+                    return NetworkStatus.WEAK; // ~ 14-64 kbps
                 case TelephonyManager.NETWORK_TYPE_EDGE:
-                    return NetworkStatus.WEEK; // ~ 50-100 kbps
+                    return NetworkStatus.WEAK; // ~ 50-100 kbps
                 case TelephonyManager.NETWORK_TYPE_EVDO_0:
-                    return NetworkStatus.WEEK; // ~ 400-1000 kbps
+                    return NetworkStatus.WEAK; // ~ 400-1000 kbps
                 case TelephonyManager.NETWORK_TYPE_EVDO_A:
-                    return NetworkStatus.WEEK; // ~ 600-1400 kbps
+                    return NetworkStatus.WEAK; // ~ 600-1400 kbps
                 case TelephonyManager.NETWORK_TYPE_GPRS:
-                    return NetworkStatus.WEEK; // ~ 100 kbps
+                    return NetworkStatus.WEAK; // ~ 100 kbps
                 case TelephonyManager.NETWORK_TYPE_HSDPA:
                     return NetworkStatus.BEST; // ~ 2-14 Mbps
                 case TelephonyManager.NETWORK_TYPE_HSPA:

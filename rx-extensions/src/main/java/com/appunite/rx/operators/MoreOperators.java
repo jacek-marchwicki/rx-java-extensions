@@ -229,7 +229,7 @@ public class MoreOperators {
                                         .filter(new Func1<NetworkObservableProvider.NetworkStatus, Boolean>() {
                                             @Override
                                             public Boolean call(NetworkObservableProvider.NetworkStatus networkStatus) {
-                                                return networkStatus.isNetowrk();
+                                                return networkStatus.isNetwork();
                                             }
                                         });
                                 final Observable<Long> timeout = Observable.timer(integer, TimeUnit.SECONDS, scheduler);

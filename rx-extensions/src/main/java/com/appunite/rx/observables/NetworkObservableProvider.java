@@ -22,9 +22,9 @@ import rx.Observable;
 
 public interface NetworkObservableProvider {
 
-    public static enum NetworkStatus {
+    enum NetworkStatus {
         NO_NETWORK(0),
-        WEEK(1),
+        WEAK(1),
         GOOD(2),
         BEST(3);
 
@@ -34,12 +34,12 @@ public interface NetworkObservableProvider {
             this.pos = pos;
         }
 
-        public boolean isNetowrk() {
+        public boolean isNetwork() {
             return pos > 0;
         }
 
-        public boolean weekOrBetter() {
-            return pos >= WEEK.pos;
+        public boolean weakOrBetter() {
+            return pos >= WEAK.pos;
         }
 
         public boolean goodOrBetter() {
@@ -52,5 +52,5 @@ public interface NetworkObservableProvider {
     }
 
     @Nonnull
-    public Observable<NetworkStatus> networkObservable();
+    Observable<NetworkStatus> networkObservable();
 }
