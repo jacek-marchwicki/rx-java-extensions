@@ -43,11 +43,11 @@ public class Functions2 {
     }
 
     @Nonnull
-    public static <T, K> Func2<T, K, BoothParams<T, K>> boothParams() {
-        return new Func2<T, K, BoothParams<T, K>>() {
+    public static <T, K> Func2<T, K, BothParams<T, K>> bothParams() {
+        return new Func2<T, K, BothParams<T, K>>() {
             @Override
-            public BoothParams<T, K> call(T t, K k) {
-                return new BoothParams<>(t, k);
+            public BothParams<T, K> call(T t, K k) {
+                return new BothParams<>(t, k);
             }
         };
     }
