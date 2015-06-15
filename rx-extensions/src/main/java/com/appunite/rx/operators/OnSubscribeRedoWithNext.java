@@ -106,6 +106,9 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
                         if (consumerCapacity.get() != Long.MAX_VALUE) {
                             consumerCapacity.decrementAndGet();
                         }
+                        if (child.isUnsubscribed()) {
+                            return;
+                        }
                         child.onNext(v);
                         terminals.onNext(Notification.createOnNext(v));
                     }
