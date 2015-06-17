@@ -20,6 +20,10 @@ import javax.annotation.Nonnull;
 import rx.functions.FuncN;
 
 public class FunctionsN {
+
+    private FunctionsN() {
+    }
+
     @Nonnull
     public static FuncN<Boolean> returnTrue() {
         return new FuncN<Boolean>() {

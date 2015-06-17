@@ -22,10 +22,6 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-
-import java.util.Arrays;
-import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +36,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 /**
- * Class that represents data or error
+ * Class that represents data or error.
  * @param <T> type of data
  */
 public class ResponseOrError<T> {
@@ -56,7 +52,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns error response from throwable
+     * Returns error response from throwable.
      * @param t throwable
      * @param <T> type of possible data
      * @return representation of throwable
@@ -66,7 +62,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns data response from data
+     * Returns data response from data.
      * @param data data
      * @param <T> type of data
      * @return representation of data
@@ -76,7 +72,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns data
+     * Returns data.
      *
      * You need to check {@link #isData()}
      *
@@ -86,12 +82,11 @@ public class ResponseOrError<T> {
     @Nonnull
     public T data() {
         checkState(data != null);
-        assert data != null;
         return data;
     }
 
     /**
-     * Returns if response contains data
+     * Returns if response contains data.
      * @return true if contains data
      */
     public boolean isData() {
@@ -99,7 +94,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns if response contains error
+     * Returns if response contains error.
      *
      * Helper for negation of {@link #isData()}
      * @return true if contains error
@@ -109,7 +104,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns error
+     * Returns error.
      *
      * You need to check {@link #isError()}
      * @return error throwable
@@ -118,12 +113,11 @@ public class ResponseOrError<T> {
     @Nonnull
     public Throwable error() {
         checkState(error != null);
-        assert error != null;
         return error;
     }
 
     /**
-     * Function that converts ResponseOrError to Boolean containing {@link #isData()}
+     * Function that converts ResponseOrError to Boolean containing {@link #isData()}.
      * @return function
      */
     @Nonnull
@@ -137,7 +131,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Function that converts ResponseOrError to Boolean containing {@link #isError()} ()}
+     * Function that converts ResponseOrError to Boolean containing {@link #isError()} ()}.
      * @return function
      */
     @Nonnull
@@ -146,7 +140,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Function that converts ResponseOrError to null if {@link #isData()} or {@link #error()} Throwable
+     * Function that converts ResponseOrError to null if {@link #isData()} or {@link #error()}.
      * @return function
      */
     @Nonnull
@@ -168,7 +162,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Parameters are equals using {@link Object#equals(Object)} on data or error
+     * Parameters are equals using {@link Object#equals(Object)} on data or error.
      * @param o object
      * @return true if equals
      */
@@ -184,7 +178,7 @@ public class ResponseOrError<T> {
 
     }
     /**
-     * Hash code using {@link Object#hashCode()} on data or error
+     * Hash code using {@link Object#hashCode()} on data or error.
      * @return hash code
      */
     @Override
@@ -203,7 +197,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Convert {@link Observable} that can throw error to {@link Observable<ResponseOrError>}
+     * Convert {@link Observable} that can throw error to {@link Observable<ResponseOrError>}.
      *
      * If source Observable returns obj, result observable will return ResponseOrError.fromData(obj)
      * If source Observable throws err, result observable will return ResponseOrError.fromError(err)
@@ -223,7 +217,8 @@ public class ResponseOrError<T> {
     }
 
     @Nonnull
-    private static <T> Observable<ResponseOrError<T>> toResponseOrErrorObservable(@Nonnull Observable<T> observable) {
+    private static <T> Observable<ResponseOrError<T>> toResponseOrErrorObservable(
+            @Nonnull Observable<T> observable) {
         return observable
                 .map(new Func1<T, ResponseOrError<T>>() {
                     @Override
@@ -231,28 +226,32 @@ public class ResponseOrError<T> {
                         return ResponseOrError.fromData(t);
                     }
                 })
-                .onErrorResumeNext(new Func1<Throwable, Observable<? extends ResponseOrError<T>>>() {
-                    @Override
-                    public Observable<? extends ResponseOrError<T>> call(final Throwable throwable) {
-                        return Observable.just(ResponseOrError.<T>fromError(throwable));
-                    }
-                });
+                .onErrorResumeNext(ResponseOrError.<T>mapThrowableToResponseOrError());
 
     }
 
+    @Nonnull
+    private static
+    <T> Func1<Throwable, Observable<? extends ResponseOrError<T>>> mapThrowableToResponseOrError() {
+        return new Func1<Throwable, Observable<? extends ResponseOrError<T>>>() {
+            @Override
+            public Observable<? extends ResponseOrError<T>> call(final Throwable throwable) {
+                return Observable.just(ResponseOrError.<T>fromError(throwable));
+            }
+        };
+    }
+
     /**
-     * Map only success response ignoring error
+     * Map only success response ignoring error.
      *
      * <pre>
-     * {@code
      *  Observable<ResponseOrError<Boolean>> output =
-     *      Observable.just(ResponseOrError.fromData("text")
-     *      .compose(ResponseOrError.map(new Func<String, Boolean) {
+     *      Observable.just(ResponseOrError.fromData("text"))
+     *      .compose(ResponseOrError.map(new Func&lt;String, Boolean&gt;) {
      *          Boolean call(String in) {
      *             return in != null;
      *          }
-     *      });
-     * }
+     *      }));
      * </pre>
      *
      * @param func that maps data of ResponseOrError to another data
@@ -261,18 +260,21 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> map(@Nonnull final Func1<T, K> func) {
+    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> map(
+            @Nonnull final Func1<T, K> func) {
         return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
             @Override
-            public Observable<ResponseOrError<K>> call(final Observable<ResponseOrError<T>> observable) {
+            public Observable<ResponseOrError<K>> call(
+                    final Observable<ResponseOrError<T>> observable) {
                 return map(observable, func);
             }
         };
     }
 
     @Nonnull
-    private static <T, K> Observable<ResponseOrError<K>> map(@Nonnull final Observable<ResponseOrError<T>> observable,
-                                                            @Nonnull final Func1<T, K> func) {
+    private static <T, K> Observable<ResponseOrError<K>> map(
+            @Nonnull final Observable<ResponseOrError<T>> observable,
+            @Nonnull final Func1<T, K> func) {
         checkNotNull(observable);
         checkNotNull(func);
         return observable.map(new Func1<ResponseOrError<T>, ResponseOrError<K>>() {
@@ -287,7 +289,7 @@ public class ResponseOrError<T> {
         });
     }
     /**
-     * Flat map only success response ignoring error
+     * Flat map only success response ignoring error.
      *
      * <pre>
      * {@code
@@ -307,18 +309,21 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> flatMap(@Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> flatMap(
+            @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
         return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
             @Override
-            public Observable<ResponseOrError<K>> call(final Observable<ResponseOrError<T>> observableObservable) {
+            public Observable<ResponseOrError<K>> call(
+                    final Observable<ResponseOrError<T>> observableObservable) {
                 return flatMap(observableObservable, func);
             }
         };
     }
 
     @Nonnull
-    private static <T, K> Observable<ResponseOrError<K>> flatMap(@Nonnull final Observable<ResponseOrError<T>> observable,
-                                                            @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+    private static <T, K> Observable<ResponseOrError<K>> flatMap(
+            @Nonnull final Observable<ResponseOrError<T>> observable,
+            @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
         checkNotNull(observable);
         checkNotNull(func);
         return observable.flatMap(new Func1<ResponseOrError<T>, Observable<ResponseOrError<K>>>() {
@@ -334,7 +339,7 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Switch map only success response ignoring error
+     * Switch map only success response ignoring error.
      *
      * <pre>
      * {@code
@@ -354,34 +359,41 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> switchMap(@Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+    public static <T, K> Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>> switchMap(
+            @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
         return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
             @Override
-            public Observable<ResponseOrError<K>> call(final Observable<ResponseOrError<T>> observableObservable) {
+            public Observable<ResponseOrError<K>> call(
+                    final Observable<ResponseOrError<T>> observableObservable) {
                 return switchMap(observableObservable, func);
             }
         };
     }
 
     @Nonnull
-    private static <T, K> Observable<ResponseOrError<K>> switchMap(@Nonnull final Observable<ResponseOrError<T>> observable,
-                                                                 @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
+    private static <T, K> Observable<ResponseOrError<K>> switchMap(
+            @Nonnull final Observable<ResponseOrError<T>> observable,
+            @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
         checkNotNull(observable);
         checkNotNull(func);
-        return observable.switchMap(new Func1<ResponseOrError<T>, Observable<ResponseOrError<K>>>() {
-            @Override
-            public Observable<ResponseOrError<K>> call(final ResponseOrError<T> response) {
-                if (response.isError()) {
-                    return Observable.just(ResponseOrError.<K>fromError(response.error()));
-                } else {
-                    return func.call(response.data());
-                }
-            }
-        });
+        return observable.switchMap(
+                new Func1<ResponseOrError<T>, Observable<ResponseOrError<K>>>() {
+                    @Override
+                    public Observable<ResponseOrError<K>> call(final ResponseOrError<T> response) {
+                        if (response.isError()) {
+                            return Observable.just(ResponseOrError.<K>fromError(response.error()));
+                        } else {
+                            return func.call(response.data());
+                        }
+                    }
+                });
     }
 
     /**
-     * Returns only success response of observable of {@link ResponseOrError} and convert to {@link #data()}
+     * Returns only success response of observable of {@link ResponseOrError}.
+     *
+     * If success then also convert to {@link #data()}
+     *
      * @param <T> type ResponseOrError
      * @return observable
      */
@@ -396,7 +408,8 @@ public class ResponseOrError<T> {
     }
 
     @Nonnull
-    private static <T> Observable<T> onlySuccess(@Nonnull final Observable<ResponseOrError<T>> observable) {
+    private static <T> Observable<T> onlySuccess(
+            @Nonnull final Observable<ResponseOrError<T>> observable) {
         return observable.filter(funcIsData()).map(new Func1<ResponseOrError<T>, T>() {
             @Override
             public T call(final ResponseOrError<T> response) {
@@ -406,7 +419,10 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns only error response of observable of {@link ResponseOrError} and convert to {@link #error()}
+     * Returns only error response of observable of {@link ResponseOrError}.
+     *
+     * If error also convert to {@link #error()}
+     *
      * @param <T> type of ResponseOrError
      * @return observable
      */
@@ -421,7 +437,8 @@ public class ResponseOrError<T> {
     }
 
     @Nonnull
-    private static <T> Observable<Throwable> onlyError(@Nonnull final Observable<ResponseOrError<T>> observable) {
+    private static <T> Observable<Throwable> onlyError(
+            @Nonnull final Observable<ResponseOrError<T>> observable) {
         return observable.filter(funcIsError()).map(new Func1<ResponseOrError<?>, Throwable>() {
             @Override
             public Throwable call(final ResponseOrError<?> responseOrError) {
@@ -431,17 +448,21 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Converts lists of ResponseOrError to ResponseOrError with list
+     * Converts lists of ResponseOrError to ResponseOrError with list.
      *
      * If there will be error only first will be returned
      * @param <T> type of element
      * @return observable
      */
     @Nonnull
-    public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>> fromListObservable() {
-        return new Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
+    public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>,
+            ResponseOrError<ImmutableList<T>>>
+    fromListObservable() {
+        return new Observable.Transformer<ImmutableList<ResponseOrError<T>>,
+                ResponseOrError<ImmutableList<T>>>() {
             @Override
-            public Observable<ResponseOrError<ImmutableList<T>>> call(final Observable<ImmutableList<ResponseOrError<T>>> observable) {
+            public Observable<ResponseOrError<ImmutableList<T>>> call(
+                    final Observable<ImmutableList<ResponseOrError<T>>> observable) {
                 return fromListObservable(observable);
             }
         };
@@ -450,35 +471,39 @@ public class ResponseOrError<T> {
     @Nonnull
     private static <T> Observable<ResponseOrError<ImmutableList<T>>> fromListObservable(
             @Nonnull final Observable<ImmutableList<ResponseOrError<T>>> observable) {
-        return observable.map(new Func1<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
-            @Override
-            public ResponseOrError<ImmutableList<T>> call(final ImmutableList<ResponseOrError<T>> responses) {
-                final ImmutableList.Builder<T> builder = ImmutableList.builder();
-                for (ResponseOrError<T> response : responses) {
-                    if (response.isError()) {
-                        return ResponseOrError.fromError(response.error());
+        return observable
+                .map(new Func1<ImmutableList<ResponseOrError<T>>,
+                        ResponseOrError<ImmutableList<T>>>() {
+                    @Override
+                    public ResponseOrError<ImmutableList<T>> call(
+                            final ImmutableList<ResponseOrError<T>> responses) {
+                        final ImmutableList.Builder<T> builder = ImmutableList.builder();
+                        for (ResponseOrError<T> response : responses) {
+                            if (response.isError()) {
+                                return ResponseOrError.fromError(response.error());
+                            }
+                            builder.add(response.data());
+                        }
+                        return ResponseOrError.fromData(builder.build());
                     }
-                    builder.add(response.data());
-                }
-                return ResponseOrError.fromData(builder.build());
-            }
-        });
+                });
     }
 
     /**
-     * Returns true unit all observables will returns some value
+     * Returns true unit all observables will returns some value.
      *
      * @param observables observables that returns some data
      * @return observable
      */
     @Nonnull
-    public static Observable<Boolean> combineProgressObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    public static Observable<Boolean> combineProgressObservable(
+            @Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         return Observable.combineLatest(observables, FunctionsN.returnFalse())
                 .startWith(true);
     }
 
     /**
-     * Converts {@code ResponseOrError<T>} to {@code ResponseOrError<?>}
+     * Converts {@code ResponseOrError<T>} to {@code ResponseOrError<?>}.
      *
      * @param observable to transform
      * @param <T> type of source observable
@@ -487,7 +512,8 @@ public class ResponseOrError<T> {
      * @see #combineProgressObservable(com.google.common.collect.ImmutableList)
      */
     @Nonnull
-    public static <T> Observable<ResponseOrError<?>> transform(@Nonnull Observable<ResponseOrError<T>> observable) {
+    public static <T> Observable<ResponseOrError<?>> transform(
+            @Nonnull Observable<ResponseOrError<T>> observable) {
         return observable
                 .map(new Func1<ResponseOrError<T>, ResponseOrError<?>>() {
                     @Override
@@ -498,20 +524,23 @@ public class ResponseOrError<T> {
     }
 
     /**
-     * Returns throwable if some observable returned {@link #error()} otherwise null
+     * Returns throwable if some observable returned {@link #error()} otherwise null.
      *
      * @param observables source observables
      * @return observable
      */
     @Nonnull
-    public static Observable<Throwable> combineErrorsObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    public static Observable<Throwable> combineErrorsObservable(
+            @Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
         final ImmutableList<Observable<Throwable>> ob = FluentIterable
                 .from(observables)
                 .transform(new Function<Observable<ResponseOrError<?>>, Observable<Throwable>>() {
                     @Nonnull
                     @Override
                     public Observable<Throwable> apply(Observable<ResponseOrError<?>> input) {
-                        return input.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null);
+                        assert input != null;
+                        return input.map(ResponseOrError.toNullableThrowable())
+                                .startWith((Throwable) null);
                     }
                 })
                 .toList();
@@ -520,7 +549,8 @@ public class ResponseOrError<T> {
     }
 
     @Nonnull
-    public static <T1, T2, R> Func2<ResponseOrError<T1>, T2, ResponseOrError<R>> toErrorFunc2(@Nonnull final Func2<T1, T2, R> func) {
+    public static <T1, T2, R> Func2<ResponseOrError<T1>, T2, ResponseOrError<R>> toErrorFunc2(
+            @Nonnull final Func2<T1, T2, R> func) {
         return new Func2<ResponseOrError<T1>, T2, ResponseOrError<R>>() {
             @Override
             public ResponseOrError<R> call(ResponseOrError<T1> t1ResponseOrError, T2 t2) {
@@ -534,14 +564,17 @@ public class ResponseOrError<T> {
     }
 
     @Nonnull
-    public static <T1, T2, T3, R> Func3<ResponseOrError<T1>, ResponseOrError<T2>, T3, ResponseOrError<R>> toErrorFunc3(@Nonnull final Func3<T1, T2, T3, R> func) {
+    public static <T1, T2, T3, R> Func3<ResponseOrError<T1>, ResponseOrError<T2>, T3,
+            ResponseOrError<R>>
+    toErrorFunc3(@Nonnull final Func3<T1, T2, T3, R> func) {
         return new Func3<ResponseOrError<T1>, ResponseOrError<T2>, T3, ResponseOrError<R>>() {
             @Override
             public ResponseOrError<R> call(ResponseOrError<T1> t1ResponseOrError,
                                            ResponseOrError<T2> t2ResponseOrError, T3 t3) {
                 if (t1ResponseOrError.isData() && t2ResponseOrError.isData()) {
-                    return ResponseOrError.fromData(func.call(t1ResponseOrError.data(), t2ResponseOrError.data, t3));
-                } else if (t1ResponseOrError.isError()){
+                    return ResponseOrError.fromData(func.call(t1ResponseOrError.data(),
+                            t2ResponseOrError.data, t3));
+                } else if (t1ResponseOrError.isError()) {
                     return ResponseOrError.fromError(t1ResponseOrError.error());
                 } else {
                     return ResponseOrError.fromError(t2ResponseOrError.error());

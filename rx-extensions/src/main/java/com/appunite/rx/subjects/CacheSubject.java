@@ -45,8 +45,9 @@ public class CacheSubject<T> extends Subject<T, T> {
     }
 
     @Nonnull
-    public static <T> ConnectableObservable<T> behavior(final @Nonnull Observable<T> observable,
-                                                        final @Nonnull CacheSubject.CacheCreator<T> cacheCreator) {
+    public static <T> ConnectableObservable<T> behavior(
+            @Nonnull final Observable<T> observable,
+            @Nonnull final CacheSubject.CacheCreator<T> cacheCreator) {
         return new OperatorMulticast<>(observable, new Func0<Subject<? super T, ? extends T>>() {
 
             @Override
@@ -58,7 +59,7 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     @Nonnull
     public static <T> Observable.Transformer<T, T> behaviorRefCount(
-            final @Nonnull CacheSubject.CacheCreator<T> cacheCreator) {
+            @Nonnull final CacheSubject.CacheCreator<T> cacheCreator) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> tObservable) {
@@ -67,7 +68,8 @@ public class CacheSubject<T> extends Subject<T, T> {
         };
     }
 
-    private CacheSubject(@Nonnull final CacheCreator<T> cacheCreator, DelegateOnSubscribe<T> delegateOnSubscribe) {
+    private CacheSubject(@Nonnull final CacheCreator<T> cacheCreator,
+                         @Nonnull DelegateOnSubscribe<T> delegateOnSubscribe) {
         super(delegateOnSubscribe);
         delegateOnSubscribe.setDelegate(new OnSubscribe<T>() {
             @Override

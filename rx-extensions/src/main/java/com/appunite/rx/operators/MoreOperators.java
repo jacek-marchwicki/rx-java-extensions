@@ -44,6 +44,9 @@ import static com.appunite.rx.ObservableExtensions.behavior;
 
 public class MoreOperators {
 
+    private MoreOperators() {
+    }
+
     @Nonnull
     public static <T> Observable.Transformer<T, T> refresh(
             @Nonnull final Observable<Object> refreshSubject) {
@@ -58,12 +61,14 @@ public class MoreOperators {
     @Nonnull
     private static <T> Observable<T> refresh(@Nonnull Observable<Object> refreshSubject,
                                              @Nonnull final Observable<T> toRefresh) {
-        return refreshSubject.startWith((Object)null).switchMap(new Func1<Object, Observable<T>>() {
-            @Override
-            public Observable<T> call(final Object o) {
-                return toRefresh;
-            }
-        });
+        return refreshSubject
+                .startWith((Object) null)
+                .switchMap(new Func1<Object, Observable<T>>() {
+                    @Override
+                    public Observable<T> call(final Object o) {
+                        return toRefresh;
+                    }
+                });
     }
 
     @Nonnull
@@ -88,31 +93,35 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>> repeatOnError(
             @Nonnull final Scheduler scheduler) {
-        return
-                new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
+        return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
             @Override
-            public Observable<ResponseOrError<T>> call(final Observable<ResponseOrError<T>> responseOrErrorObservable) {
+            public Observable<ResponseOrError<T>> call(
+                    final Observable<ResponseOrError<T>> responseOrErrorObservable) {
                 return repeatOnError(responseOrErrorObservable, scheduler);
             }
         };
     }
 
     @Nonnull
-    public static <T> Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>> repeatOnErrorOrNetwork(
+    public static
+    <T> Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>> repeatOnErrorOrNetwork(
             @Nonnull final NetworkObservableProvider networkObservableProvider,
             @Nonnull final Scheduler scheduler) {
-        return
-                new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
+        return new Observable.Transformer<ResponseOrError<T>, ResponseOrError<T>>() {
                     @Override
-                    public Observable<ResponseOrError<T>> call(final Observable<ResponseOrError<T>> responseOrErrorObservable) {
-                        return repeatOnErrorOrNetwork(responseOrErrorObservable, networkObservableProvider, scheduler);
+                    public Observable<ResponseOrError<T>> call(
+                            final Observable<ResponseOrError<T>> responseOrErrorObservable) {
+                        return repeatOnErrorOrNetwork(responseOrErrorObservable,
+                                networkObservableProvider,
+                                scheduler);
                     }
                 };
     }
 
     @Nonnull
-    public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(@Nonnull final Observable<T2> observable,
-                                                                        @Nonnull final Func2<T1, T2, R> func) {
+    public static <T1, T2, R> Observable.Transformer<T1, R> combineWith(
+            @Nonnull final Observable<T2> observable,
+            @Nonnull final Func2<T1, T2, R> func) {
         return new Observable.Transformer<T1, R>() {
             @Override
             public Observable<R> call(Observable<T1> t1Observable) {
@@ -122,9 +131,10 @@ public class MoreOperators {
     }
 
     @Nonnull
-    public static <T1, T2, T3, R> Observable.Transformer<T1, R> combineWith(@Nonnull final Observable<T2> observable2,
-                                                                            @Nonnull final Observable<T3> observable3,
-                                                                        @Nonnull final Func3<T1, T2, T3, R> func) {
+    public static <T1, T2, T3, R> Observable.Transformer<T1, R> combineWith(
+            @Nonnull final Observable<T2> observable2,
+            @Nonnull final Observable<T3> observable3,
+            @Nonnull final Func3<T1, T2, T3, R> func) {
         return new Observable.Transformer<T1, R>() {
             @Override
             public Observable<R> call(Observable<T1> t1Observable) {
@@ -137,25 +147,36 @@ public class MoreOperators {
     private static <T> Observable<ResponseOrError<T>> repeatOnError(
             @Nonnull final Observable<ResponseOrError<T>> from,
             @Nonnull final Scheduler scheduler) {
-        return OnSubscribeRedoWithNext.repeat(from, new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
+        return OnSubscribeRedoWithNext
+                .repeat(from, MoreOperators.<T>returnObservableOnError(scheduler));
+    }
+
+    @Nonnull
+    private static <T> Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>
+    returnObservableOnError(@Nonnull final Scheduler scheduler) {
+        return new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
             @Override
-            public Observable<?> call(Observable<? extends Notification<ResponseOrError<T>>> observable) {
+            public Observable<?> call(
+                    Observable<? extends Notification<ResponseOrError<T>>> observable) {
                 return observable
                         .filter(new Func1<Notification<ResponseOrError<T>>, Boolean>() {
                             @Override
-                            public Boolean call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                            public Boolean call(
+                                    Notification<ResponseOrError<T>> responseOrErrorNotification) {
                                 return responseOrErrorNotification.isOnNext();
                             }
                         })
                         .map(new Func1<Notification<ResponseOrError<T>>, ResponseOrError<T>>() {
                             @Override
-                            public ResponseOrError<T> call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                            public ResponseOrError<T> call(
+                                    Notification<ResponseOrError<T>> responseOrErrorNotification) {
                                 return responseOrErrorNotification.getValue();
                             }
                         })
                         .scan(0, new Func2<Integer, ResponseOrError<T>, Integer>() {
                             @Override
-                            public Integer call(Integer integer, ResponseOrError<T> tResponseOrError) {
+                            public Integer call(Integer integer,
+                                                ResponseOrError<T> tResponseOrError) {
                                 if (tResponseOrError.isData()) {
                                     return 0;
                                 } else {
@@ -177,9 +198,8 @@ public class MoreOperators {
                             }
                         });
             }
-        });
+        };
     }
-
 
 
     @Nonnull
@@ -187,25 +207,30 @@ public class MoreOperators {
             @Nonnull final Observable<ResponseOrError<T>> from,
             @Nonnull final NetworkObservableProvider networkObservableProvider,
             @Nonnull final Scheduler scheduler) {
-        return OnSubscribeRedoWithNext.repeat(from, new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
+        return OnSubscribeRedoWithNext.repeat(from,
+                new Func1<Observable<? extends Notification<ResponseOrError<T>>>, Observable<?>>() {
             @Override
-            public Observable<?> call(Observable<? extends Notification<ResponseOrError<T>>> observable) {
+            public Observable<?> call(
+                    Observable<? extends Notification<ResponseOrError<T>>> observable) {
                 return observable
                         .filter(new Func1<Notification<ResponseOrError<T>>, Boolean>() {
                             @Override
-                            public Boolean call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                            public Boolean call(
+                                    Notification<ResponseOrError<T>> responseOrErrorNotification) {
                                 return responseOrErrorNotification.isOnNext();
                             }
                         })
                         .map(new Func1<Notification<ResponseOrError<T>>, ResponseOrError<T>>() {
                             @Override
-                            public ResponseOrError<T> call(Notification<ResponseOrError<T>> responseOrErrorNotification) {
+                            public ResponseOrError<T> call(
+                                    Notification<ResponseOrError<T>> responseOrErrorNotification) {
                                 return responseOrErrorNotification.getValue();
                             }
                         })
                         .scan(0, new Func2<Integer, ResponseOrError<T>, Integer>() {
                             @Override
-                            public Integer call(Integer integer, ResponseOrError<T> tResponseOrError) {
+                            public Integer call(Integer integer,
+                                                ResponseOrError<T> tResponseOrError) {
                                 if (tResponseOrError.isData()) {
                                     return 0;
                                 } else {
@@ -223,19 +248,26 @@ public class MoreOperators {
                                 if (integer == 0) {
                                     return Observable.never();
                                 }
-                                final Observable<NetworkObservableProvider.NetworkStatus> networkBecomeActive = networkObservableProvider
+                                final Observable<NetworkObservableProvider.NetworkStatus>
+                                        networkBecomeActive = networkObservableProvider
                                         .networkObservable()
                                         .skip(1)
-                                        .filter(new Func1<NetworkObservableProvider.NetworkStatus, Boolean>() {
-                                            @Override
-                                            public Boolean call(NetworkObservableProvider.NetworkStatus networkStatus) {
-                                                return networkStatus.isNetwork();
-                                            }
-                                        });
-                                final Observable<Long> timeout = Observable.timer(integer, TimeUnit.SECONDS, scheduler);
+                                        .filter(filterIsNetwork());
+                                final Observable<Long> timeout = Observable.timer(
+                                        integer, TimeUnit.SECONDS, scheduler);
                                 return Observable.amb(networkBecomeActive, timeout);
                             }
                         });
+            }
+
+            @Nonnull
+            private Func1<NetworkObservableProvider.NetworkStatus, Boolean> filterIsNetwork() {
+                return new Func1<NetworkObservableProvider.NetworkStatus, Boolean>() {
+                    @Override
+                    public Boolean call(NetworkObservableProvider.NetworkStatus networkStatus) {
+                        return networkStatus.isNetwork();
+                    }
+                };
             }
         });
     }
@@ -262,14 +294,17 @@ public class MoreOperators {
                     }
 
                     @Override
-                    public void onNext(T obj) {}
+                    public void onNext(T obj) {
+
+                    }
                 };
             }
         };
     }
 
     @Nonnull
-    public static <T> Observable.Transformer<Object, T> filterAndMap(@Nonnull final Class<T> clazz) {
+    public static <T> Observable.Transformer<Object, T> filterAndMap(
+            @Nonnull final Class<T> clazz) {
         return new Observable.Transformer<Object, T>() {
             @Override
             public Observable<T> call(Observable<Object> observable) {
@@ -337,10 +372,13 @@ public class MoreOperators {
     public static <T> Observable.Transformer<List<Observable<T>>, ImmutableList<T>> combineAll() {
         return new Observable.Transformer<List<Observable<T>>, ImmutableList<T>>() {
             @Override
-            public Observable<ImmutableList<T>> call(Observable<List<Observable<T>>> listObservable) {
-                return listObservable.switchMap(new Func1<List<Observable<T>>, Observable<? extends ImmutableList<T>>>() {
+            public Observable<ImmutableList<T>> call(
+                    Observable<List<Observable<T>>> listObservable) {
+                return listObservable.switchMap(new Func1<List<Observable<T>>,
+                        Observable<? extends ImmutableList<T>>>() {
                     @Override
-                    public Observable<? extends ImmutableList<T>> call(List<Observable<T>> observables) {
+                    public Observable<? extends ImmutableList<T>> call(
+                            List<Observable<T>> observables) {
                         return combineAll(observables);
                     }
                 });
@@ -349,7 +387,8 @@ public class MoreOperators {
     }
 
     @Nonnull
-    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
+    public static <T> Observable<ImmutableList<T>> combineAll(
+            @Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
             return Observable.just(ImmutableList.<T>of());
         }
@@ -364,7 +403,8 @@ public class MoreOperators {
                     combineAll(observables.subList(left, size)),
                     new Func2<ImmutableList<T>, ImmutableList<T>, ImmutableList<T>>() {
                         @Override
-                        public ImmutableList<T> call(final ImmutableList<T> ts, final ImmutableList<T> ts2) {
+                        public ImmutableList<T> call(final ImmutableList<T> ts,
+                                                     final ImmutableList<T> ts2) {
                             return ImmutableList.<T>builder().addAll(ts).addAll(ts2).build();
                         }
                     });
@@ -414,10 +454,7 @@ public class MoreOperators {
 
                             @Override
                             public void onNext(final T endValue) {
-                                if (subscription != null) {
-                                    subscription.unsubscribe();
-                                    subscription = null;
-                                }
+                                unsubscribeIfSubscribed();
                                 if (prevValue == null) {
                                     prevValue = endValue;
                                     child.onNext(endValue);
@@ -428,17 +465,23 @@ public class MoreOperators {
 
                                         @Override
                                         public void call() {
-                                            float percent = (scheduler.now() - startTime) / (float)periodInMillis;
-                                            prevValue = evaluator.evaluate(Math.min(percent, 1.0f), startValue, endValue);
+                                            float percent = (scheduler.now() - startTime)
+                                                    / (float) periodInMillis;
+                                            prevValue = evaluator.evaluate(Math.min(percent, 1.0f),
+                                                    startValue, endValue);
                                             child.onNext(prevValue);
                                             if (percent >= 1.0f) {
-                                                if (subscription != null) {
-                                                    subscription.unsubscribe();
-                                                    subscription = null;
-                                                }
+                                                unsubscribeIfSubscribed();
                                             }
                                         }
                                     }, FRAME_PERIOD, FRAME_PERIOD, TimeUnit.MILLISECONDS);
+                                }
+                            }
+
+                            private void unsubscribeIfSubscribed() {
+                                if (subscription != null) {
+                                    subscription.unsubscribe();
+                                    subscription = null;
                                 }
                             }
                         });

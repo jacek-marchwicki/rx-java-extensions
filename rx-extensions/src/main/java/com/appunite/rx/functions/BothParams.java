@@ -27,8 +27,8 @@ public class BothParams<T1, T2> {
         if (this == o) return true;
         if (!(o instanceof BothParams)) return false;
         BothParams<?, ?> that = (BothParams<?, ?>) o;
-        return Objects.equal(param1, that.param1) &&
-                Objects.equal(param2, that.param2);
+        return Objects.equal(param1, that.param1)
+                && Objects.equal(param2, that.param2);
     }
 
     @Override

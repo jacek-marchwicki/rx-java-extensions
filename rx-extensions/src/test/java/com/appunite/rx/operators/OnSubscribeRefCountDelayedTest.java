@@ -31,7 +31,6 @@ import rx.Subscription;
 import rx.schedulers.TestScheduler;
 import rx.subjects.PublishSubject;
 
-import static org.junit.Assert.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;

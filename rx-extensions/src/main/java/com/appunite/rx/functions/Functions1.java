@@ -22,6 +22,9 @@ import rx.functions.Func1;
 
 public class Functions1 {
 
+    private Functions1() {
+    }
+
     @Nonnull
     public static Func1<? super Boolean, Boolean> isTrue() {
         return new Func1<Boolean, Boolean>() {

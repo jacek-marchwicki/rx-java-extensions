@@ -36,7 +36,7 @@ import rx.subscriptions.Subscriptions;
 /**
  * Returns an observable sequence that stays connected to the source as long as
  * there is at least one subscription to the observable sequence + delay.
- * 
+ *
  * @param <T>
  *            the value type
  */
@@ -66,7 +66,10 @@ public final class OnSubscribeRefCountDelayed<T> implements OnSubscribe<T> {
      * @param scheduler
      *            the {@link Scheduler} to use for delaying
      */
-    private OnSubscribeRefCountDelayed(ConnectableObservable<? extends T> source, long delay, TimeUnit unit, Scheduler scheduler) {
+    private OnSubscribeRefCountDelayed(ConnectableObservable<? extends T> source,
+                                       long delay,
+                                       TimeUnit unit,
+                                       Scheduler scheduler) {
         this.source = source;
         this.delay = delay;
         this.unit = unit;
@@ -74,8 +77,8 @@ public final class OnSubscribeRefCountDelayed<T> implements OnSubscribe<T> {
     }
 
     /**
-     * Returns an {@code Observable} that stays connected to this {@code ConnectableObservable} as long as there
-     * is at least one subscription to this {@code ConnectableObservable} + delay.
+     * Returns an {@code Observable} that stays connected to this {@code ConnectableObservable} as
+     * long as there is at least one subscription to this {@code ConnectableObservable} + delay.
      *
      * @param source
      *            observable to apply ref count to
@@ -88,12 +91,15 @@ public final class OnSubscribeRefCountDelayed<T> implements OnSubscribe<T> {
      *
      * @return a {@link Observable}
      */
-    public static <T> Observable<T> create(ConnectableObservable<? extends T> source, long delay, TimeUnit unit, Scheduler scheduler) {
+    public static <T> Observable<T> create(ConnectableObservable<? extends T> source,
+                                           long delay,
+                                           TimeUnit unit,
+                                           Scheduler scheduler) {
         return Observable.create(new OnSubscribeRefCountDelayed<>(source, delay, unit, scheduler));
     }
     /**
-     * Returns an {@code Observable} that stays connected to this {@code ConnectableObservable} as long as there
-     * is at least one subscription to this {@code ConnectableObservable} + delay.
+     * Returns an {@code Observable} that stays connected to this {@code ConnectableObservable} as
+     * long as there is at least one subscription to this {@code ConnectableObservable} + delay.
      *
      * @param source
      *            observable to apply ref count to
@@ -104,10 +110,14 @@ public final class OnSubscribeRefCountDelayed<T> implements OnSubscribe<T> {
      *
      * @return a {@link Observable}
      */
-    public static <T> Observable<T> create(ConnectableObservable<? extends T> source, long delay, TimeUnit unit) {
-        return Observable.create(new OnSubscribeRefCountDelayed<>(source, delay, unit, Schedulers.computation()));
+    public static <T> Observable<T> create(ConnectableObservable<? extends T> source,
+                                           long delay,
+                                           TimeUnit unit) {
+        return Observable.create(new OnSubscribeRefCountDelayed<>(source, delay, unit,
+                Schedulers.computation()));
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("UL_UNRELEASED_LOCK")
     @Override
     public void call(final Subscriber<? super T> subscriber) {
 

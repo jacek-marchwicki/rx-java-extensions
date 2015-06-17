@@ -56,7 +56,10 @@ import javax.annotation.Nullable;
  * @since 2.0 (imported from Google Collections Library)
  */
 public final class Preconditions {
-  private Preconditions() {}
+
+  private Preconditions() {
+
+  }
 
   /**
    * Ensures the truth of an expression involving one or more parameters to the
@@ -440,4 +443,5 @@ public final class Preconditions {
 
     return builder.toString();
   }
+
 }
