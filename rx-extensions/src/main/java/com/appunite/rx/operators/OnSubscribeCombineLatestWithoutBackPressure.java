@@ -185,7 +185,7 @@ public class OnSubscribeCombineLatestWithoutBackPressure<T, R> implements Observ
             items[i] = NO_OBJECT_RETURNED;
         }
 
-        final Boolean[] completed = new Boolean[items.length];
+        final boolean[] completed = new boolean[items.length];
         for (int i = 0; i < completed.length; i++) {
             completed[i] = false;
         }
@@ -206,7 +206,7 @@ public class OnSubscribeCombineLatestWithoutBackPressure<T, R> implements Observ
         @Nonnull
         private final Object[] items;
         @Nonnull
-        private final Boolean[] completed;
+        private final boolean[] completed;
         @Nonnull
         private final FuncN<? extends R> combinator;
 
@@ -215,7 +215,7 @@ public class OnSubscribeCombineLatestWithoutBackPressure<T, R> implements Observ
         public MyObserver(@Nonnull Subscriber<? super R> subscriber,
                           @Nonnull Object lock,
                           @Nonnull Object[] items,
-                          @Nonnull Boolean[] completed,
+                          @Nonnull boolean[] completed,
                           int current,
                           @Nonnull FuncN<? extends R> combinator) {
             this.subscriber = subscriber;

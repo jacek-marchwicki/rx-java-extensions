@@ -277,4 +277,29 @@ public class OnSubscribeCombineLatestWithoutBackPressureTest {
                 .containsExactly(e);
 
     }
+
+    @Test
+    public void testWhenObservableIsNotCompleted_dataIsAlsoPropagated() throws Exception {
+        final TestObserver<List<String>> observer = new TestObserver<>();
+        final Observable<String> observableWithAButNeverCompleted = Observable.just("a")
+                .mergeWith(Observable.<String>never());
+
+        OnSubscribeCombineLatestWithoutBackPressure
+                .combineLatest(observableWithAButNeverCompleted,
+                        Observable.just("b"),
+                        new Func2<String, String, List<String>>() {
+                            @Override
+                            public List<String> call(String s, String s2) {
+                                return ImmutableList.of(s, s2);
+                            }
+                        })
+                .subscribe(observer);
+
+        assert_().that(observer.getOnNextEvents())
+                .containsExactly(ImmutableList.of("a", "b"));
+        assert_().that(observer.getOnCompletedEvents())
+                .isEmpty();
+        assert_().that(observer.getOnErrorEvents())
+                .isEmpty();
+    }
 }
