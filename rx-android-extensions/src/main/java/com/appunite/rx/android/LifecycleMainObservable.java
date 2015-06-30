@@ -19,6 +19,8 @@ package com.appunite.rx.android;
 import android.app.Activity;
 import android.support.v4.app.Fragment;
 
+import com.appunite.rx.operators.NiceErrorOperator;
+
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
@@ -92,11 +94,13 @@ public class LifecycleMainObservable {
 
     @Nonnull
     public <T> Observable.Transformer<T, T> bindLifecycle() {
+        final StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(Observable<T> source) {
                 checkNotNull(source);
-                return lifecycleProvider.bindLifecycle(source);
+                return lifecycleProvider.bindLifecycle(source)
+                        .lift(NiceErrorOperator.<T>niceErrorOperator(null, stackTraceElements));
             }
         };
     }
