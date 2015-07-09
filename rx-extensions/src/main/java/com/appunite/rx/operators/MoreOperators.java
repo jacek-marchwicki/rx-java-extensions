@@ -359,7 +359,7 @@ public class MoreOperators {
             // android we will not get any throw so rxjava fail sailent
             final int size = observables.size();
             final int left = size / 2;
-            return Observable.combineLatest(
+            return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
                     combineAll(observables.subList(0, left)),
                     combineAll(observables.subList(left, size)),
                     new Func2<ImmutableList<T>, ImmutableList<T>, ImmutableList<T>>() {
@@ -369,7 +369,7 @@ public class MoreOperators {
                         }
                     });
         }
-        return Observable.combineLatest(observables, new FuncN<ImmutableList<T>>() {
+        return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(observables, new FuncN<ImmutableList<T>>() {
             @Override
             public ImmutableList<T> call(final Object... args) {
                 final ImmutableList.Builder<T> builder = ImmutableList.builder();
