@@ -45,6 +45,8 @@ import rx.android.internal.Assertions;
 import rx.functions.Action0;
 import rx.functions.Func1;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class MoreViewObservables {
 
     @Nonnull
@@ -760,6 +762,119 @@ public class MoreViewObservables {
         @Nonnull
         public MenuItem menuItem() {
             return menuItem;
+        }
+    }
+
+    @Nonnull
+    public static Observable<OnLongClickEvent> longClicks(final View view) {
+        return Observable.create(new OnSubscribeViewLongClick(view));
+    }
+
+    private static class OnSubscribeViewLongClick implements Observable.OnSubscribe<OnLongClickEvent> {
+
+        private final View view;
+
+        public OnSubscribeViewLongClick(final View view) {
+            this.view = view;
+        }
+
+        @Override
+        public void call(final Subscriber<? super OnLongClickEvent> observer) {
+            Assertions.assertUiThread();
+            final CompositeOnLongClickListener composite = CachedListeners.getFromViewOrCreate(view);
+
+            final View.OnLongClickListener listener = new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    observer.onNext(new OnLongClickEvent(view));
+                    return true;
+                }
+            };
+
+            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+                @Override
+                public void call() {
+                    composite.removeOnClickListener(listener);
+                }
+            });
+
+            composite.addOnClickListener(listener);
+            observer.add(subscription);
+        }
+
+        private static class CompositeOnLongClickListener implements View.OnLongClickListener {
+            private final List<View.OnLongClickListener> listeners = new ArrayList<>();
+
+            public boolean addOnClickListener(final View.OnLongClickListener listener) {
+                return listeners.add(listener);
+            }
+
+            public boolean removeOnClickListener(final View.OnLongClickListener listener) {
+                return listeners.remove(listener);
+            }
+
+            @Override
+            public boolean onLongClick(View view) {
+                for (final View.OnLongClickListener listener : listeners) {
+                    listener.onLongClick(view);
+                }
+                return true;
+            }
+        }
+
+        private static class CachedListeners {
+            private static final Map<View, CompositeOnLongClickListener> sCachedListeners = new WeakHashMap<>();
+
+            public static CompositeOnLongClickListener getFromViewOrCreate(final View view) {
+                final CompositeOnLongClickListener cached = sCachedListeners.get(view);
+
+                if (cached != null) {
+                    return cached;
+                }
+
+                final CompositeOnLongClickListener listener = new CompositeOnLongClickListener();
+
+                sCachedListeners.put(view, listener);
+                view.setOnLongClickListener(listener);
+
+                return listener;
+            }
+        }
+    }
+
+    public static class OnLongClickEvent {
+        private final View view;
+
+        public OnLongClickEvent(View view) {
+            checkNotNull(view != null, "View is null!");
+            this.view = view;
+        }
+
+        public View view() {
+            return view;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final OnLongClickEvent that = (OnLongClickEvent) o;
+
+            return view.equals(that.view);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return view.hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "OnLongClickEvent{" +
+                    "view=" + view +
+                    '}';
         }
     }
 }
