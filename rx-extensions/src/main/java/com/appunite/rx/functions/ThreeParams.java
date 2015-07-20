@@ -13,6 +13,11 @@ public class ThreeParams<T1, T2, T3> extends BothParams<T1, T2> {
         this.param3 = param3;
     }
 
+    @Nonnull
+    public static <T1, T2, T3> ThreeParams<T1, T2, T3> of(T1 first, T2 second, T3 third) {
+        return new ThreeParams<>(first, second, third);
+    }
+
     public T3 param3() {
         return param3;
     }
