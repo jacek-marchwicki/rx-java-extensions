@@ -14,6 +14,11 @@ public class BothParams<T1, T2> {
         this.param2 = param2;
     }
 
+    @Nonnull
+    public static <T1, T2> BothParams<T1, T2> of(T1 first, T2 second) {
+        return new BothParams<>(first, second);
+    }
+
     public T1 param1() {
         return param1;
     }
