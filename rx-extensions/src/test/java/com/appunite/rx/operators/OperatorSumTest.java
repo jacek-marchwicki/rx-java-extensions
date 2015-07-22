@@ -26,7 +26,7 @@ import rx.subjects.PublishSubject;
 
 import static org.mockito.Mockito.verify;
 
-public class OperatorSumTes {
+public class OperatorSumTest {
 
     private PublishSubject<Long> subject;
     @Mock

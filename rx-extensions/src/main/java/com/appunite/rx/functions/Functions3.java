@@ -18,10 +18,12 @@ package com.appunite.rx.functions;
 
 import javax.annotation.Nonnull;
 
-import rx.functions.Func2;
 import rx.functions.Func3;
 
 public class Functions3 {
+
+    private Functions3() {
+    }
 
     @Nonnull
     public static <T1, T2, T3> Func3<T1, T2, T3, ThreeParams<T1, T2, T3>> threeParams() {

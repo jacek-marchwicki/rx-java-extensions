@@ -1,13 +1,13 @@
 /*
  * Copyright 2014 Netflix, Inc.
  * Copyright 2015 Jacek Marchwicki <jacek.marchwicki@gmail.com>
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,7 +38,8 @@ import rx.subscriptions.SerialSubscription;
 
 public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
-    public static <T> Observable<T> repeatOn(Observable<T> source, final Func1<Notification<T>, Observable<?>> on) {
+    public static <T> Observable<T> repeatOn(Observable<T> source,
+                                             final Func1<Notification<T>, Observable<?>> on) {
         final Func1<Observable<? extends Notification<T>>, Observable<?>> func1
                 = new Func1<Observable<? extends Notification<T>>, Observable<?>>() {
             @Override
@@ -49,16 +50,25 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
         return create(new OnSubscribeRedoWithNext<>(source, func1, Schedulers.trampoline()));
     }
 
-    public static <T> Observable<T> repeat(Observable<T> source, Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> notificationHandler) {
-        return create(new OnSubscribeRedoWithNext<>(source, notificationHandler, Schedulers.trampoline()));
+    public static <T> Observable<T> repeat(
+            Observable<T> source,
+            Func1<? super Observable<? extends Notification<T>>,
+                    ? extends Observable<?>> notificationHandler) {
+        return create(new OnSubscribeRedoWithNext<>(
+                source,
+                notificationHandler,
+                Schedulers.trampoline()));
     }
 
 
     private Observable<T> source;
-    private final Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> controlHandlerFunction;
+    private final Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>>
+            controlHandlerFunction;
     private final Scheduler scheduler;
 
-    private OnSubscribeRedoWithNext(Observable<T> source, Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> f,
+    private OnSubscribeRedoWithNext(Observable<T> source,
+                                    Func1<? super Observable<? extends Notification<T>>,
+                                            ? extends Observable<?>> f,
                                     Scheduler scheduler) {
         this.source = source;
         this.controlHandlerFunction = f;
@@ -70,7 +80,7 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
         final AtomicBoolean isLocked = new AtomicBoolean(true);
         final AtomicBoolean resumeBoundary = new AtomicBoolean(true);
         // incremented when requests are made, decremented when requests are fulfilled
-        final AtomicLong consumerCapacity = new AtomicLong(0l);
+        final AtomicLong consumerCapacity = new AtomicLong(0L);
         final AtomicReference<Producer> currentProducer = new AtomicReference<>();
 
         final Scheduler.Worker worker = scheduler.createWorker();
@@ -119,20 +129,22 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
                         }
                     }
                 };
-                // new subscription each time so if it unsubscribes itself it does not prevent retries
-                // by unsubscribing the child subscription
+                // new subscription each time so if it unsubscribes itself it does not prevent
+                // retries by unsubscribing the child subscription
                 sourceSubscriptions.set(terminalDelegatingSubscriber);
                 source.unsafeSubscribe(terminalDelegatingSubscriber);
             }
         };
 
-        // the observable received by the control handler function will receive notifications of onCompleted in the case of 'repeat' 
-        // type operators or notifications of onError for 'retry' this is done by lifting in a custom operator to selectively divert 
-        // the retry/repeat relevant values to the control handler
+        // the observable received by the control handler function will receive notifications of
+        // onCompleted in the case of 'repeat' type operators or notifications of onError for
+        // 'retry' this is done by lifting in a custom operator to selectively divert the
+        // retry/repeat relevant values to the control handler
         final Observable<?> restarts = controlHandlerFunction.call(
                 terminals.lift(new Operator<Notification<T>, Notification<T>>() {
                     @Override
-                    public Subscriber<? super Notification<T>> call(final Subscriber<? super Notification<T>> filteredTerminals) {
+                    public Subscriber<? super Notification<T>> call(
+                            final Subscriber<? super Notification<T>> filteredTerminals) {
                         return new Subscriber<Notification<T>>(filteredTerminals) {
                             @Override
                             public void onCompleted() {
@@ -206,6 +218,6 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
                 }
             }
         });
-        
+
     }
 }

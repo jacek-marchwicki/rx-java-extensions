@@ -31,8 +31,8 @@ public class Size {
         if (this == o) return true;
         if (!(o instanceof Size)) return false;
         final Size size = (Size) o;
-        return Objects.equal(width, size.width) &&
-                Objects.equal(height, size.height);
+        return Objects.equal(width, size.width)
+                && Objects.equal(height, size.height);
     }
 
     @Override

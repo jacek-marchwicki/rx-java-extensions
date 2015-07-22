@@ -27,13 +27,16 @@ import rx.subjects.Subject;
 
 public class ObservableExtensions {
 
+    private ObservableExtensions() {
+    }
+
     @Nonnull
     public static <T> ConnectableObservable<T> behavior(@Nonnull Observable<T> observable) {
         return new OperatorMulticast<>(observable, new Func0<Subject<? super T, ? extends T>>() {
 
             @Override
             public Subject<? super T, ? extends T> call() {
-                return BehaviorSubject.<T> create();
+                return BehaviorSubject.<T>create();
             }
         });
     }

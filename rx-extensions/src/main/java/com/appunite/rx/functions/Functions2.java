@@ -22,6 +22,9 @@ import rx.functions.Func2;
 
 public class Functions2 {
 
+    private Functions2() {
+    }
+
     @Nonnull
     public static <T> Func2<T, Object, T> firstParam() {
         return new Func2<T, Object, T>() {

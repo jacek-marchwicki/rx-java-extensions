@@ -5,6 +5,9 @@ buildscript {
 }
 
 apply plugin: 'java'
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+apply plugin: 'findbugs'
 
 repositories {
     mavenCentral()
@@ -12,6 +15,7 @@ repositories {
 
 dependencies {
     compile "javax.annotation:javax.annotation-api:1.2"
+    compile 'findbugs:annotations:1.0.0'
     compile "com.google.code.findbugs:jsr305:2.0.1"
     compile "io.reactivex:rxjava:1.0.8"
     compile 'com.google.guava:guava:18.0'
@@ -21,6 +25,13 @@ dependencies {
     testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'com.google.truth:truth:0.25'
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
 }
 
 test {

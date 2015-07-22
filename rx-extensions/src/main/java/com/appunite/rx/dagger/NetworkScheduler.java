@@ -28,7 +28,8 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.PARAMETER;
 
 @Qualifier
-@Target({PARAMETER, FIELD, CONSTRUCTOR, METHOD})
+@Target({PARAMETER, FIELD, CONSTRUCTOR, METHOD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface NetworkScheduler {
+
 }

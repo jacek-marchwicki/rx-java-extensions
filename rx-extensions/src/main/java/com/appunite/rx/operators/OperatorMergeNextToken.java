@@ -35,19 +35,25 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
         this.merge = merge;
     }
 
-    public static <T, K> OperatorMergeNextToken<T, K> create(final T initialValue, final Func2<T, K, Observable<T>> merge) {
+    public static <T, K> OperatorMergeNextToken<T, K> create(
+            final T initialValue,
+            final Func2<T, K, Observable<T>> merge) {
         return new OperatorMergeNextToken<>(initialValue, merge);
     }
 
-    public static <T, K> OperatorMergeNextToken<T, K> create(final Func2<T, K, Observable<T>> merge) {
+    public static <T, K> OperatorMergeNextToken<T, K> create(
+            final Func2<T, K, Observable<T>> merge) {
         return new OperatorMergeNextToken<>(null, merge);
     }
 
-    public static <T> OperatorMergeNextToken<T, Object> create(final Func1<T, Observable<T>> merge) {
+    public static <T> OperatorMergeNextToken<T, Object> create(
+            final Func1<T, Observable<T>> merge) {
         return new OperatorMergeNextToken<>(null, new IgnoreSourceParameter<>(merge));
     }
 
-    public static <T> OperatorMergeNextToken<T, Object> create(T initialValue, final Func1<T, Observable<T>> merge) {
+    public static <T> OperatorMergeNextToken<T, Object> create(
+            T initialValue,
+            final Func1<T, Observable<T>> merge) {
         return new OperatorMergeNextToken<>(initialValue, new IgnoreSourceParameter<>(merge));
     }
 
