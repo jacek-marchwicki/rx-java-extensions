@@ -15,6 +15,8 @@ import com.google.common.base.Strings;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -31,7 +33,7 @@ public class MainPresenter {
     @Nonnull
     private final Observable<ResponseOrError<String>> titleObservable;
     @Nonnull
-    private final Observable<ResponseOrError<ImmutableList<AdapterItem>>> itemsObservable;
+    private final Observable<ResponseOrError<List<AdapterItem>>> itemsObservable;
     @Nonnull
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
     @Nonnull
@@ -49,10 +51,10 @@ public class MainPresenter {
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
         itemsObservable = postsObservable()
-                .compose(ResponseOrError.map(new Func1<PostsResponse, ImmutableList<AdapterItem>>() {
+                .compose(ResponseOrError.map(new Func1<PostsResponse, List<AdapterItem>>() {
                     @Override
-                    public ImmutableList<AdapterItem> call(PostsResponse postsResponse) {
-                        final ImmutableList<Post> posts = postsResponse.items();
+                    public List<AdapterItem> call(PostsResponse postsResponse) {
+                        final List<Post> posts = postsResponse.items();
                         return FluentIterable.from(posts).transform(new Function<Post, AdapterItem>() {
                             @Nonnull
                             @Override
@@ -62,7 +64,7 @@ public class MainPresenter {
                         }).toList();
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<ImmutableList<AdapterItem>>>behaviorRefCount());
+                .compose(ObservableExtensions.<ResponseOrError<List<AdapterItem>>>behaviorRefCount());
     }
 
     @Nonnull
@@ -85,11 +87,11 @@ public class MainPresenter {
                                     }
                                 })
                                 .toList()
-                                .compose(MoreOperators.<ResponseOrError<Post>>combineAll())
-                                .compose(ResponseOrError.<Post>fromListObservable())
-                                .compose(ResponseOrError.map(new Func1<ImmutableList<Post>, PostsResponse>() {
+                                .compose(MoreOperators.<ResponseOrError<Post>>newCombineAll())
+                                .compose(ResponseOrError.<Post>newFromListObservable())
+                                .compose(ResponseOrError.map(new Func1<List<Post>, PostsResponse>() {
                                     @Override
-                                    public PostsResponse call(ImmutableList<Post> posts) {
+                                    public PostsResponse call(List<Post> posts) {
                                         return new PostsResponse(o.title(), posts, o.nextToken());
                                     }
                                 }));
@@ -108,8 +110,8 @@ public class MainPresenter {
     }
 
     @Nonnull
-    public Observable<ImmutableList<AdapterItem>> itemsObservable() {
-        return itemsObservable.compose(ResponseOrError.<ImmutableList<AdapterItem>>onlySuccess());
+    public Observable<List<AdapterItem>> itemsObservable() {
+        return itemsObservable.compose(ResponseOrError.<List<AdapterItem>>onlySuccess());
     }
 
     @Nonnull

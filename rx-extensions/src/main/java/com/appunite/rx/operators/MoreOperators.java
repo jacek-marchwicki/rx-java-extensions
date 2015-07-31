@@ -333,15 +333,50 @@ public class MoreOperators {
         };
     }
 
+    /**
+     * Use {@link #newCombineAll()}
+     */
+    @Deprecated
     @Nonnull
     public static <T> Observable.Transformer<List<Observable<T>>, ImmutableList<T>> combineAll() {
         return new Observable.Transformer<List<Observable<T>>, ImmutableList<T>>() {
             @Override
             public Observable<ImmutableList<T>> call(Observable<List<Observable<T>>> listObservable) {
-                return listObservable.switchMap(new Func1<List<Observable<T>>, Observable<? extends ImmutableList<T>>>() {
+                return listObservable
+                        .compose(MoreOperators.<T>newCombineAll())
+                        .map(new Func1<List<T>, ImmutableList<T>>() {
+                            @Override
+                            public ImmutableList<T> call(List<T> ts) {
+                                return ImmutableList.copyOf(ts);
+                            }
+                        });
+            }
+        };
+    }
+
+    /**
+     * Use {@link #newCombineAll(List)}
+     */
+    @Deprecated
+    @Nonnull
+    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
+        return newCombineAll(observables).map(new Func1<List<T>, ImmutableList<T>>() {
+            @Override
+            public ImmutableList<T> call(List<T> ts) {
+                return ImmutableList.copyOf(ts);
+            }
+        });
+    }
+
+    @Nonnull
+    public static <T> Observable.Transformer<List<Observable<T>>, List<T>> newCombineAll() {
+        return new Observable.Transformer<List<Observable<T>>, List<T>>() {
+            @Override
+            public Observable<List<T>> call(Observable<List<Observable<T>>> listObservable) {
+                return listObservable.switchMap(new Func1<List<Observable<T>>, Observable<List<T>>>() {
                     @Override
-                    public Observable<? extends ImmutableList<T>> call(List<Observable<T>> observables) {
-                        return combineAll(observables);
+                    public Observable<List<T>> call(List<Observable<T>> observables) {
+                        return newCombineAll(observables);
                     }
                 });
             }
@@ -349,13 +384,13 @@ public class MoreOperators {
     }
 
     @Nonnull
-    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
+    public static <T> Observable<List<T>> newCombineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
-            return Observable.just(ImmutableList.<T>of());
+            return Observable.just((List<T>)ImmutableList.<T>of());
         }
-        return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(observables, new FuncN<ImmutableList<T>>() {
+        return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(observables, new FuncN<List<T>>() {
             @Override
-            public ImmutableList<T> call(final Object... args) {
+            public List<T> call(final Object... args) {
                 final ImmutableList.Builder<T> builder = ImmutableList.builder();
                 for (Object arg : args) {
                     //noinspection unchecked

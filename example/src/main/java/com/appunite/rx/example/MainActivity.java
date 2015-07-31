@@ -14,7 +14,8 @@ import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.MainPresenter;
-import com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 import javax.annotation.Nonnull;
 
@@ -55,7 +56,7 @@ public class MainActivity extends BaseActivity {
                 .subscribe(MoreViewActions.setTitle(toolbar));
 
         presenter.itemsObservable()
-                .compose(lifecycleMainObservable.<ImmutableList<MainPresenter.AdapterItem>>bindLifecycle())
+                .compose(lifecycleMainObservable.<List<MainPresenter.AdapterItem>>bindLifecycle())
                 .subscribe(mainAdapter);
 
         presenter.progressObservable()

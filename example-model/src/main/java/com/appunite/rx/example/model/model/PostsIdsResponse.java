@@ -1,6 +1,6 @@
 package com.appunite.rx.example.model.model;
 
-import com.google.common.collect.ImmutableList;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -10,12 +10,12 @@ public class PostsIdsResponse {
     private final String title;
 
     @Nonnull
-    private final ImmutableList<PostId> posts;
+    private final List<PostId> posts;
     @Nullable
     private final String nextToken;
 
     public PostsIdsResponse(@Nonnull String title,
-                            @Nonnull ImmutableList<PostId> posts,
+                            @Nonnull List<PostId> posts,
                             @Nullable String nextToken) {
         this.title = title;
         this.posts = posts;
@@ -28,7 +28,7 @@ public class PostsIdsResponse {
     }
 
     @Nonnull
-    public ImmutableList<PostId> items() {
+    public List<PostId> items() {
         return posts;
     }
 

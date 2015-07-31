@@ -2,7 +2,6 @@ package com.appunite.rx.example.model.presenter;
 
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.dagger.NetworkScheduler;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.PostWithBody;

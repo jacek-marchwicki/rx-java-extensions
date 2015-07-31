@@ -22,9 +22,7 @@ import com.google.common.base.Function;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 
-import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -438,21 +436,48 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>> fromListObservable() {
-        return new Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
+    public static <T> Observable.Transformer<List<ResponseOrError<T>>, ResponseOrError<List<T>>> newFromListObservable() {
+        return new Observable.Transformer<List<ResponseOrError<T>>, ResponseOrError<List<T>>>() {
             @Override
-            public Observable<ResponseOrError<ImmutableList<T>>> call(final Observable<ImmutableList<ResponseOrError<T>>> observable) {
+            public Observable<ResponseOrError<List<T>>> call(final Observable<List<ResponseOrError<T>>> observable) {
                 return fromListObservable(observable);
             }
         };
     }
 
+    /**
+     * Use {@link #newFromListObservable()}
+     */
+    @Deprecated
     @Nonnull
-    private static <T> Observable<ResponseOrError<ImmutableList<T>>> fromListObservable(
-            @Nonnull final Observable<ImmutableList<ResponseOrError<T>>> observable) {
-        return observable.map(new Func1<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
+    public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>> fromListObservable() {
+        return new Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
             @Override
-            public ResponseOrError<ImmutableList<T>> call(final ImmutableList<ResponseOrError<T>> responses) {
+            public Observable<ResponseOrError<ImmutableList<T>>> call(final Observable<ImmutableList<ResponseOrError<T>>> observable) {
+                return observable
+                        .map(new Func1<ImmutableList<ResponseOrError<T>>, List<ResponseOrError<T>>>() {
+                            @Override
+                            public List<ResponseOrError<T>> call(ImmutableList<ResponseOrError<T>> responseOrErrors) {
+                                return responseOrErrors;
+                            }
+                        })
+                        .compose(ResponseOrError.<T>newFromListObservable())
+                        .compose(ResponseOrError.map(new Func1<List<T>, ImmutableList<T>>() {
+                            @Override
+                            public ImmutableList<T> call(List<T> ts) {
+                                return ImmutableList.copyOf(ts);
+                            }
+                        }));
+            }
+        };
+    }
+
+    @Nonnull
+    private static <T> Observable<ResponseOrError<List<T>>> fromListObservable(
+            @Nonnull final Observable<List<ResponseOrError<T>>> observable) {
+        return observable.map(new Func1<List<ResponseOrError<T>>, ResponseOrError<List<T>>>() {
+            @Override
+            public ResponseOrError<List<T>> call(final List<ResponseOrError<T>> responses) {
                 final ImmutableList.Builder<T> builder = ImmutableList.builder();
                 for (ResponseOrError<T> response : responses) {
                     if (response.isError()) {
@@ -460,7 +485,7 @@ public class ResponseOrError<T> {
                     }
                     builder.add(response.data());
                 }
-                return ResponseOrError.fromData(builder.build());
+                return ResponseOrError.fromData((List<T>)builder.build());
             }
         });
     }
@@ -472,7 +497,7 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static Observable<Boolean> combineProgressObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    public static Observable<Boolean> combineProgressObservable(@Nonnull List<Observable<ResponseOrError<?>>> observables) {
         return Observable.combineLatest(observables, FunctionsN.returnFalse())
                 .startWith(true);
     }
@@ -483,8 +508,8 @@ public class ResponseOrError<T> {
      * @param observable to transform
      * @param <T> type of source observable
      * @return observable
-     * @see #combineErrorsObservable(com.google.common.collect.ImmutableList)
-     * @see #combineProgressObservable(com.google.common.collect.ImmutableList)
+     * @see #combineErrorsObservable(List)
+     * @see #combineProgressObservable(List)
      */
     @Nonnull
     public static <T> Observable<ResponseOrError<?>> transform(@Nonnull Observable<ResponseOrError<T>> observable) {
@@ -504,7 +529,7 @@ public class ResponseOrError<T> {
      * @return observable
      */
     @Nonnull
-    public static Observable<Throwable> combineErrorsObservable(@Nonnull ImmutableList<Observable<ResponseOrError<?>>> observables) {
+    public static Observable<Throwable> combineErrorsObservable(@Nonnull List<Observable<ResponseOrError<?>>> observables) {
         final ImmutableList<Observable<Throwable>> ob = FluentIterable
                 .from(observables)
                 .transform(new Function<Observable<ResponseOrError<?>>, Observable<Throwable>>() {

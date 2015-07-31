@@ -11,6 +11,8 @@ import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
+
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
@@ -32,12 +34,12 @@ abstract class BaseViewHolder extends RecyclerView.ViewHolder {
 }
 
 public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
-        Action1<ImmutableList<MainPresenter.AdapterItem>>, ChangesDetector.ChangesAdapter {
+        Action1<List<MainPresenter.AdapterItem>>, ChangesDetector.ChangesAdapter {
 
     @Nonnull
     private final ChangesDetector<MainPresenter.AdapterItem, MainPresenter.AdapterItem> changesDetector;
     @Nonnull
-    private ImmutableList<MainPresenter.AdapterItem> items = ImmutableList.of();
+    private List<MainPresenter.AdapterItem> items = ImmutableList.of();
 
     @Inject
     public MainAdapter() {
@@ -68,7 +70,7 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
     }
 
     @Override
-    public void call(@Nonnull ImmutableList<MainPresenter.AdapterItem> items) {
+    public void call(@Nonnull List<MainPresenter.AdapterItem> items) {
         this.items = items;
         changesDetector.newData(this, items, false);
     }
