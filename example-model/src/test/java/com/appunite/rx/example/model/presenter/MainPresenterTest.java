@@ -27,6 +27,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
+
 import javax.annotation.Nonnull;
 
 import rx.observers.TestObserver;
@@ -139,7 +141,7 @@ public class MainPresenterTest {
 
     @Test
     public void testBeforeDownload_doNotPropagateItems() throws Exception {
-        final TestObserver<ImmutableList<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         assert_().that(items.getOnNextEvents())
@@ -148,7 +150,7 @@ public class MainPresenterTest {
 
     @Test
     public void testAfterDownloadEmptyArray_emptyItemsArrayIsPropagated() throws Exception {
-        final TestObserver<ImmutableList<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         postsSubject.onNext(sampleData());
@@ -159,7 +161,7 @@ public class MainPresenterTest {
 
     @Test
     public void testAfterDownload_itemsArePropagated() throws Exception {
-        final TestObserver<ImmutableList<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
@@ -177,7 +179,7 @@ public class MainPresenterTest {
         mainPresenter.openDetailsObservable().subscribe(openDetails);
 
         // Download item
-        final TestObserver<ImmutableList<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
         mainPresenter.itemsObservable().subscribe(items);
         postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
         final MainPresenter.AdapterItem itemToClick = items.getOnNextEvents().get(0).get(0);
