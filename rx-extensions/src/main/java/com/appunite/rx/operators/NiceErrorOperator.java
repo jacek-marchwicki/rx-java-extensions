@@ -115,7 +115,11 @@ public class NiceErrorOperator {
 
                     @Override
                     public void onNext(T o) {
-                        c.onNext(o);
+                        try {
+                            c.onNext(o);
+                        } catch (Throwable e) {
+                            throw new NiceRxError(message, stackTraceElements, e);
+                        }
                     }
                 };
             }
@@ -165,7 +169,7 @@ public class NiceErrorOperator {
     /**
      * Nicer rx error with attached additional info
      */
-    public static class NiceRxError extends Exception {
+    public static class NiceRxError extends RuntimeException {
 
         @Nullable
         private final String userMessage;
