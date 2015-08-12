@@ -31,8 +31,10 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import rx.observers.TestObserver;
+import rx.observers.TestSubscriber;
+import rx.schedulers.TestScheduler;
 import rx.subjects.ReplaySubject;
+import rx.subjects.TestSubject;
 
 import static com.google.common.truth.Truth.assert_;
 import static org.mockito.Mockito.when;
@@ -45,7 +47,8 @@ public class MainPresenterTest {
 
 
     private MainPresenter mainPresenter;
-    private ReplaySubject<ResponseOrError<PostsResponse>> postsSubject = ReplaySubject.create();
+    private final TestScheduler scheduler = new TestScheduler();
+    private TestSubject<ResponseOrError<PostsResponse>> postsSubject = TestSubject.create(scheduler);
 
     @Before
     public void setUp() throws Exception {
@@ -63,22 +66,25 @@ public class MainPresenterTest {
 
     @Test
     public void testBeforeDownload_progressBarIsShown() throws Exception {
-        final TestObserver<Boolean> progress = new TestObserver<>();
+        final TestSubscriber<Boolean> progress = new TestSubscriber<>();
         mainPresenter.progressObservable().subscribe(progress);
 
         assert_().that(progress.getOnNextEvents())
                 .isEqualTo(ImmutableList.of(true));
+        progress.assertNoErrors();
     }
 
     @Test
     public void testAfterDownload_progressBarIsHidden() throws Exception {
-        final TestObserver<Boolean> progress = new TestObserver<>();
+        final TestSubscriber<Boolean> progress = new TestSubscriber<>();
         mainPresenter.progressObservable().subscribe(progress);
 
         postsSubject.onNext(sampleData());
+        scheduler.triggerActions();
 
         assert_().that(progress.getOnNextEvents())
                 .isEqualTo(ImmutableList.of(true, false));
+        progress.assertNoErrors();
     }
 
     @Nonnull
@@ -88,100 +94,114 @@ public class MainPresenterTest {
 
     @Test
     public void testBeforeDownload_errorIsNull() throws Exception {
-        final TestObserver<Throwable> error = new TestObserver<>();
+        final TestSubscriber<Throwable> error = new TestSubscriber<>();
         mainPresenter.errorObservable().subscribe(error);
 
         assert_().that(error.getOnNextEvents())
                 .contains(null);
+        error.assertNoErrors();
     }
 
     @Test
     public void testAfterSuccessDownload_errorIsStillNull() throws Exception {
-        final TestObserver<Throwable> error = new TestObserver<>();
+        final TestSubscriber<Throwable> error = new TestSubscriber<>();
         mainPresenter.errorObservable().subscribe(error);
 
         postsSubject.onNext(sampleData());
+        scheduler.triggerActions();
 
         assert_().that(error.getOnNextEvents())
                 .contains(null);
+        error.assertNoErrors();
     }
 
     @Test
     public void testAfterFailedDownload_errorIsSet() throws Exception {
         final Exception e = new Exception();
-        final TestObserver<Throwable> error = new TestObserver<>();
+        final TestSubscriber<Throwable> error = new TestSubscriber<>();
         mainPresenter.errorObservable().subscribe(error);
 
         postsSubject.onNext(ResponseOrError.<PostsResponse>fromError(e));
+        scheduler.triggerActions();
 
         assert_().that(error.getOnNextEvents())
                 .containsExactly(null, e)
                 .inOrder();
+        error.assertNoErrors();
     }
 
     @Test
     public void testAfterSuccessDownload_titleIsSet() throws Exception {
-        final TestObserver<String> title = new TestObserver<>();
+        final TestSubscriber<String> title = new TestSubscriber<>();
         mainPresenter.titleObservable().subscribe(title);
 
         postsSubject.onNext(sampleData());
+        scheduler.triggerActions();
 
         assert_().that(title.getOnNextEvents())
                 .contains("some_title");
+        title.assertNoErrors();
     }
 
     @Test
     public void testBeforeDownload_titleIsNotSet() throws Exception {
-        final TestObserver<String> title = new TestObserver<>();
+        final TestSubscriber<String> title = new TestSubscriber<>();
         mainPresenter.titleObservable().subscribe(title);
 
         assert_().that(title.getOnNextEvents())
                 .isEmpty();
+        title.assertNoErrors();
     }
 
     @Test
     public void testBeforeDownload_doNotPropagateItems() throws Exception {
-        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         assert_().that(items.getOnNextEvents())
                 .isEmpty();
+        items.assertNoErrors();
     }
 
     @Test
     public void testAfterDownloadEmptyArray_emptyItemsArrayIsPropagated() throws Exception {
-        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         postsSubject.onNext(sampleData());
+        scheduler.triggerActions();
 
         assert_().that(items.getOnNextEvents())
                 .contains(ImmutableList.of());
+        items.assertNoErrors();
     }
 
     @Test
     public void testAfterDownload_itemsArePropagated() throws Exception {
-        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
+        scheduler.triggerActions();
 
         assert_().that(items.getOnNextEvents()).hasSize(1);
         assert_().that(items.getOnNextEvents().get(0)).hasSize(1);
         assert_().that(items.getOnNextEvents().get(0).get(0).text()).isEqualTo("krowa");
         assert_().that(items.getOnNextEvents().get(0).get(0).id()).isEqualTo("123");
+        items.assertNoErrors();
     }
 
     @Test
     public void testAfterClickOnFirstItem_openDetails() throws Exception {
         // Subscribe to open details
-        final TestObserver<MainPresenter.AdapterItem> openDetails = new TestObserver<>();
+        final TestSubscriber<MainPresenter.AdapterItem> openDetails = new TestSubscriber<>();
         mainPresenter.openDetailsObservable().subscribe(openDetails);
 
         // Download item
-        final TestObserver<List<MainPresenter.AdapterItem>> items = new TestObserver<>();
+        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
         postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
+        scheduler.triggerActions();
         final MainPresenter.AdapterItem itemToClick = items.getOnNextEvents().get(0).get(0);
 
         // user click
@@ -190,6 +210,7 @@ public class MainPresenterTest {
         // verify if details opened
         assert_().that(openDetails.getOnNextEvents())
                 .contains(itemToClick);
+        openDetails.assertNoErrors();
     }
 
 }
