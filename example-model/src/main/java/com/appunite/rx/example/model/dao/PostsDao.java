@@ -4,12 +4,14 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.helpers.CacheProvider;
 import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
+import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -20,10 +22,12 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
+import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
 import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
 @Singleton
@@ -33,10 +37,15 @@ public class PostsDao {
     @Nonnull
     private final Observable<ResponseOrError<PostsIdsResponse>> postsIds;
     @Nonnull
+    private final PublishSubject<Object> sendStatus= PublishSubject.create();
+    @Nonnull
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
-
+    @Nonnull
+    private final PublishSubject<String> bodySubject= PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<String> nameSubject= PublishSubject.create();
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -78,15 +87,52 @@ public class PostsDao {
                     }
                 });
 
-        posts = loadMoreSubject.startWith((Object) null)
-                .lift(mergePostsNextToken)
-                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
-                .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
-                .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
-                .subscribeOn(networkScheduler)
+
+        Observable.combineLatest(
+                nameSubject,
+                bodySubject,
+                new Func2<String, String, AddPost>() {
+                    @Override
+                    public AddPost call(String name, String body) {
+                        return new AddPost(name, body);
+                    }
+                })
+
+                .lift(OperatorSampleWithLastWithObservable.<AddPost>create(sendStatus))
+                .flatMap(new Func1<AddPost, Observable<Response>>() {
+                    @Override
+                    public Observable<Response> call(AddPost post) {
+                        return guestbookService.createPost(post).subscribeOn(networkScheduler);
+                    }
+                })
                 .observeOn(uiScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(uiScheduler));
+                .subscribe(new Observer<Response>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onNext(Response response) {
+
+                    }
+                });
+
+
+                        posts = loadMoreSubject.startWith((Object) null)
+                                .lift(mergePostsNextToken)
+                                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
+                                .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
+                                .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
+                                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
+                                .subscribeOn(networkScheduler)
+                                .observeOn(uiScheduler)
+                                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(uiScheduler));
 
         final OperatorMergeNextToken<PostsIdsResponse, Object> mergePostsIdsNextToken = OperatorMergeNextToken
                 .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
@@ -149,6 +195,18 @@ public class PostsDao {
     @Nonnull
     public Observer<Object> refreshObserver() {
         return refreshSubject;
+    }
+
+    public Observer<String> addBodyObserver() {
+        return bodySubject;
+    }
+
+    public Observer<String> addNameObserver() {
+        return nameSubject;
+    }
+
+    public Observer<Object> sendObserver() {
+        return sendStatus;
     }
 
     public class PostDao {

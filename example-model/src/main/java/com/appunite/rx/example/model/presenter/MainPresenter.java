@@ -135,6 +135,8 @@ public class MainPresenter {
         return postsDao.loadMoreObserver();
     }
 
+
+
     public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {
 
         @Nonnull

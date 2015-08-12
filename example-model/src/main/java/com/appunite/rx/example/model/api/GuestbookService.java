@@ -1,14 +1,17 @@
 package com.appunite.rx.example.model.api;
 
+import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
-import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import retrofit.client.Response;
+import retrofit.http.Body;
 import retrofit.http.GET;
+import retrofit.http.POST;
 import retrofit.http.Path;
 import retrofit.http.Query;
 import rx.Observable;
@@ -26,4 +29,8 @@ public interface GuestbookService {
     @GET("/v1/posts/{postId}?prettyPrint=false")
     @Nonnull
     Observable<PostWithBody> getPost(@Path("postId") @Nonnull String id);
+
+    @POST("/v1/posts")
+    Observable<Response> createPost(@Body AddPost addPost);
+
 }
