@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import com.appunite.detector.ChangesDetector;
 import com.appunite.detector.SimpleDetector;
+import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
 
@@ -90,7 +91,8 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         public void bind(@Nonnull MainPresenter.AdapterItem item) {
             text.setText(item.text());
             subscription = new CompositeSubscription(
-                    ViewObservable.clicks(text).subscribe(item.clickObserver())
+                    ViewObservable.clicks(text).subscribe(item.clickObserver()),
+                    MoreViewObservables.longClicks(text).subscribe(item.longClickObserver())
             );
         }
 

@@ -38,6 +38,7 @@ public class MainPresenter {
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
     @Nonnull
     private final PostsDao postsDao;
+    private final Subject<AdapterItem,AdapterItem> deleteSubject= PublishSubject.create();
 
     public MainPresenter(@Nonnull PostsDao postsDao) {
         this.postsDao = postsDao;
@@ -193,6 +194,15 @@ public class MainPresenter {
                 @Override
                 public void call(Object o) {
                     openDetailsSubject.onNext(AdapterItem.this);
+                }
+            });
+        }
+
+        public Observer<Object> longClickObserver() {
+            return Observers.create(new Action1<Object>() {
+                @Override
+                public void call(Object o) {
+                    deleteSubject.onNext(AdapterItem.this);
                 }
             });
         }

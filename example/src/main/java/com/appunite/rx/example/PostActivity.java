@@ -1,18 +1,14 @@
 package com.appunite.rx.example;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
-import com.appunite.rx.android.MoreActivityActions;
-import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.PostPresenter;
 
@@ -20,7 +16,8 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.Observable;
+import retrofit.client.Response;
+import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.OnClickEvent;
 import rx.android.view.ViewObservable;
@@ -34,6 +31,7 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
 public class PostActivity extends BaseActivity {
 
     private static final String EXTRA_ID = "EXTRA_ID";
+    private boolean doubleBackToExitPressedOnce;
 
     public static Intent getIntent(@Nonnull Context context, @Nonnull String id) {
         return new Intent(context, PostActivity.class)
@@ -94,6 +92,44 @@ public class PostActivity extends BaseActivity {
                 })
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
                 .subscribe(postPresenter.nameObservable());
+
+        postPresenter.postSuccesObservable()
+                .subscribe(new Observer<Response>() {
+                    @Override
+                    public void onCompleted() {
+
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                    Toast.makeText(getApplicationContext(),"Error, try again later", Toast.LENGTH_SHORT).show();
+                    }
+
+                    @Override
+                    public void onNext(Response response) {
+                        finish();
+                    }
+                });
+
+    }
+    
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Are you sure want to cancel post?", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce=false;
+            }
+        }, 3000);
     }
 
 }

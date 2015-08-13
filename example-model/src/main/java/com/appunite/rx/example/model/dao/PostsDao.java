@@ -26,6 +26,7 @@ import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.Subscription;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.subjects.PublishSubject;
@@ -42,6 +43,8 @@ public class PostsDao {
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
+    @Nonnull
+    private final PublishSubject<ResponseOrError<Response>> postSuccesObserver = PublishSubject.create();
     @Nonnull
     private final PublishSubject<String> bodySubject= PublishSubject.create();
     @Nonnull
@@ -87,7 +90,6 @@ public class PostsDao {
                     }
                 });
 
-
         Observable.combineLatest(
                 nameSubject,
                 bodySubject,
@@ -97,7 +99,6 @@ public class PostsDao {
                         return new AddPost(name, body);
                     }
                 })
-
                 .lift(OperatorSampleWithLastWithObservable.<AddPost>create(sendStatus))
                 .flatMap(new Func1<AddPost, Observable<Response>>() {
                     @Override
@@ -105,23 +106,10 @@ public class PostsDao {
                         return guestbookService.createPost(post).subscribeOn(networkScheduler);
                     }
                 })
+                .compose(ResponseOrError.<Response>toResponseOrErrorObservable())
+                .compose(MoreOperators.<Response>repeatOnError(networkScheduler))
                 .observeOn(uiScheduler)
-                .subscribe(new Observer<Response>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(Response response) {
-
-                    }
-                });
+                .subscribe(postSuccesObserver);
 
 
                         posts = loadMoreSubject.startWith((Object) null)
@@ -203,6 +191,11 @@ public class PostsDao {
 
     public Observer<String> addNameObserver() {
         return nameSubject;
+    }
+
+    @Nonnull
+    public Observable<ResponseOrError<Response>> getPostSuccesObserver() {
+        return postSuccesObserver;
     }
 
     public Observer<Object> sendObserver() {

@@ -1,11 +1,13 @@
 package com.appunite.rx.example;
 
 import android.app.Activity;
+import android.app.ActivityOptions;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
+import android.support.v4.util.Pair;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -87,7 +89,8 @@ public class MainActivity extends BaseActivity {
                 .subscribe(presenter.loadMoreObserver());
 
         ViewObservable.clicks(fab)
-                .subscribe(startPostActivityAction(this));
+                .subscribe(startPostActivityAction(this, fab));
+
     }
 
     @Nonnull
@@ -105,13 +108,14 @@ public class MainActivity extends BaseActivity {
         };
     }
     @Nonnull
-    private static Action1<Object> startPostActivityAction(final Activity activity) {
+    private static Action1<Object> startPostActivityAction(final Activity activity, final FloatingActionButton fab) {
         return new Action1<Object>() {
             @Override
             public void call(Object o) {
-                final Bundle bundle = new Bundle();
+                final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
+                        .toBundle();
                 ActivityCompat.startActivity(activity,
-                        PostActivity.getIntent(activity,"Something"),
+                        PostActivity.getIntent(activity, "id"),
                         bundle);
             }
         };

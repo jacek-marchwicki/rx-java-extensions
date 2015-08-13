@@ -23,12 +23,18 @@
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/cancel"
+                android:src="@drawable/cancel"
+                android:layout_marginStart="5dp"
+                android:layout_marginTop="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|start" />
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/accept"
+                android:src="@drawable/accept"
+                android:layout_marginEnd="5dp"
+                android:layout_marginTop="5dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="top|end" />
@@ -45,13 +51,13 @@
                     android:id="@+id/nameText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:hint="Type something" />
+                    android:hint="Type name" />
 
                 <EditText
                     android:id="@+id/bodyText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:hint="Something else" />
+                    android:hint="Type body" />
 
 
             </LinearLayout>
