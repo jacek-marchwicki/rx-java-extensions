@@ -31,6 +31,7 @@ public interface GuestbookService {
     Observable<PostWithBody> getPost(@Path("postId") @Nonnull String id);
 
     @POST("/v1/posts")
-    Observable<Response> createPost(@Body AddPost addPost);
+    @Nonnull
+    Observable<Response> createPost(@Body @Nonnull AddPost addPost);
 
 }

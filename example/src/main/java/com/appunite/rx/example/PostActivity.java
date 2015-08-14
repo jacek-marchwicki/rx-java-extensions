@@ -5,10 +5,18 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.PostPresenter;
 
@@ -20,6 +28,7 @@ import retrofit.client.Response;
 import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.android.view.OnClickEvent;
+import rx.android.view.ViewActions;
 import rx.android.view.ViewObservable;
 import rx.android.widget.OnTextChangeEvent;
 import rx.android.widget.WidgetObservable;
@@ -31,21 +40,23 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
 public class PostActivity extends BaseActivity {
 
     private static final String EXTRA_ID = "EXTRA_ID";
-    private boolean doubleBackToExitPressedOnce;
 
     public static Intent getIntent(@Nonnull Context context, @Nonnull String id) {
         return new Intent(context, PostActivity.class)
                 .putExtra(EXTRA_ID, checkNotNull(id));
     }
 
-    @InjectView(R.id.accept)
-    FloatingActionButton accept;
-    @InjectView(R.id.cancel)
-    FloatingActionButton cancel;
+    @InjectView(R.id.post_toolbar)
+    Toolbar toolbar;
+    @InjectView(R.id.accept_button)
+    ImageView acceptButton;
     @InjectView(R.id.bodyText)
     EditText bodyText;
     @InjectView(R.id.nameText)
     EditText nameText;
+    @InjectView(R.id.main_activity_error)
+    TextView error;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,22 +64,23 @@ public class PostActivity extends BaseActivity {
 
         ButterKnife.inject(this);
 
+        toolbar.setNavigationIcon(R.drawable.ic_cancel_white_24dp);
+
         final PostPresenter postPresenter = new PostPresenter(AndroidSchedulers.mainThread(),
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
 
 
-        ViewObservable.clicks(cancel)
-                .subscribe(new Action1<OnClickEvent>() {
+        MoreViewObservables.navigationClick(toolbar)
+                .subscribe(new Action1<View>() {
                     @Override
-                    public void call(OnClickEvent onClickEvent) {
+                    public void call(View view) {
                         finish();
                     }
                 });
 
-        ViewObservable.clicks(accept).map(new Func1<OnClickEvent, Object>() {
+        ViewObservable.clicks(acceptButton).map(new Func1<OnClickEvent, Object>() {
             @Override
             public Object call(OnClickEvent onClickEvent) {
-                Log.v("call", "click");
                 return new Object();
             }
         }).subscribe(postPresenter.sendObservable());
@@ -94,42 +106,28 @@ public class PostActivity extends BaseActivity {
                 .subscribe(postPresenter.nameObservable());
 
         postPresenter.postSuccesObservable()
-                .subscribe(new Observer<Response>() {
+                .compose(lifecycleMainObservable.<Response>bindLifecycle())
+                .subscribe(new Action1<Response>() {
                     @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-                    Toast.makeText(getApplicationContext(),"Error, try again later", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onNext(Response response) {
+                    public void call(Response response) {
                         finish();
                     }
                 });
 
-    }
-    
-    @Override
-    public void onBackPressed() {
-        if (doubleBackToExitPressedOnce) {
-            super.onBackPressed();
-            return;
-        }
+        postPresenter.postErrorObservable()
+                .compose(lifecycleMainObservable.<Throwable>bindLifecycle())
+                .subscribe(new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        Toast.makeText(getApplicationContext(), "Check your internet connection", Toast.LENGTH_SHORT).show();
+                    }
+                });
 
-        this.doubleBackToExitPressedOnce = true;
-        Toast.makeText(this, "Are you sure want to cancel post?", Toast.LENGTH_SHORT).show();
+        postPresenter.errorObservable()
+                .map(ErrorHelper.mapThrowableToStringError())
+                .compose(lifecycleMainObservable.<String>bindLifecycle())
+                .subscribe(ViewActions.setText(error));
 
-        new Handler().postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                doubleBackToExitPressedOnce=false;
-            }
-        }, 3000);
     }
 
 }

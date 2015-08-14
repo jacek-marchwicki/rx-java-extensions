@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">RxExtensions</string>
+    <string name="post_activity_title">Create Post</string>
+    <string name="accept_button_description">Button for adding new post</string>
 </resources>
