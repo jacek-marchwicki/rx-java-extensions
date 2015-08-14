@@ -13,8 +13,8 @@
         android:minHeight="?attr/actionBarSize"
         android:navigationIcon="@drawable/ic_cancel_white_24dp"
         android:theme="@style/Toolbar"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
         android:title="@string/post_activity_title"
         android:transitionName="@string/transition_toolbar">
 
@@ -38,34 +38,29 @@
 
     </android.support.v7.widget.Toolbar>
 
-    <FrameLayout
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:layout_marginTop="?attr/actionBarSize"
+        android:gravity="center"
+        android:orientation="vertical"
         android:transitionGroup="false">
 
-            <LinearLayout
-                android:gravity="center"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:orientation="vertical">
+        <EditText
+            android:id="@+id/nameText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Type name" />
 
-                <EditText
-                    android:id="@+id/nameText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:hint="Type name" />
+        <EditText
+            android:id="@+id/bodyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:hint="Type body" />
 
-                <EditText
-                    android:id="@+id/bodyText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:hint="Type body" />
-
-
-            </LinearLayout>
-    </FrameLayout>
+    </LinearLayout>
 
 
     <FrameLayout
