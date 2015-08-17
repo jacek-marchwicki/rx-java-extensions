@@ -91,9 +91,8 @@ public class MainAdapter extends RecyclerView.Adapter<BaseViewHolder> implements
         public void bind(@Nonnull MainPresenter.AdapterItem item) {
             text.setText(item.text());
             subscription = new CompositeSubscription(
-                    ViewObservable.clicks(text).subscribe(item.clickObserver()),
-                    MoreViewObservables.longClicks(text).subscribe(item.longClickObserver())
-            );
+                    ViewObservable.clicks(text).subscribe(item.clickObserver()));
+
         }
 
         @Override

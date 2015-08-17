@@ -87,17 +87,17 @@ public class PostsDao {
                     }
                 });
 
-
-                sendPost.flatMap(new Func1<AddPost, Observable<ResponseOrError<Response>>>() {
+        sendPost
+                .flatMap(new Func1<AddPost, Observable<ResponseOrError<Response>>>() {
                     @Override
                     public Observable<ResponseOrError<Response>> call(AddPost post) {
-                        return guestbookService.createPost(post).subscribeOn(networkScheduler)
+                        return guestbookService.createPost(post)
+                                .subscribeOn(networkScheduler)
                                 .compose(ResponseOrError.<Response>toResponseOrErrorObservable());
                     }
                 })
-                        .observeOn(uiScheduler)
-                        .compose(MoreOperators.<ResponseOrError<Response>>cacheWithTimeout(uiScheduler))
-                        .subscribe(postSuccesObserver);
+                .observeOn(uiScheduler)
+                .subscribe(postSuccesObserver);
 
 
         posts = loadMoreSubject.startWith((Object) null)
@@ -178,7 +178,7 @@ public class PostsDao {
         return postSuccesObserver;
     }
 
-
+    @Nonnull
     public Observer<AddPost> postRequestObserver() {
         return sendPost;
     }

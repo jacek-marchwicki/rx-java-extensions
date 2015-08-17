@@ -6,17 +6,17 @@
     android:transitionGroup="false">
 
     <android.support.v7.widget.Toolbar
-        android:id="@+id/post_toolbar"
+        android:id="@+id/create_post_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
         android:minHeight="?attr/actionBarSize"
-        android:navigationIcon="@drawable/ic_cancel_white_24dp"
         android:theme="@style/Toolbar"
         android:paddingLeft="4dp"
         android:paddingRight="4dp"
-        android:title="@string/post_activity_title"
-        android:transitionName="@string/transition_toolbar">
+        android:title="@string/create_post_title"
+        android:transitionName="@string/transition_toolbar"
+        android:navigationIcon="@drawable/ic_cancel_white_24dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -31,7 +31,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="@string/accept_button_description"
+                android:contentDescription="@string/create_post_accept_button_content_description"
                 android:src="@drawable/ic_check_white_24dp" />
         </LinearLayout>
 
@@ -49,16 +49,16 @@
         android:transitionGroup="false">
 
         <EditText
-            android:id="@+id/nameText"
+            android:id="@+id/create_post_name_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Type name" />
+            android:hint="@string/create_post_name_hint" />
 
         <EditText
-            android:id="@+id/bodyText"
+            android:id="@+id/create_post_body_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Type body" />
+            android:hint="@string/create_post_body_hint" />
 
     </LinearLayout>
 
@@ -71,7 +71,7 @@
         android:transitionGroup="false">
 
         <ProgressBar
-            android:id="@+id/details_activity_progress"
+            android:id="@+id/create_post_activity_progress"
             style="?android:attr/progressBarStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -79,7 +79,7 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:id="@+id/main_activity_error"
+            android:id="@+id/create_post_activity_error"
             style="@style/ErrorTextView" />
 
     </FrameLayout>

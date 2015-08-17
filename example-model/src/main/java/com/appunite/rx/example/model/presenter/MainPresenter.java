@@ -39,8 +39,6 @@ public class MainPresenter {
     @Nonnull
     private final PostsDao postsDao;
     @Nonnull
-    private final Subject<AdapterItem,AdapterItem> deleteSubject= PublishSubject.create();
-    @Nonnull
     private final PublishSubject<Object> clickOnFabSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull PostsDao postsDao) {
@@ -145,7 +143,7 @@ public class MainPresenter {
     }
 
     @Nonnull
-    public Observable<Object> clickOnFabObservable() {
+    public Observable<Object> startCreatePostActivityObservable() {
         return clickOnFabSubject;
     }
 
@@ -209,13 +207,5 @@ public class MainPresenter {
             });
         }
 
-        public Observer<Object> longClickObserver() {
-            return Observers.create(new Action1<Object>() {
-                @Override
-                public void call(Object o) {
-                    deleteSubject.onNext(AdapterItem.this);
-                }
-            });
-        }
     }
 }

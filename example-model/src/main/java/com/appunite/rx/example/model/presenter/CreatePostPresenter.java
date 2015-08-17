@@ -7,7 +7,7 @@ import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.google.common.collect.ImmutableList;
-
+import com.appunite.rx.operators.OnSubscribeCombineLatestWithoutBackPressure;
 import javax.annotation.Nonnull;
 
 import retrofit.client.Response;
@@ -18,28 +18,30 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
-public class PostPresenter {
+public class CreatePostPresenter {
 
     @Nonnull
     private final Scheduler uiScheduler;
     @Nonnull
     private final PostsDao postsDao;
     @Nonnull
-    private final PublishSubject<String> nameSubject= PublishSubject.create();
+    private final PublishSubject<String> nameSubject = PublishSubject.create();
     @Nonnull
-    private final PublishSubject<String> bodySubject= PublishSubject.create();
+    private final PublishSubject<String> bodySubject = PublishSubject.create();
     @Nonnull
-    private final PublishSubject<Object> sendSubject= PublishSubject.create();
+    private final PublishSubject<Object> sendSubject = PublishSubject.create();
     @Nonnull
     private final Observable<ResponseOrError<Response>> postSucces;
+    @Nonnull
+    private final PublishSubject<Object> navigationClickSubject = PublishSubject.create();
 
-    public PostPresenter(@Nonnull @UiScheduler Scheduler uiScheduler,
-                             @Nonnull PostsDao postsDao) {
+    public CreatePostPresenter(@Nonnull @UiScheduler Scheduler uiScheduler,
+                               @Nonnull PostsDao postsDao) {
 
         this.uiScheduler = uiScheduler;
         this.postsDao = postsDao;
 
-        Observable.combineLatest(
+        OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
                 nameSubject,
                 bodySubject,
                 new Func2<String, String, AddPost>() {
@@ -67,7 +69,7 @@ public class PostPresenter {
         return sendSubject;
     }
     @Nonnull
-    public Observable<Response> postSuccesObservable(){
+    public Observable<Response> finishActivityObservable(){
         return this.postSucces.compose(ResponseOrError.<Response>onlySuccess());
     }
     @Nonnull
@@ -81,5 +83,13 @@ public class PostPresenter {
                 ResponseOrError.transform(postSucces)))
                 .distinctUntilChanged();
 
+    }
+
+    public Observer<Object> navigationClickObserver() {
+        return navigationClickSubject;
+    }
+
+    public Observable<Object> closeActivityObservable(){
+        return navigationClickSubject;
     }
 }

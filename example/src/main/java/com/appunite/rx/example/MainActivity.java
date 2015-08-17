@@ -1,24 +1,19 @@
 package com.appunite.rx.example;
 
 import android.app.Activity;
-import android.app.ActivityOptions;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
-import android.support.v4.util.Pair;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.TextView;
 
 import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
-import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 
 import java.util.List;
@@ -27,10 +22,8 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.Observer;
 import rx.android.view.ViewActions;
 import rx.android.view.ViewObservable;
-import rx.android.widget.WidgetObservable;
 import rx.functions.Action1;
 
 public class MainActivity extends BaseActivity {
@@ -43,7 +36,7 @@ public class MainActivity extends BaseActivity {
     View progress;
     @InjectView(R.id.main_activity_error)
     TextView error;
-    @InjectView(R.id.fab)
+    @InjectView(R.id.main_activity_fab)
     FloatingActionButton fab;
 
     @Override
@@ -92,7 +85,7 @@ public class MainActivity extends BaseActivity {
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(presenter.clickOnFabObserver());
 
-        presenter.clickOnFabObservable()
+        presenter.startCreatePostActivityObservable()
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(startPostActivityAction(this));
     }
@@ -119,7 +112,7 @@ public class MainActivity extends BaseActivity {
                 final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
                         .toBundle();
                 ActivityCompat.startActivity(activity,
-                        PostActivity.getIntent(activity, "id"),
+                        CreatePostActivity.getIntent(activity, "id"),
                         bundle);
             }
         };
