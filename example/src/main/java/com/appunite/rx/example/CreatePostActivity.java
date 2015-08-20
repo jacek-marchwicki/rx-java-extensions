@@ -2,6 +2,7 @@ package com.appunite.rx.example;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.VectorDrawable;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.widget.EditText;
@@ -32,7 +33,7 @@ import rx.functions.Func1;
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class CreatePostActivity extends BaseActivity {
-    
+
     @InjectView(R.id.create_post_toolbar)
     Toolbar toolbar;
     @InjectView(R.id.accept_button)
@@ -51,7 +52,7 @@ public class CreatePostActivity extends BaseActivity {
 
         ButterKnife.inject(this);
 
-        toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
+        toolbar.setNavigationIcon(R.drawable.close47);
 
         final CreatePostPresenter createPostPresenter = new CreatePostPresenter(AndroidSchedulers.mainThread(),
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
@@ -92,7 +93,6 @@ public class CreatePostActivity extends BaseActivity {
                         Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
                     }
                 });
-
     }
 
     private static class OnTextChangeAction implements Func1<OnTextChangeEvent, String> {
