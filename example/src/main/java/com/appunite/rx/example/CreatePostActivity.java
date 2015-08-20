@@ -13,6 +13,8 @@ import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.CreatePostPresenter;
 
+import java.util.Objects;
+
 import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
@@ -30,14 +32,7 @@ import rx.functions.Func1;
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class CreatePostActivity extends BaseActivity {
-
-    private static final String EXTRA_ID = "EXTRA_ID";
-
-    public static Intent getIntent(@Nonnull Context context, @Nonnull String id) {
-        return new Intent(context, CreatePostActivity.class)
-                .putExtra(EXTRA_ID, checkNotNull(id));
-    }
-
+    
     @InjectView(R.id.create_post_toolbar)
     Toolbar toolbar;
     @InjectView(R.id.accept_button)
@@ -56,7 +51,7 @@ public class CreatePostActivity extends BaseActivity {
 
         ButterKnife.inject(this);
 
-    //    toolbar.setNavigationIcon(R.drawable.ic_cancel_white_24dp);
+        toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
 
         final CreatePostPresenter createPostPresenter = new CreatePostPresenter(AndroidSchedulers.mainThread(),
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
@@ -66,22 +61,7 @@ public class CreatePostActivity extends BaseActivity {
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(createPostPresenter.navigationClickObserver());
 
-        createPostPresenter.closeActivityObservable()
-                .compose(lifecycleMainObservable.bindLifecycle())
-                .subscribe(new Action1<Object>() {
-                    @Override
-                    public void call(Object o) {
-                        finish();
-                    }
-                });
-
         ViewObservable.clicks(acceptButton)
-                .map(new Func1<OnClickEvent, Object>() {
-                    @Override
-                    public Object call(OnClickEvent onClickEvent) {
-                        return new Object();
-                    }
-                })
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(createPostPresenter.sendObservable());
 
@@ -96,10 +76,10 @@ public class CreatePostActivity extends BaseActivity {
                 .subscribe(createPostPresenter.nameObservable());
 
         createPostPresenter.finishActivityObservable()
-                .compose(lifecycleMainObservable.<Response>bindLifecycle())
-                .subscribe(new Action1<Response>() {
+                .compose(lifecycleMainObservable.bindLifecycle())
+                .subscribe(new Action1<Object>() {
                     @Override
-                    public void call(Response response) {
+                    public void call(Object response) {
                         finish();
                     }
                 });
@@ -112,11 +92,6 @@ public class CreatePostActivity extends BaseActivity {
                         Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
                     }
                 });
-
-        createPostPresenter.errorObservable()
-                .map(ErrorHelper.mapThrowableToStringError())
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(ViewActions.setText(error));
 
     }
 

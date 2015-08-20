@@ -12,28 +12,22 @@
         android:layout_gravity="top"
         android:minHeight="?attr/actionBarSize"
         android:theme="@style/Toolbar"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:gravity="end"
         android:title="@string/create_post_title"
-        android:transitionName="@string/transition_toolbar"
-        android:navigationIcon="@drawable/ic_cancel_white_24dp">
+        android:navigationIcon="@drawable/ic_close_white_24dp"
+        android:transitionName="@string/transition_toolbar">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="end"
-            android:clickable="false"
-            android:orientation="horizontal">
 
-            <ImageButton
-                android:id="@+id/accept_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:background="?android:attr/selectableItemBackground"
-                android:contentDescription="@string/create_post_accept_button_content_description"
-                android:src="@drawable/ic_check_white_24dp" />
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/accept_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:background="?android:attr/selectableItemBackground"
+            android:contentDescription="@string/create_post_accept_button_content_description"
+            android:src="@drawable/ic_check_white_24dp" />
 
 
     </android.support.v7.widget.Toolbar>

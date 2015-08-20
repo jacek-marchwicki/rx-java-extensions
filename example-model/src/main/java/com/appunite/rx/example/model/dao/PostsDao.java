@@ -11,7 +11,6 @@ import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
-import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -22,14 +21,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
-import retrofit.RetrofitError;
 import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
-import rx.Subscription;
 import rx.functions.Func1;
-import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
 @Singleton
@@ -45,7 +41,7 @@ public class PostsDao {
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
     @Nonnull
-    private final PublishSubject<ResponseOrError<Response>> postSuccesObserver = PublishSubject.create();
+    private final PublishSubject<ResponseOrError<Response>> postSuccesSubject = PublishSubject.create();
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -97,7 +93,7 @@ public class PostsDao {
                     }
                 })
                 .observeOn(uiScheduler)
-                .subscribe(postSuccesObserver);
+                .subscribe(postSuccesSubject);
 
 
         posts = loadMoreSubject.startWith((Object) null)
@@ -174,8 +170,8 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<Response>> getPostSuccesObserver() {
-        return postSuccesObserver;
+    public Observable<ResponseOrError<Response>> postSuccesObserver() {
+        return postSuccesSubject;
     }
 
     @Nonnull

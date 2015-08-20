@@ -1,6 +1,5 @@
 package com.appunite.rx.example.model.presenter;
 
-import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.PostsDao;
@@ -14,7 +13,6 @@ import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
-import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.subjects.PublishSubject;
 
@@ -31,7 +29,7 @@ public class CreatePostPresenter {
     @Nonnull
     private final PublishSubject<Object> sendSubject = PublishSubject.create();
     @Nonnull
-    private final Observable<ResponseOrError<Response>> postSucces;
+    private final Observable<Object> closeActivitySubject;
     @Nonnull
     private final PublishSubject<Object> navigationClickSubject = PublishSubject.create();
 
@@ -53,43 +51,46 @@ public class CreatePostPresenter {
                 .lift(OperatorSampleWithLastWithObservable.<AddPost>create(sendSubject))
                 .subscribe(postsDao.postRequestObserver());
 
-        postSucces = postsDao.getPostSuccesObserver();
+        closeActivitySubject = OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
+                postsDao.postSuccesObserver().compose(ResponseOrError.<Response>onlySuccess()),
+                navigationClickSubject.startWith((Object) null),
+                new Func2<Response, Object, Object>() {
+                    @Override
+                    public Object call(Response response, Object o) {
+                        return new Object();
+                    }
+                }
+        );
+
     }
 
     @Nonnull
     public Observer<String> bodyObservable() {
         return bodySubject;
     }
+
     @Nonnull
     public Observer<String> nameObservable() {
         return nameSubject;
     }
+
     @Nonnull
     public Observer<Object> sendObservable() {
         return sendSubject;
     }
+
     @Nonnull
-    public Observable<Response> finishActivityObservable(){
-        return this.postSucces.compose(ResponseOrError.<Response>onlySuccess());
-    }
-    @Nonnull
-    public Observable<Throwable> postErrorObservable(){
-        return this.postSucces.compose(ResponseOrError.<Response>onlyError());
+    public Observable<Object> finishActivityObservable() {
+        return closeActivitySubject;
     }
 
     @Nonnull
-    public Observable<Throwable> errorObservable() {
-        return ResponseOrError.combineErrorsObservable(ImmutableList.of(
-                ResponseOrError.transform(postSucces)))
-                .distinctUntilChanged();
-
+    public Observable<Throwable> postErrorObservable() {
+        return postsDao.postSuccesObserver().compose(ResponseOrError.<Response>onlyError());
     }
 
+    @Nonnull
     public Observer<Object> navigationClickObserver() {
-        return navigationClickSubject;
-    }
-
-    public Observable<Object> closeActivityObservable(){
         return navigationClickSubject;
     }
 }

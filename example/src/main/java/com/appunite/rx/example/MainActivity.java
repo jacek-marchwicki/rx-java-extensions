@@ -1,6 +1,7 @@
 package com.appunite.rx.example;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -111,9 +112,8 @@ public class MainActivity extends BaseActivity {
             public void call(Object o) {
                 final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
                         .toBundle();
-                ActivityCompat.startActivity(activity,
-                        CreatePostActivity.getIntent(activity, "id"),
-                        bundle);
+//                ActivityCompat.startActivity(new Intent(activity, )
+                activity.startActivity(new Intent(activity.getApplicationContext(), CreatePostActivity.class));
             }
         };
     }
