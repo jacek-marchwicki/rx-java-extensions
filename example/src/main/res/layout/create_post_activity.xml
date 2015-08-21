@@ -58,10 +58,14 @@
 
 
     <FrameLayout
+        android:id="@+id/create_post_loading_frame"
         android:layout_width="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
         android:layout_height="match_parent"
         android:visibility="gone"
+        android:clickable="true"
+        android:background="@color/black_87"
+        android:alpha="0.5"
         android:transitionGroup="false">
 
         <ProgressBar

@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.drawable.VectorDrawable;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -44,6 +45,8 @@ public class CreatePostActivity extends BaseActivity {
     EditText bodyText;
     @InjectView(R.id.create_post_name_text)
     EditText nameText;
+    @InjectView(R.id.create_post_loading_frame)
+    View progress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,6 +96,10 @@ public class CreatePostActivity extends BaseActivity {
                         Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        presenter.progressObservable()
+                .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
+                .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
 
         presenter.showBodyIsEmptyErrorObservable()
                 .compose(lifecycleMainObservable.bindLifecycle())

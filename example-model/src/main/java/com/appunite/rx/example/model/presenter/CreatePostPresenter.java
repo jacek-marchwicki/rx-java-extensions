@@ -37,12 +37,16 @@ public class CreatePostPresenter {
     private final PublishSubject<Object> nameErrorSubject = PublishSubject.create();
     @Nonnull
     private final PublishSubject<Object> bodyErrorSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> requestSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> showProgress = PublishSubject.create();
 
     public CreatePostPresenter(@Nonnull PostsDao postsDao) {
 
         this.postsDao = postsDao;
 
-        OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
+        final Observable<AddPost> filter = OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
                 nameSubject,
                 bodySubject,
                 new Func2<String, String, AddPost>() {
@@ -57,8 +61,10 @@ public class CreatePostPresenter {
                     public Boolean call(AddPost addPost) {
                         return !(Strings.isNullOrEmpty(addPost.name()) || Strings.isNullOrEmpty(addPost.body()));
                     }
-                })
-                .subscribe(postsDao.postRequestObserver());
+                });
+
+        filter.subscribe(postsDao.postRequestObserver());
+        filter.subscribe(showProgress);
 
         closeActivitySubject = Observable.merge(
                 postsDao.postSuccesObserver().compose(ResponseOrError.<Response>onlySuccess()),
@@ -125,4 +131,12 @@ public class CreatePostPresenter {
     public Observable<Object> showNameIsEmptyErrorObservable() {
         return nameErrorSubject;
     }
+
+    @Nonnull
+    public Observable<Boolean> progressObservable() {
+        return ResponseOrError.combineProgressObservable(ImmutableList.of(
+                ResponseOrError.transform(postsDao.postSuccesObserver())))
+                .lift(OperatorSampleWithLastWithObservable.<Boolean>create(showProgress));
+    }
+
 }
