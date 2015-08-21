@@ -105,14 +105,13 @@ public class MainActivity extends BaseActivity {
             }
         };
     }
+
     @Nonnull
     private static Action1<Object> startPostActivityAction(final Activity activity) {
         return new Action1<Object>() {
             @Override
             public void call(Object o) {
-                final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
-                        .toBundle();
-//                ActivityCompat.startActivity(new Intent(activity, )
+
                 activity.startActivity(new Intent(activity.getApplicationContext(), CreatePostActivity.class));
             }
         };

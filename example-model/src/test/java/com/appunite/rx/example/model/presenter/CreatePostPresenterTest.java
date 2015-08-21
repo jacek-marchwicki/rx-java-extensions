@@ -3,6 +3,7 @@ package com.appunite.rx.example.model.presenter;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.AddPost;
+import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.google.common.collect.ImmutableList;
 
@@ -32,7 +33,7 @@ public class CreatePostPresenterTest {
     private TestScheduler testScheduler = Schedulers.test();
     private CreatePostPresenter postPresenter;
     private TestSubject<ResponseOrError<PostsResponse>> postsSubject = TestSubject.create(testScheduler);
-    private TestSubject<ResponseOrError<Response>> postSuccessSubject = TestSubject.create(testScheduler);
+    private TestSubject<ResponseOrError<PostWithBody>> postSuccessSubject = TestSubject.create(testScheduler);
     private TestObserver<AddPost> postRequestObserver = new TestObserver<>();
 
     @Before
@@ -218,13 +219,13 @@ public class CreatePostPresenterTest {
     }
 
     private void returnCorrectResponse() {
-        postSuccessSubject.onNext(ResponseOrError.fromData(new Response("", 200, "", ImmutableList.<Header>of(), null)), 0);
+        postSuccessSubject.onNext(ResponseOrError.fromData(new PostWithBody("id", "krowa", "123")), 0);
         testScheduler.triggerActions();
     }
 
     private void returnException() {
         final IOException e = new IOException("xyz");
-        postSuccessSubject.onNext(ResponseOrError.<Response>fromError(e), 0);
+        postSuccessSubject.onNext(ResponseOrError.<PostWithBody>fromError(e), 0);
         testScheduler.triggerActions();
     }
 

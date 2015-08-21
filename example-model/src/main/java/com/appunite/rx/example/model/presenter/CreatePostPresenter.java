@@ -4,6 +4,7 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.AddPost;
+import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.google.common.base.Strings;
@@ -67,7 +68,7 @@ public class CreatePostPresenter {
         filter.subscribe(showProgress);
 
         closeActivitySubject = Observable.merge(
-                postsDao.postSuccesObserver().compose(ResponseOrError.<Response>onlySuccess()),
+                postsDao.postSuccesObserver().compose(ResponseOrError.<PostWithBody>onlySuccess()),
                 navigationClickSubject);
 
         nameSubject.startWith("")
@@ -114,7 +115,7 @@ public class CreatePostPresenter {
 
     @Nonnull
     public Observable<Throwable> postErrorObservable() {
-        return postsDao.postSuccesObserver().compose(ResponseOrError.<Response>onlyError());
+        return postsDao.postSuccesObserver().compose(ResponseOrError.<PostWithBody>onlyError());
     }
 
     @Nonnull

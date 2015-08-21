@@ -41,7 +41,7 @@ public class PostsDao {
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
     @Nonnull
-    private final PublishSubject<ResponseOrError<Response>> postSuccesSubject = PublishSubject.create();
+    private final PublishSubject<ResponseOrError<PostWithBody>> postSuccesSubject = PublishSubject.create();
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -84,12 +84,12 @@ public class PostsDao {
                 });
 
         sendPost
-                .flatMap(new Func1<AddPost, Observable<ResponseOrError<Response>>>() {
+                .flatMap(new Func1<AddPost, Observable<ResponseOrError<PostWithBody>>>() {
                     @Override
-                    public Observable<ResponseOrError<Response>> call(AddPost post) {
+                    public Observable<ResponseOrError<PostWithBody>> call(AddPost post) {
                         return guestbookService.createPost(post)
                                 .subscribeOn(networkScheduler)
-                                .compose(ResponseOrError.<Response>toResponseOrErrorObservable());
+                                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable());
                     }
                 })
                 .observeOn(uiScheduler)
@@ -170,7 +170,7 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<Response>> postSuccesObserver() {
+    public Observable<ResponseOrError<PostWithBody>> postSuccesObserver() {
         return postSuccesSubject;
     }
 
