@@ -21,6 +21,8 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Checkable;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import javax.annotation.Nonnull;
 
@@ -92,6 +94,17 @@ public class MoreViewActions {
             @Override
             public void call(final Boolean refreshing) {
                 swipeRefreshLayout.setRefreshing(refreshing);
+            }
+        };
+    }
+
+    @Nonnull
+    public static Action1<? super CharSequence> showError(@Nonnull final TextView textView) {
+        checkNotNull(textView);
+        return new Action1<CharSequence>() {
+            @Override
+            public void call(CharSequence error) {
+                textView.setError(error);
             }
         };
     }

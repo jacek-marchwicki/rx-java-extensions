@@ -10,9 +10,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.CreatePostPresenter;
+import com.appunite.rx.functions.Functions1;
 
 import java.util.Objects;
 
@@ -52,29 +54,29 @@ public class CreatePostActivity extends BaseActivity {
 
         toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
 
-        final CreatePostPresenter createPostPresenter = new CreatePostPresenter(AndroidSchedulers.mainThread(),
+        final CreatePostPresenter presenter = new CreatePostPresenter(
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
 
 
         MoreViewObservables.navigationClick(toolbar)
                 .compose(lifecycleMainObservable.bindLifecycle())
-                .subscribe(createPostPresenter.navigationClickObserver());
+                .subscribe(presenter.navigationClickObserver());
 
         ViewObservable.clicks(acceptButton)
                 .compose(lifecycleMainObservable.bindLifecycle())
-                .subscribe(createPostPresenter.sendObservable());
+                .subscribe(presenter.sendObservable());
 
         WidgetObservable.text(bodyText)
                 .map(new OnTextChangeAction())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(createPostPresenter.bodyObservable());
+                .subscribe(presenter.bodyObservable());
 
         WidgetObservable.text(nameText)
                 .map(new OnTextChangeAction())
                 .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(createPostPresenter.nameObservable());
+                .subscribe(presenter.nameObservable());
 
-        createPostPresenter.finishActivityObservable()
+        presenter.finishActivityObservable()
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .subscribe(new Action1<Object>() {
                     @Override
@@ -83,7 +85,7 @@ public class CreatePostActivity extends BaseActivity {
                     }
                 });
 
-        createPostPresenter.postErrorObservable()
+        presenter.postErrorObservable()
                 .compose(lifecycleMainObservable.<Throwable>bindLifecycle())
                 .subscribe(new Action1<Throwable>() {
                     @Override
@@ -91,6 +93,16 @@ public class CreatePostActivity extends BaseActivity {
                         Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
                     }
                 });
+
+        presenter.showBodyIsEmptyErrorObservable()
+                .compose(lifecycleMainObservable.bindLifecycle())
+                .map(Functions1.returnJust(getString(R.string.create_post_empty_body_error)))
+                .subscribe(MoreViewActions.showError(bodyText));
+
+        presenter.showNameIsEmptyErrorObservable()
+                .compose(lifecycleMainObservable.bindLifecycle())
+                .map(Functions1.returnJust(getString(R.string.create_post_empty_name_error)))
+                .subscribe(MoreViewActions.showError(nameText));
     }
 
     private static class OnTextChangeAction implements Func1<OnTextChangeEvent, String> {

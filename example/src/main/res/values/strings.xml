@@ -6,4 +6,6 @@
     <string name="create_post_error_message">Check your internet connection</string>
     <string name="create_post_name_hint">Type name</string>
     <string name="create_post_body_hint">Type body</string>
+    <string name="create_post_empty_body_error">Body should be set</string>
+    <string name="create_post_empty_name_error">Name should be set</string>
 </resources>

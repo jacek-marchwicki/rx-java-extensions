@@ -1,5 +1,8 @@
 package com.appunite.rx.example.model.model;
 
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+
 import javax.annotation.Nonnull;
 
 public class AddPost {
@@ -22,5 +25,27 @@ public class AddPost {
     @Nonnull
     public String body() {
         return body;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("name", name)
+                .add("body", body)
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AddPost)) return false;
+        final AddPost addPost = (AddPost) o;
+        return Objects.equal(name, addPost.name) &&
+                Objects.equal(body, addPost.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(name, body);
     }
 }
