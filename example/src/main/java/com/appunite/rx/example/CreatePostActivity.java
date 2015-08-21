@@ -42,8 +42,6 @@ public class CreatePostActivity extends BaseActivity {
     EditText bodyText;
     @InjectView(R.id.create_post_name_text)
     EditText nameText;
-    @InjectView(R.id.create_post_activity_error)
-    TextView error;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,7 +50,7 @@ public class CreatePostActivity extends BaseActivity {
 
         ButterKnife.inject(this);
 
-        toolbar.setNavigationIcon(R.drawable.close47);
+        toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
 
         final CreatePostPresenter createPostPresenter = new CreatePostPresenter(AndroidSchedulers.mainThread(),
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
