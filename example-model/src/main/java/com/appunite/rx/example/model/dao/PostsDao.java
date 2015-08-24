@@ -3,8 +3,8 @@ package com.appunite.rx.example.model.dao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.helpers.CacheProvider;
-import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.AddPost;
+import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
@@ -21,7 +21,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
 
-import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;

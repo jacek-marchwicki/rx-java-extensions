@@ -1,23 +1,21 @@
 package com.appunite.rx.example.model.presenter;
 
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.example.model.model.PostWithBody;
-import com.appunite.rx.functions.Functions1;
+import com.appunite.rx.operators.OnSubscribeCombineLatestWithoutBackPressure;
 import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
-import com.appunite.rx.operators.OnSubscribeCombineLatestWithoutBackPressure;
+
 import javax.annotation.Nonnull;
 
-import retrofit.client.Response;
 import rx.Observable;
 import rx.Observer;
-import rx.Scheduler;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 public class CreatePostPresenter {
@@ -39,15 +37,13 @@ public class CreatePostPresenter {
     @Nonnull
     private final PublishSubject<Object> bodyErrorSubject = PublishSubject.create();
     @Nonnull
-    private final PublishSubject<Object> requestSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> showProgress = PublishSubject.create();
+    private final BehaviorSubject<Boolean> showProgress = BehaviorSubject.create(false);
 
     public CreatePostPresenter(@Nonnull PostsDao postsDao) {
 
         this.postsDao = postsDao;
 
-        final Observable<AddPost> filter = OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
+        OnSubscribeCombineLatestWithoutBackPressure.combineLatest(
                 nameSubject,
                 bodySubject,
                 new Func2<String, String, AddPost>() {
@@ -60,12 +56,18 @@ public class CreatePostPresenter {
                 .filter(new Func1<AddPost, Boolean>() {
                     @Override
                     public Boolean call(AddPost addPost) {
-                        return !(Strings.isNullOrEmpty(addPost.name()) || Strings.isNullOrEmpty(addPost.body()));
+                        final boolean nameIsPresent = !Strings.isNullOrEmpty(addPost.name());
+                        final boolean bodyIsPresent = !Strings.isNullOrEmpty(addPost.body());
+                        return (nameIsPresent || bodyIsPresent);
                     }
-                });
-
-        filter.subscribe(postsDao.postRequestObserver());
-        filter.subscribe(showProgress);
+                })
+                .doOnNext(new Action1<AddPost>() {
+                    @Override
+                    public void call(AddPost addPost) {
+                        showProgress.onNext(true);
+                    }
+                })
+                .subscribe(postsDao.postRequestObserver());
 
         closeActivitySubject = Observable.merge(
                 postsDao.postSuccesObserver().compose(ResponseOrError.<PostWithBody>onlySuccess()),
@@ -81,16 +83,13 @@ public class CreatePostPresenter {
                 .filter(fieldNullOrEmpty())
                 .subscribe(bodyErrorSubject);
 
-
-    }
-
-    private Func1<String, Boolean> fieldNullOrEmpty() {
-        return new Func1<String, Boolean>() {
-            @Override
-            public Boolean call(String s) {
-                return Strings.isNullOrEmpty(s);
-            }
-        };
+        postsDao.postSuccesObserver()
+                .doOnNext(new Action1<ResponseOrError<PostWithBody>>() {
+                    @Override
+                    public void call(ResponseOrError<PostWithBody> postWithBodyResponseOrError) {
+                        showProgress.onNext(false);
+                    }
+                });
     }
 
     @Nonnull
@@ -135,9 +134,17 @@ public class CreatePostPresenter {
 
     @Nonnull
     public Observable<Boolean> progressObservable() {
-        return ResponseOrError.combineProgressObservable(ImmutableList.of(
-                ResponseOrError.transform(postsDao.postSuccesObserver())))
-                .lift(OperatorSampleWithLastWithObservable.<Boolean>create(showProgress));
+        return showProgress;
+    }
+
+    @Nonnull
+    private Func1<String, Boolean> fieldNullOrEmpty() {
+        return new Func1<String, Boolean>() {
+            @Override
+            public Boolean call(String s) {
+                return Strings.isNullOrEmpty(s);
+            }
+        };
     }
 
 }

@@ -14,8 +14,6 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 
-import retrofit.client.Header;
-import retrofit.client.Response;
 import rx.observers.TestObserver;
 import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
@@ -210,6 +208,43 @@ public class CreatePostPresenterTest {
         postPresenter.sendObservable().onNext(null);
 
         assert_().that(nameEmptyError.getOnNextEvents()).hasSize(1);
+    }
+
+    @Test
+    public void testAfterStart_progressBarIsHidden() throws Exception {
+        final TestSubscriber<Boolean> showProgress = new TestSubscriber<>();
+        postPresenter.progressObservable().subscribe(showProgress);
+
+        assert_().that(showProgress.getOnNextEvents()).isEqualTo(ImmutableList.of(false));
+    }
+
+    @Test
+    public void testAfterFillingDataAndClickSend_progressBarIsShowed() throws Exception {
+        final TestSubscriber<Object> showProgress = new TestSubscriber<>();
+        postPresenter.progressObservable().subscribe(showProgress);
+        fillDataAndSubmit();
+
+        assert_().that(showProgress.getOnNextEvents()).isEqualTo(ImmutableList.of(false, true));
+    }
+
+    @Test
+    public void testAfterSaveSucces_progressBarIsHidden() throws Exception {
+        final TestSubscriber<Object> hideProgressBar = new TestSubscriber<>();
+        postPresenter.progressObservable().subscribe(hideProgressBar);
+
+        returnCorrectResponse();
+
+        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false));
+    }
+
+    @Test
+    public void testAfterSaveFail_progressBarIsHidden() throws Exception {
+        final TestSubscriber<Object> hideProgressBar = new TestSubscriber<>();
+        postPresenter.progressObservable().subscribe(hideProgressBar);
+
+        returnException();
+
+        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false));
     }
 
     private void fillDataAndSubmit() {

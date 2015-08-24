@@ -1,31 +1,20 @@
 package com.appunite.rx.example;
 
-import android.content.Context;
+import android.app.Activity;
 import android.content.Intent;
-import android.graphics.drawable.VectorDrawable;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
-
 import com.appunite.rx.android.MoreViewActions;
 import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.CreatePostPresenter;
 import com.appunite.rx.functions.Functions1;
-
-import java.util.Objects;
-
-import javax.annotation.Nonnull;
-
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import retrofit.client.Response;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.android.view.OnClickEvent;
 import rx.android.view.ViewActions;
 import rx.android.view.ViewObservable;
 import rx.android.widget.OnTextChangeEvent;
@@ -33,7 +22,6 @@ import rx.android.widget.WidgetObservable;
 import rx.functions.Action1;
 import rx.functions.Func1;
 
-import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class CreatePostActivity extends BaseActivity {
 
@@ -110,6 +98,10 @@ public class CreatePostActivity extends BaseActivity {
                 .compose(lifecycleMainObservable.bindLifecycle())
                 .map(Functions1.returnJust(getString(R.string.create_post_empty_name_error)))
                 .subscribe(MoreViewActions.showError(nameText));
+    }
+
+    public static Intent newIntent(Activity context) {
+        return new Intent(context, CreatePostActivity.class);
     }
 
     private static class OnTextChangeAction implements Func1<OnTextChangeEvent, String> {

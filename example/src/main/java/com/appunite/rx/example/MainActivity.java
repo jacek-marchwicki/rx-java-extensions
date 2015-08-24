@@ -1,7 +1,6 @@
 package com.appunite.rx.example;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -112,7 +111,7 @@ public class MainActivity extends BaseActivity {
             @Override
             public void call(Object o) {
 
-                activity.startActivity(new Intent(activity.getApplicationContext(), CreatePostActivity.class));
+                activity.startActivity(CreatePostActivity.newIntent(activity));
             }
         };
     }
