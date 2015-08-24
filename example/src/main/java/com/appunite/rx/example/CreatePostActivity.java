@@ -1,6 +1,7 @@
 package com.appunite.rx.example;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -13,6 +14,9 @@ import com.appunite.rx.android.MoreViewObservables;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.CreatePostPresenter;
 import com.appunite.rx.functions.Functions1;
+
+import javax.annotation.Nonnull;
+
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.android.view.ViewActions;
@@ -100,7 +104,8 @@ public class CreatePostActivity extends BaseActivity {
                 .subscribe(MoreViewActions.showError(nameText));
     }
 
-    public static Intent newIntent(Activity context) {
+    @Nonnull
+    public static Intent newIntent(@Nonnull Context context) {
         return new Intent(context, CreatePostActivity.class);
     }
 

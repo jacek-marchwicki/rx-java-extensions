@@ -76,10 +76,6 @@
             android:transitionName="@string/transition_progress"
             android:layout_gravity="center" />
 
-        <TextView
-            android:id="@+id/create_post_activity_error"
-            style="@style/ErrorTextView" />
-
     </FrameLayout>
 
 </FrameLayout>
