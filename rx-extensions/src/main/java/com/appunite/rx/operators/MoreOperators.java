@@ -245,6 +245,10 @@ public class MoreOperators {
         return new OperatorCallOnNext<>(events);
     }
 
+    /**
+     * @deprecated use {@link Observable#ignoreElements()} instead.
+     */
+    @Deprecated
     @Nonnull
     public static <T> Observable.Operator<T, T> ignoreNext() {
         return new Observable.Operator<T, T>() {
