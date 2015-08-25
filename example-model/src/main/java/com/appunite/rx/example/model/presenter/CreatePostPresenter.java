@@ -29,7 +29,7 @@ public class CreatePostPresenter {
     @Nonnull
     private final PublishSubject<Object> sendSubject = PublishSubject.create();
     @Nonnull
-    private final Observable<Object> closeActivitySubject;
+    private final PublishSubject<Object> closeActivitySubject = PublishSubject.create();
     @Nonnull
     private final PublishSubject<Object> navigationClickSubject = PublishSubject.create();
     @Nonnull
@@ -38,6 +38,8 @@ public class CreatePostPresenter {
     private final PublishSubject<Object> bodyErrorSubject = PublishSubject.create();
     @Nonnull
     private final BehaviorSubject<Boolean> showProgress = BehaviorSubject.create(false);
+    @Nonnull
+    private final PublishSubject<Throwable> postErrorSubject = PublishSubject.create();
 
     public CreatePostPresenter(@Nonnull PostsDao postsDao) {
 
@@ -58,7 +60,7 @@ public class CreatePostPresenter {
                     public Boolean call(AddPost addPost) {
                         final boolean nameIsPresent = !Strings.isNullOrEmpty(addPost.name());
                         final boolean bodyIsPresent = !Strings.isNullOrEmpty(addPost.body());
-                        return (nameIsPresent || bodyIsPresent);
+                        return (nameIsPresent && bodyIsPresent);
                     }
                 })
                 .doOnNext(new Action1<AddPost>() {
@@ -69,9 +71,25 @@ public class CreatePostPresenter {
                 })
                 .subscribe(postsDao.postRequestObserver());
 
-        closeActivitySubject = Observable.merge(
-                postsDao.postSuccesObserver().compose(ResponseOrError.<PostWithBody>onlySuccess()),
-                navigationClickSubject);
+        Observable.merge(
+                postsDao.postSuccesObservable().compose(ResponseOrError.<PostWithBody>onlySuccess()),
+                navigationClickSubject)
+                .doOnNext(new Action1<Object>() {
+                    @Override
+                    public void call(Object o) {
+                        showProgress.onNext(false);
+                    }
+                })
+                .subscribe(closeActivitySubject);
+
+        postsDao.postSuccesObservable()
+                .compose(ResponseOrError.<PostWithBody>onlyError())
+                .doOnNext(new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        showProgress.onNext(false);
+                    }
+                }).subscribe(postErrorSubject);
 
         nameSubject.startWith("")
                 .lift(OperatorSampleWithLastWithObservable.<String>create(sendSubject))
@@ -82,14 +100,6 @@ public class CreatePostPresenter {
                 .lift(OperatorSampleWithLastWithObservable.<String>create(sendSubject))
                 .filter(fieldNullOrEmpty())
                 .subscribe(bodyErrorSubject);
-
-        postsDao.postSuccesObserver()
-                .doOnNext(new Action1<ResponseOrError<PostWithBody>>() {
-                    @Override
-                    public void call(ResponseOrError<PostWithBody> postWithBodyResponseOrError) {
-                        showProgress.onNext(false);
-                    }
-                });
     }
 
     @Nonnull
@@ -114,7 +124,7 @@ public class CreatePostPresenter {
 
     @Nonnull
     public Observable<Throwable> postErrorObservable() {
-        return postsDao.postSuccesObserver().compose(ResponseOrError.<PostWithBody>onlyError());
+        return postErrorSubject;
     }
 
     @Nonnull

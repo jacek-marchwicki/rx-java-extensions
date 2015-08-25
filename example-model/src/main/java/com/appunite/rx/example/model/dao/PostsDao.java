@@ -169,7 +169,7 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<PostWithBody>> postSuccesObserver() {
+    public Observable<ResponseOrError<PostWithBody>> postSuccesObservable() {
         return postSuccesSubject;
     }
 

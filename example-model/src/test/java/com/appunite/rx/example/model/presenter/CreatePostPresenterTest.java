@@ -39,7 +39,7 @@ public class CreatePostPresenterTest {
         MockitoAnnotations.initMocks(this);
 
         when(postsDao.postsObservable()).thenReturn(postsSubject);
-        when(postsDao.postSuccesObserver()).thenReturn(postSuccessSubject);
+        when(postsDao.postSuccesObservable()).thenReturn(postSuccessSubject);
         when(postsDao.postRequestObserver()).thenReturn(postRequestObserver);
 
         postPresenter = new CreatePostPresenter(postsDao);
@@ -231,20 +231,20 @@ public class CreatePostPresenterTest {
     public void testAfterSaveSucces_progressBarIsHidden() throws Exception {
         final TestSubscriber<Object> hideProgressBar = new TestSubscriber<>();
         postPresenter.progressObservable().subscribe(hideProgressBar);
-
+        fillDataAndSubmit();
         returnCorrectResponse();
 
-        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false));
+        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false,true,false));
     }
 
     @Test
     public void testAfterSaveFail_progressBarIsHidden() throws Exception {
         final TestSubscriber<Object> hideProgressBar = new TestSubscriber<>();
         postPresenter.progressObservable().subscribe(hideProgressBar);
-
+        fillDataAndSubmit();
         returnException();
 
-        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false));
+        assert_().that(hideProgressBar.getOnNextEvents()).isEqualTo(ImmutableList.of(false,true,false));
     }
 
     private void fillDataAndSubmit() {
