@@ -385,11 +385,11 @@ public class MoreViewObservables {
             final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
                 @Override
                 public void call() {
-                    composite.removeOnScrollListener(listener);
+                    composite.removeOnClickListener(listener);
                 }
             });
 
-            composite.addOnScrollListener(listener);
+            composite.addOnClickListener(listener);
             subscriber.add(subscription);
         }
 
@@ -398,11 +398,11 @@ public class MoreViewObservables {
         private static class CompositeListener implements View.OnClickListener {
             private final List<View.OnClickListener> listeners = new ArrayList<>();
 
-            public boolean addOnScrollListener(final View.OnClickListener listener) {
+            public boolean addOnClickListener(final View.OnClickListener listener) {
                 return listeners.add(listener);
             }
 
-            public boolean removeOnScrollListener(final View.OnClickListener listener) {
+            public boolean removeOnClickListener(final View.OnClickListener listener) {
                 return listeners.remove(listener);
             }
 
@@ -436,8 +436,7 @@ public class MoreViewObservables {
 
     @Nonnull
     public static Observable<View> navigationClick(@Nonnull Toolbar toolbar) {
-        return Observable.create(new OnNavigationClick(toolbar))
-                .distinctUntilChanged();
+        return Observable.create(new OnNavigationClick(toolbar));
     }
 
     public static class PopupMenuEvent {
