@@ -436,8 +436,7 @@ public class MoreViewObservables {
 
     @Nonnull
     public static Observable<View> navigationClick(@Nonnull Toolbar toolbar) {
-        return Observable.create(new OnNavigationClick(toolbar))
-                .distinctUntilChanged();
+        return Observable.create(new OnNavigationClick(toolbar));
     }
 
     public static class PopupMenuEvent {
