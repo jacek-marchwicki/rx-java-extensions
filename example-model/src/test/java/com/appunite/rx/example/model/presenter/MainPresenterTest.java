@@ -17,6 +17,7 @@
 package com.appunite.rx.example.model.presenter;
 
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostsResponse;
@@ -33,7 +34,6 @@ import javax.annotation.Nonnull;
 
 import rx.observers.TestSubscriber;
 import rx.schedulers.TestScheduler;
-import rx.subjects.ReplaySubject;
 import rx.subjects.TestSubject;
 
 import static com.google.common.truth.Truth.assert_;
@@ -155,7 +155,7 @@ public class MainPresenterTest {
 
     @Test
     public void testBeforeDownload_doNotPropagateItems() throws Exception {
-        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
+        final TestSubscriber<List<BaseAdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         assert_().that(items.getOnNextEvents())
@@ -165,7 +165,7 @@ public class MainPresenterTest {
 
     @Test
     public void testAfterDownloadEmptyArray_emptyItemsArrayIsPropagated() throws Exception {
-        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
+        final TestSubscriber<List<BaseAdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
         postsSubject.onNext(sampleData());
@@ -178,16 +178,21 @@ public class MainPresenterTest {
 
     @Test
     public void testAfterDownload_itemsArePropagated() throws Exception {
-        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
+        final TestSubscriber<List<BaseAdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
 
-        postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
+        postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("",
+                ImmutableList.of(new Post("123", "krowa")), null)));
         scheduler.triggerActions();
 
         assert_().that(items.getOnNextEvents()).hasSize(1);
         assert_().that(items.getOnNextEvents().get(0)).hasSize(1);
-        assert_().that(items.getOnNextEvents().get(0).get(0).text()).isEqualTo("krowa");
-        assert_().that(items.getOnNextEvents().get(0).get(0).id()).isEqualTo("123");
+        assert_().that(items.getOnNextEvents().get(0).get(0))
+                .isInstanceOf(MainPresenter.AdapterItem.class);
+        final MainPresenter.AdapterItem firstItem = (MainPresenter.AdapterItem) items
+                .getOnNextEvents().get(0).get(0);
+        assert_().that(firstItem.text()).isEqualTo("krowa");
+        assert_().that(firstItem.id()).isEqualTo("123");
         items.assertNoErrors();
     }
 
@@ -198,14 +203,16 @@ public class MainPresenterTest {
         mainPresenter.openDetailsObservable().subscribe(openDetails);
 
         // Download item
-        final TestSubscriber<List<MainPresenter.AdapterItem>> items = new TestSubscriber<>();
+        final TestSubscriber<List<BaseAdapterItem>> items = new TestSubscriber<>();
         mainPresenter.itemsObservable().subscribe(items);
-        postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("", ImmutableList.of(new Post("123", "krowa")), null)));
+        postsSubject.onNext(ResponseOrError.fromData(new PostsResponse("",
+                ImmutableList.of(new Post("123", "krowa")), null)));
         scheduler.triggerActions();
-        final MainPresenter.AdapterItem itemToClick = items.getOnNextEvents().get(0).get(0);
+        final BaseAdapterItem itemToClick = items.getOnNextEvents().get(0).get(0);
 
         // user click
-        itemToClick.clickObserver().onNext(null);
+        assert_().that(itemToClick).isInstanceOf(MainPresenter.AdapterItem.class);
+        ((MainPresenter.AdapterItem)itemToClick).clickObserver().onNext(null);
 
         // verify if details opened
         assert_().that(openDetails.getOnNextEvents())
