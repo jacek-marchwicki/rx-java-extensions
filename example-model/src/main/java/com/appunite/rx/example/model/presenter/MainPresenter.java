@@ -1,8 +1,8 @@
 package com.appunite.rx.example.model.presenter;
 
-import com.appunite.detector.SimpleDetector;
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
@@ -33,7 +33,7 @@ public class MainPresenter {
     @Nonnull
     private final Observable<ResponseOrError<String>> titleObservable;
     @Nonnull
-    private final Observable<ResponseOrError<List<AdapterItem>>> itemsObservable;
+    private final Observable<ResponseOrError<List<BaseAdapterItem>>> itemsObservable;
     @Nonnull
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
     @Nonnull
@@ -51,20 +51,20 @@ public class MainPresenter {
                 .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
         itemsObservable = postsObservable()
-                .compose(ResponseOrError.map(new Func1<PostsResponse, List<AdapterItem>>() {
+                .compose(ResponseOrError.map(new Func1<PostsResponse, List<BaseAdapterItem>>() {
                     @Override
-                    public List<AdapterItem> call(PostsResponse postsResponse) {
+                    public List<BaseAdapterItem> call(PostsResponse postsResponse) {
                         final List<Post> posts = postsResponse.items();
-                        return FluentIterable.from(posts).transform(new Function<Post, AdapterItem>() {
+                        return FluentIterable.from(posts).transform(new Function<Post, BaseAdapterItem>() {
                             @Nonnull
                             @Override
-                            public AdapterItem apply(Post input) {
+                            public BaseAdapterItem apply(Post input) {
                                 return new AdapterItem(input.id(), input.name());
                             }
                         }).toList();
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<List<AdapterItem>>>behaviorRefCount());
+                .compose(ObservableExtensions.<ResponseOrError<List<BaseAdapterItem>>>behaviorRefCount());
     }
 
     @Nonnull
@@ -110,8 +110,8 @@ public class MainPresenter {
     }
 
     @Nonnull
-    public Observable<List<AdapterItem>> itemsObservable() {
-        return itemsObservable.compose(ResponseOrError.<List<AdapterItem>>onlySuccess());
+    public Observable<List<BaseAdapterItem>> itemsObservable() {
+        return itemsObservable.compose(ResponseOrError.<List<BaseAdapterItem>>onlySuccess());
     }
 
     @Nonnull
@@ -135,7 +135,7 @@ public class MainPresenter {
         return postsDao.loadMoreObserver();
     }
 
-    public class AdapterItem implements SimpleDetector.Detectable<AdapterItem> {
+    public class AdapterItem implements BaseAdapterItem {
 
         @Nonnull
         private final String id;
@@ -176,12 +176,17 @@ public class MainPresenter {
         }
 
         @Override
-        public boolean matches(@Nonnull AdapterItem item) {
-            return Objects.equal(id, item.id);
+        public long adapterId() {
+            return id.hashCode();
         }
 
         @Override
-        public boolean same(@Nonnull AdapterItem item) {
+        public boolean matches(@Nonnull BaseAdapterItem item) {
+            return item instanceof AdapterItem && Objects.equal(id, ((AdapterItem)item).id);
+        }
+
+        @Override
+        public boolean same(@Nonnull BaseAdapterItem item) {
             return equals(item);
         }
 

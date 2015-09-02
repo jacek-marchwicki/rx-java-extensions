@@ -26,9 +26,16 @@ import javax.annotation.Nonnull;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Detector for adapter items that can find what was changed and call recycler adapter methods
+ * @param <T> type of items to detect
+ */
 public class ChangesDetector<T, H> {
 
-    public static interface ChangesAdapter {
+    /**
+     * Interface that is already implemented by RecyclerView
+     */
+    public interface ChangesAdapter {
 
         void notifyItemRangeInserted(int start, int count);
 
@@ -42,11 +49,15 @@ public class ChangesDetector<T, H> {
     @Nonnull
     public final Detector<T, H> mDetector;
 
+    /**
+     * Created {@link ChangesDetector} with {@link ChangesDetector.Detector}
+     * @param detector detector
+     */
     public ChangesDetector(@Nonnull Detector<T, H> detector) {
         mDetector = checkNotNull(detector);
     }
 
-    public static interface Detector<T, H> extends Function<T, H> {
+    public interface Detector<T, H> extends Function<T, H> {
 
         @SuppressWarnings("NullableProblems")
         @Nonnull
@@ -69,6 +80,12 @@ public class ChangesDetector<T, H> {
         return -1;
     }
 
+    /**
+     * Inform adapter about new data
+     * @param adapter adapter to be informed about changes
+     * @param values items for adapter
+     * @param force true if you need to force all data reload
+     */
     public void newData(@Nonnull ChangesAdapter adapter,
                         @Nonnull List<T> values,
                         boolean force) {

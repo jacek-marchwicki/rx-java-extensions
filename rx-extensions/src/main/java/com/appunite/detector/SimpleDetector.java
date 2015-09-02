@@ -16,13 +16,41 @@
 
 package com.appunite.detector;
 
-import javax.annotation.Nonnull;
+import java.lang.Override;import javax.annotation.Nonnull;
 
+/**
+ * Detector for adapter items that can find what was changed and call recycler adapter methods
+ * @param <T> type of items to detect
+ */
 public class SimpleDetector<T extends SimpleDetector.Detectable<T>> implements ChangesDetector.Detector<T, T> {
 
-    public static interface Detectable<T> {
-        public boolean matches(@Nonnull T item);
-        public boolean same(@Nonnull T item);
+    public interface Detectable<T> {
+
+        /**
+         * If booth items are the same but can have different content
+         *
+         * <p>Usually it means booth items has same id</p>
+         * @param item to compare
+         * @return true if booth items matches
+         */
+        boolean matches(@Nonnull T item);
+
+        /**
+         * If booth items has exactly same content
+         *
+         * <p>Usually it means booth items has same id, name and other fields</p>
+         * <p>If you implemented {@link Object#equals(Object)} you can call
+         * {@code this.equals(item)}</p>
+         * @param item to compare
+         * @return true if booth items are the same
+         */
+        boolean same(@Nonnull T item);
+    }
+
+    /**
+     * Create {@link SimpleDetector}
+     */
+    public SimpleDetector() {
     }
 
     @Nonnull
