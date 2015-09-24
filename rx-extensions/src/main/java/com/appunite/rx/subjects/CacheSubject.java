@@ -41,7 +41,12 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     @Nonnull
     public static <T> CacheSubject<T> create(@Nonnull CacheCreator<T> cacheCreator) {
-        return new CacheSubject<>(cacheCreator, new DelegateOnSubscribe<T>());
+        return create(cacheCreator, true);
+    }
+
+    @Nonnull
+    public static <T> CacheSubject<T> create(@Nonnull CacheCreator<T> cacheCreator, final boolean skipFirstNull) {
+        return new CacheSubject<>(cacheCreator, new DelegateOnSubscribe<T>(), skipFirstNull);
     }
 
     @Nonnull
@@ -67,13 +72,15 @@ public class CacheSubject<T> extends Subject<T, T> {
         };
     }
 
-    private CacheSubject(@Nonnull final CacheCreator<T> cacheCreator, DelegateOnSubscribe<T> delegateOnSubscribe) {
+    private CacheSubject(@Nonnull final CacheCreator<T> cacheCreator,
+                         @Nonnull DelegateOnSubscribe<T> delegateOnSubscribe,
+                         final boolean skipFirstNull) {
         super(delegateOnSubscribe);
         delegateOnSubscribe.setDelegate(new OnSubscribe<T>() {
             @Override
             public void call(final Subscriber<? super T> child) {
                 final T t = cacheCreator.readFromCache();
-                if (t != null) {
+                if (!skipFirstNull || t != null) {
                     child.onNext(t);
                 }
                 add(child);
