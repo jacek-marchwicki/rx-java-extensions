@@ -24,6 +24,7 @@ import org.mockito.MockitoAnnotations;
 import java.io.IOException;
 
 import rx.Observer;
+import rx.observers.TestSubscriber;
 
 import static com.google.common.truth.Truth.assert_;
 import static org.mockito.Matchers.anyString;
@@ -47,6 +48,26 @@ public class CacheSubjectTest {
         subject.subscribe(observer);
 
         verify(observer, never()).onNext(anyString());
+    }
+
+    @Test
+    public void testSubscribeToEmptyCacheAndSkipEmpty_doNotCallOnNext() throws Exception {
+        final TestSubscriber<String> subscriber = new TestSubscriber<>();
+        final CacheSubject<String> subject = CacheSubject.create(new CacheSubject.InMemoryCache<String>(null), true);
+
+        subject.subscribe(subscriber);
+
+        assert_().that(subscriber.getOnNextEvents()).isEmpty();
+    }
+
+    @Test
+    public void testSubscribeToEmptyCacheAndDoNotSkipEmpty_callOnNext() throws Exception {
+        final TestSubscriber<String> subscriber = new TestSubscriber<>();
+        final CacheSubject<String> subject = CacheSubject.create(new CacheSubject.InMemoryCache<String>(null), false);
+
+        subject.subscribe(subscriber);
+
+        assert_().that(subscriber.getOnNextEvents()).containsExactly((String) null);
     }
 
     @Test
