@@ -212,7 +212,7 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
             @Override
             public void request(final long n) {
-                long c = consumerCapacity.getAndAdd(n);
+                long c = getAndAdd(consumerCapacity, n);
                 Producer producer = currentProducer.get();
                 if (producer != null) {
                     producer.request(n);
@@ -223,5 +223,61 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
             }
         });
         
+    }
+
+    /**
+     * Atomic {@link AtomicLong#getAndAdd(long)} that limits to Long.MAX_VALUE and Long.MIN_VALUE
+     * @param atomicLong atomic long
+     * @param delta the value to add
+     * @return the previous value
+     */
+    private long getAndAdd(AtomicLong atomicLong, long delta) {
+        while (true) {
+            long current = atomicLong.get();
+            long next = addAndCheck(current, delta);
+            if (atomicLong.compareAndSet(current, next))
+                return current;
+        }
+    }
+
+    /**
+     * Add two values limiting to Long.MIN_VALUE and Long.MAX_VALUE
+     * @param a an addend
+     * @param b an addend
+     * @return the sum <code>a+b</code> or Long.MIN_VALUE or Long.MAX_VALUE if overflow
+     */
+    private static long addAndCheck(long a, long b) {
+        long ret;
+        if (a > b) {
+            // use symmetry to reduce boundry cases
+            ret = addAndCheck(b, a);
+        } else {
+            // assert a <= b
+
+            if (a < 0) {
+                if (b < 0) {
+                    // check for negative overflow
+                    if (Long.MIN_VALUE - b <= a) {
+                        ret = a + b;
+                    } else {
+                        return Long.MIN_VALUE;
+                    }
+                } else {
+                    // oppisite sign addition is always safe
+                    ret = a + b;
+                }
+            } else {
+                // assert a >= 0
+                // assert b >= 0
+
+                // check for positive overflow
+                if (a <= Long.MAX_VALUE - b) {
+                    ret = a + b;
+                } else {
+                    return Long.MAX_VALUE;
+                }
+            }
+        }
+        return ret;
     }
 }
