@@ -46,13 +46,14 @@ public class OnSubscribeRedoWithNextTest {
 
     private boolean returnError;
     private TestScheduler scheduler;
+    private Observable<Boolean> apiResponse;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         scheduler = new TestScheduler();
 
-        final Observable<Boolean> apiResponse = Observable.create(new Observable.OnSubscribe<Boolean>() {
+        apiResponse = Observable.create(new Observable.OnSubscribe<Boolean>() {
             @Override
             public void call(final Subscriber<? super Boolean> subscriber) {
                 subscriber.onNext(returnError);
@@ -90,6 +91,29 @@ public class OnSubscribeRedoWithNextTest {
         response.subscribe(responseOnErrorObserver);
 
         verify(responseOnErrorObserver).onNext(false);
+        verifyNoMoreInteractions(responseOnErrorObserver);
+    }
+
+    @Test
+    public void testOnCompleted_onCompleted() throws Exception {
+
+        returnError = false;
+
+        OnSubscribeRedoWithNext.repeatOn(apiResponse, new Func1<Notification<Boolean>, Observable<?>>() {
+            @Override
+            public Observable<?> call(final Notification<Boolean> notification) {
+                if (notification.isOnNext()) {
+                    final Boolean isError = notification.getValue();
+                    return isError ? Observable.timer(1, TimeUnit.SECONDS, scheduler) : Observable.empty();
+                } else {
+                    return Observable.empty();
+                }
+            }
+        }, true)
+                .subscribe(responseOnErrorObserver);
+
+        verify(responseOnErrorObserver).onNext(false);
+        verify(responseOnErrorObserver).onCompleted();
         verifyNoMoreInteractions(responseOnErrorObserver);
     }
 
