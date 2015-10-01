@@ -181,18 +181,20 @@ public final class OnSubscribeRefCountDelayed<T> implements OnSubscribe<T> {
         final Scheduler.Worker worker = scheduler.createWorker();
         baseSubscription.add(worker);
 
-        worker.schedule(new Action0() {
-            @Override
-            public void call() {
-                disconnectNow();
-            }
-        }, delay, unit);
+        if (subscriptionCount.decrementAndGet() == 0) {
+            worker.schedule(new Action0() {
+                @Override
+                public void call() {
+                    disconnectNow();
+                }
+            }, delay, unit);
+        }
     }
 
     private void disconnectNow() {
         lock.lock();
         try {
-            if (subscriptionCount.decrementAndGet() == 0) {
+            if (subscriptionCount.get() == 0) {
                 baseSubscription.unsubscribe();
                 // need a new baseSubscription because once
                 // unsubscribed stays that way
