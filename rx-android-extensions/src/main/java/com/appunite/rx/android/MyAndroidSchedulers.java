@@ -31,10 +31,6 @@ import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
  */
 public final class MyAndroidSchedulers {
 
-    public static final Scheduler NETWORK_SCHEDULER = Schedulers.from(new ThreadPoolExecutor(3, 10,
-            5L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>()));
-
     public static final Scheduler NETWORK_SCHEDULER2 = Schedulers.from(Executors.newCachedThreadPool(new ThreadFactory() {
         @Override
         public Thread newThread(final Runnable r) {
