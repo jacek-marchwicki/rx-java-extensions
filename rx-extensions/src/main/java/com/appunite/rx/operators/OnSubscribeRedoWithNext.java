@@ -231,10 +231,9 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
      * @return the sum <code>a+b</code> or Long.MIN_VALUE or Long.MAX_VALUE if overflow
      */
     private static long addAndCheck(long a, long b) {
-        long ret;
         if (a > b) {
             // use symmetry to reduce boundry cases
-            ret = addAndCheck(b, a);
+            return addAndCheck(b, a);
         } else {
             // assert a <= b
 
@@ -242,13 +241,13 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
                 if (b < 0) {
                     // check for negative overflow
                     if (Long.MIN_VALUE - b <= a) {
-                        ret = a + b;
+                        return a + b;
                     } else {
                         return Long.MIN_VALUE;
                     }
                 } else {
                     // oppisite sign addition is always safe
-                    ret = a + b;
+                    return a + b;
                 }
             } else {
                 // assert a >= 0
@@ -256,12 +255,11 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
                 // check for positive overflow
                 if (a <= Long.MAX_VALUE - b) {
-                    ret = a + b;
+                    return a + b;
                 } else {
                     return Long.MAX_VALUE;
                 }
             }
         }
-        return ret;
     }
 }
