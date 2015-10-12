@@ -38,7 +38,7 @@ import rx.subscriptions.SerialSubscription;
 
 public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
-    public static <T> Observable<T> repeatOn(Observable<T> source, final Func1<Notification<T>, Observable<?>> on) {
+    public static <T> Observable<T> repeatOn(Observable<T> source, final Func1<Notification<T>, Observable<?>> on, boolean stopOnComplete) {
         final Func1<Observable<? extends Notification<T>>, Observable<?>> func1
                 = new Func1<Observable<? extends Notification<T>>, Observable<?>>() {
             @Override
@@ -46,11 +46,19 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
                 return observable.flatMap(on);
             }
         };
-        return create(new OnSubscribeRedoWithNext<>(source, func1, Schedulers.trampoline()));
+        return create(new OnSubscribeRedoWithNext<>(source, func1, Schedulers.trampoline(), stopOnComplete));
+    }
+
+    public static <T> Observable<T> repeatOn(Observable<T> source, final Func1<Notification<T>, Observable<?>> on) {
+        return repeatOn(source, on, false);
+    }
+
+    public static <T> Observable<T> repeat(Observable<T> source, Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> notificationHandler, boolean stopOnComplete) {
+        return create(new OnSubscribeRedoWithNext<>(source, notificationHandler, Schedulers.trampoline(), stopOnComplete));
     }
 
     public static <T> Observable<T> repeat(Observable<T> source, Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> notificationHandler) {
-        return create(new OnSubscribeRedoWithNext<>(source, notificationHandler, Schedulers.trampoline()));
+        return repeat(source, notificationHandler, false);
     }
 
 
@@ -58,11 +66,15 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
     private final Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> controlHandlerFunction;
     private final Scheduler scheduler;
 
+    private final boolean stopOnComplete;
+
     private OnSubscribeRedoWithNext(Observable<T> source, Func1<? super Observable<? extends Notification<T>>, ? extends Observable<?>> f,
-                                    Scheduler scheduler) {
+                                    Scheduler scheduler,
+                                    boolean stopOnComplete) {
         this.source = source;
         this.controlHandlerFunction = f;
         this.scheduler = scheduler;
+        this.stopOnComplete = stopOnComplete;
     }
 
     @Override
@@ -146,8 +158,12 @@ public final class OnSubscribeRedoWithNext<T> implements OnSubscribe<T> {
 
                             @Override
                             public void onNext(Notification<T> t) {
-                                isLocked.set(false);
-                                filteredTerminals.onNext(t);
+                                if (t.isOnCompleted() && stopOnComplete) {
+                                    child.onCompleted();
+                                } else {
+                                    isLocked.set(false);
+                                    filteredTerminals.onNext(t);
+                                }
                             }
 
                             @Override
