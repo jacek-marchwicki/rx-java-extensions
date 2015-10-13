@@ -13,36 +13,15 @@
  */
 package com.appunite.rx.android;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import rx.Scheduler;
-import rx.schedulers.Schedulers;
-
-import android.os.*;
-
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
 
 /**
  * Schedulers that have Android-specific functionality
  */
 public final class MyAndroidSchedulers {
-
-    public static final Scheduler NETWORK_SCHEDULER2 = Schedulers.from(Executors.newCachedThreadPool(new ThreadFactory() {
-        @Override
-        public Thread newThread(final Runnable r) {
-            return new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    android.os.Process.setThreadPriority(THREAD_PRIORITY_BACKGROUND);
-                    r.run();
-                }
-            }, "Rx-Network scheduler");
-        }
-    }));
 
     private MyAndroidSchedulers() {
         throw new AssertionError("No instances");
@@ -65,7 +44,4 @@ public final class MyAndroidSchedulers {
         return MAIN_THREAD_SCHEDULER;
     }
 
-    public static Scheduler networkScheduler() {
-        return NETWORK_SCHEDULER2;
-    }
 }

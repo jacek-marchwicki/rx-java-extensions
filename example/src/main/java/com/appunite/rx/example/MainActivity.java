@@ -20,6 +20,8 @@ import com.appunite.rx.android.adapter.ViewHolderManager;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
+import com.jakewharton.rxbinding.view.RxView;
+import com.jakewharton.rxbinding.widget.RxTextView;
 
 import java.util.List;
 
@@ -27,8 +29,6 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.android.view.ViewActions;
-import rx.android.view.ViewObservable;
 import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
@@ -75,7 +75,7 @@ public class MainActivity extends BaseActivity {
                 text.setText(item.text());
                 unsubscribe();
                 subscription = new CompositeSubscription(
-                        ViewObservable.clicks(text)
+                        RxView.clicks(text)
                                 .subscribe(item.clickObserver())
                 );
             }
@@ -113,29 +113,29 @@ public class MainActivity extends BaseActivity {
 
 
         presenter.titleObservable()
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(MoreViewActions.setTitle(toolbar));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(MoreViewActions.title(toolbar));
 
         presenter.itemsObservable()
-                .compose(lifecycleMainObservable.<List<BaseAdapterItem>>bindLifecycle())
+                .compose(this.<List<BaseAdapterItem>>bindToLifecycle())
                 .subscribe(mainAdapter);
 
         presenter.progressObservable()
-                .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
-                .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
+                .compose(this.<Boolean>bindToLifecycle())
+                .subscribe(RxView.visibility(progress, View.INVISIBLE));
 
         presenter.errorObservable()
                 .map(ErrorHelper.mapThrowableToStringError())
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(ViewActions.setText(error));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxTextView.text(error));
 
         presenter.openDetailsObservable()
-                .compose(lifecycleMainObservable.<MainPresenter.AdapterItem>bindLifecycle())
+                .compose(this.<MainPresenter.AdapterItem>bindToLifecycle())
                 .subscribe(startDetailsActivityAction(this));
 
         MoreViewObservables.scroll(recyclerView)
                 .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
-                .compose(lifecycleMainObservable.bindLifecycle())
+                .compose(this.bindToLifecycle())
                 .subscribe(presenter.loadMoreObserver());
     }
 

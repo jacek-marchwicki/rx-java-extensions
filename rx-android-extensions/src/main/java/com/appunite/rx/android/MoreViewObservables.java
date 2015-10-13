@@ -27,6 +27,8 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 
 import com.appunite.rx.Size;
+import com.appunite.rx.android.internal.MainThreadSubscription;
+import com.appunite.rx.android.internal.Preconditions;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
@@ -39,13 +41,7 @@ import javax.annotation.Nonnull;
 
 import rx.Observable;
 import rx.Subscriber;
-import rx.Subscription;
-import rx.android.AndroidSubscriptions;
-import rx.android.internal.Assertions;
-import rx.functions.Action0;
 import rx.functions.Func1;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 public class MoreViewObservables {
 
@@ -125,8 +121,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super RecyclerScrollEvent> subscriber) {
-            Assertions.assertUiThread();
-            final CompositeListener composite = CachedListeners.getFromViewOrCreate(recyclerView);
+            Preconditions.checkUiThread();
 
             final RecyclerView.OnScrollListener listener = new RecyclerView.OnScrollListener() {
                 @Override
@@ -135,61 +130,16 @@ public class MoreViewObservables {
                 }
             };
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+            subscriber.add(new MainThreadSubscription() {
                 @Override
-                public void call() {
-                    composite.removeOnScrollListener(listener);
+                protected void onUnsubscribe() {
+                    recyclerView.removeOnScrollListener(listener);
                 }
             });
 
-            composite.addOnScrollListener(listener);
-            subscriber.add(subscription);
+            recyclerView.addOnScrollListener(listener);
         }
 
-        private static class CompositeListener extends RecyclerView.OnScrollListener {
-            private final List<RecyclerView.OnScrollListener> listeners = new ArrayList<>();
-
-            public boolean addOnScrollListener(final RecyclerView.OnScrollListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnScrollListener(final RecyclerView.OnScrollListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public void onScrolled(final RecyclerView recyclerView, final int dx, final int dy) {
-                for (final RecyclerView.OnScrollListener listener : listeners) {
-                    listener.onScrolled(recyclerView, dx, dy);
-                }
-            }
-
-            @Override
-            public void onScrollStateChanged(final RecyclerView recyclerView, final int newState) {
-                for (final RecyclerView.OnScrollListener listener : listeners) {
-                    listener.onScrollStateChanged(recyclerView, newState);
-                }
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<View, CompositeListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeListener getFromViewOrCreate(final RecyclerView view) {
-                final CompositeListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeListener listener = new CompositeListener();
-
-                sCachedListeners.put(view, listener);
-                view.setOnScrollListener(listener);
-
-                return listener;
-            }
-        }
     }
 
     private static class OnSubscribePageSelected implements Observable.OnSubscribe<Integer> {
@@ -202,8 +152,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super Integer> subscriber) {
-            Assertions.assertUiThread();
-            final CompositeListener composite = CachedListeners.getFromViewOrCreate(viewPager);
+            Preconditions.checkUiThread();
 
             final ViewPager.OnPageChangeListener listener = new ViewPager.OnPageChangeListener() {
                 @Override
@@ -221,69 +170,15 @@ public class MoreViewObservables {
 
                 }
             };
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
-                @Override
-                public void call() {
-                    composite.removeOnScrollListener(listener);
+            viewPager.addOnPageChangeListener(listener);
+
+            subscriber.add(new MainThreadSubscription() {
+                @Override protected void onUnsubscribe() {
+                    viewPager.removeOnPageChangeListener(listener);
                 }
             });
-
-            composite.addOnScrollListener(listener);
-            subscriber.add(subscription);
         }
 
-
-        private static class CompositeListener implements ViewPager.OnPageChangeListener {
-            private final List<ViewPager.OnPageChangeListener> listeners = new ArrayList<>();
-
-            public boolean addOnScrollListener(final ViewPager.OnPageChangeListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnScrollListener(final ViewPager.OnPageChangeListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public void onPageScrolled(final int position, final float positionOffset, final int positionOffsetPixels) {
-                for (final ViewPager.OnPageChangeListener listener : listeners) {
-                    listener.onPageScrolled(position, positionOffset, positionOffsetPixels);
-                }
-            }
-
-            @Override
-            public void onPageSelected(final int position) {
-                for (final ViewPager.OnPageChangeListener listener : listeners) {
-                    listener.onPageSelected(position);
-                }
-            }
-
-            @Override
-            public void onPageScrollStateChanged(final int state) {
-                for (final ViewPager.OnPageChangeListener listener : listeners) {
-                    listener.onPageScrollStateChanged(state);
-                }
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<View, CompositeListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeListener getFromViewOrCreate(final ViewPager view) {
-                final CompositeListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeListener listener = new CompositeListener();
-
-                sCachedListeners.put(view, listener);
-                view.setOnPageChangeListener(listener);
-
-                return listener;
-            }
-        }
     }
 
     public static class ViewSize extends Size {
@@ -330,7 +225,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super ViewSize> subscriber) {
-            Assertions.assertUiThread();
+            Preconditions.checkUiThread();
             sendSizeIfValid(subscriber);
 
             final ViewTreeObserver.OnPreDrawListener listener = new ViewTreeObserver.OnPreDrawListener() {
@@ -342,13 +237,11 @@ public class MoreViewObservables {
             };
             view.getViewTreeObserver().addOnPreDrawListener(listener);
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
-                @Override
-                public void call() {
+            subscriber.add(new MainThreadSubscription() {
+                @Override protected void onUnsubscribe() {
                     view.getViewTreeObserver().removeOnPreDrawListener(listener);
                 }
             });
-            subscriber.add(subscription);
         }
 
         protected void sendSizeIfValid(Subscriber<? super ViewSize> subscriber) {
@@ -371,8 +264,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super View> subscriber) {
-            Assertions.assertUiThread();
-            final CompositeListener composite = CachedListeners.getFromViewOrCreate(toolbar);
+            Preconditions.checkUiThread();
 
             final View.OnClickListener listener = new View.OnClickListener() {
 
@@ -382,56 +274,15 @@ public class MoreViewObservables {
                 }
             };
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
-                @Override
-                public void call() {
-                    composite.removeOnClickListener(listener);
+            toolbar.setNavigationOnClickListener(listener);
+
+            subscriber.add(new MainThreadSubscription() {
+                @Override protected void onUnsubscribe() {
+                    toolbar.setNavigationOnClickListener(null);
                 }
             });
-
-            composite.addOnClickListener(listener);
-            subscriber.add(subscription);
         }
 
-
-
-        private static class CompositeListener implements View.OnClickListener {
-            private final List<View.OnClickListener> listeners = new ArrayList<>();
-
-            public boolean addOnClickListener(final View.OnClickListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnClickListener(final View.OnClickListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public void onClick(@Nonnull View v) {
-                for (final View.OnClickListener listener : listeners) {
-                    listener.onClick(v);
-                }
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<View, CompositeListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeListener getFromViewOrCreate(final Toolbar view) {
-                final CompositeListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeListener listener = new CompositeListener();
-
-                sCachedListeners.put(view, listener);
-                view.setNavigationOnClickListener(listener);
-
-                return listener;
-            }
-        }
     }
 
     @Nonnull
@@ -489,8 +340,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super PopupMenuEvent> subscriber) {
-            Assertions.assertUiThread();
-            final CompositeListener composite = CachedListeners.getFromViewOrCreate(popupMenu);
+            Preconditions.checkUiThread();
 
             final PopupMenu.OnMenuItemClickListener listener = new PopupMenu.OnMenuItemClickListener() {
 
@@ -501,57 +351,16 @@ public class MoreViewObservables {
                 }
             };
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
-                @Override
-                public void call() {
-                    composite.removeOnScrollListener(listener);
+            popupMenu.setOnMenuItemClickListener(listener);
+
+            subscriber.add(new MainThreadSubscription() {
+                @Override protected void onUnsubscribe() {
+                    popupMenu.setOnMenuItemClickListener(null);
                 }
             });
-
-            composite.addOnScrollListener(listener);
-            subscriber.add(subscription);
         }
 
 
-        private static class CompositeListener implements PopupMenu.OnMenuItemClickListener  {
-            private final List<PopupMenu.OnMenuItemClickListener> listeners = new ArrayList<>();
-
-            public boolean addOnScrollListener(final PopupMenu.OnMenuItemClickListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnScrollListener(final PopupMenu.OnMenuItemClickListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                boolean ret = false;
-                for (final PopupMenu.OnMenuItemClickListener listener : listeners) {
-                    ret |= listener.onMenuItemClick(menuItem);
-                }
-                return ret;
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<PopupMenu, CompositeListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeListener getFromViewOrCreate(final PopupMenu view) {
-                final CompositeListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeListener listener = new CompositeListener();
-
-                sCachedListeners.put(view, listener);
-                view.setOnMenuItemClickListener(listener);
-
-                return listener;
-            }
-        }
     }
 
     public static class SwipeRefreshLayoutRefreshEvent {
@@ -587,8 +396,7 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super SwipeRefreshLayoutRefreshEvent> subscriber) {
-            Assertions.assertUiThread();
-            final CompositeListener composite = CachedListeners.getFromViewOrCreate(swipeRefreshLayout);
+            Preconditions.checkUiThread();
 
             final SwipeRefreshLayout.OnRefreshListener listener = new SwipeRefreshLayout.OnRefreshListener() {
 
@@ -599,55 +407,16 @@ public class MoreViewObservables {
 
             };
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+            swipeRefreshLayout.setOnRefreshListener(listener);
+
+            subscriber.add(new MainThreadSubscription() {
                 @Override
-                public void call() {
-                    composite.removeOnScrollListener(listener);
+                protected void onUnsubscribe() {
+                    swipeRefreshLayout.setOnRefreshListener(null);
                 }
             });
-
-            composite.addOnScrollListener(listener);
-            subscriber.add(subscription);
         }
 
-
-        private static class CompositeListener implements SwipeRefreshLayout.OnRefreshListener  {
-            private final List<SwipeRefreshLayout.OnRefreshListener> listeners = new ArrayList<>();
-
-            public boolean addOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnScrollListener(final SwipeRefreshLayout.OnRefreshListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public void onRefresh() {
-                for (final SwipeRefreshLayout.OnRefreshListener listener : listeners) {
-                    listener.onRefresh();
-                }
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<SwipeRefreshLayout, CompositeListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeListener getFromViewOrCreate(final SwipeRefreshLayout view) {
-                final CompositeListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeListener listener = new CompositeListener();
-
-                sCachedListeners.put(view, listener);
-                view.setOnRefreshListener(listener);
-
-                return listener;
-            }
-        }
     }
 
     @Nonnull
@@ -676,9 +445,8 @@ public class MoreViewObservables {
 
         @Override
         public void call(final Subscriber<? super ToolbarMenuEvent> subscriber) {
-            Assertions.assertUiThread();
+            Preconditions.checkUiThread();
             final CompositeListener composite = CachedListeners.getFromViewOrCreate(toolbar);
-
 
             final Toolbar.OnMenuItemClickListener listener = new Toolbar.OnMenuItemClickListener() {
                 @Override
@@ -688,15 +456,14 @@ public class MoreViewObservables {
                 }
             };
 
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
+            toolbar.setOnMenuItemClickListener(listener);
+
+            subscriber.add(new MainThreadSubscription() {
                 @Override
-                public void call() {
-                    composite.removeOnMenuItemClickListener(listener);
+                protected void onUnsubscribe() {
+                    toolbar.setOnMenuItemClickListener(null);
                 }
             });
-
-            composite.addOnMenuItemClickListener(listener);
-            subscriber.add(subscription);
         }
 
 
@@ -764,116 +531,4 @@ public class MoreViewObservables {
         }
     }
 
-    @Nonnull
-    public static Observable<OnLongClickEvent> longClicks(final View view) {
-        return Observable.create(new OnSubscribeViewLongClick(view));
-    }
-
-    private static class OnSubscribeViewLongClick implements Observable.OnSubscribe<OnLongClickEvent> {
-
-        private final View view;
-
-        public OnSubscribeViewLongClick(final View view) {
-            this.view = view;
-        }
-
-        @Override
-        public void call(final Subscriber<? super OnLongClickEvent> observer) {
-            Assertions.assertUiThread();
-            final CompositeOnLongClickListener composite = CachedListeners.getFromViewOrCreate(view);
-
-            final View.OnLongClickListener listener = new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    observer.onNext(new OnLongClickEvent(view));
-                    return true;
-                }
-            };
-
-            final Subscription subscription = AndroidSubscriptions.unsubscribeInUiThread(new Action0() {
-                @Override
-                public void call() {
-                    composite.removeOnClickListener(listener);
-                }
-            });
-
-            composite.addOnClickListener(listener);
-            observer.add(subscription);
-        }
-
-        private static class CompositeOnLongClickListener implements View.OnLongClickListener {
-            private final List<View.OnLongClickListener> listeners = new ArrayList<>();
-
-            public boolean addOnClickListener(final View.OnLongClickListener listener) {
-                return listeners.add(listener);
-            }
-
-            public boolean removeOnClickListener(final View.OnLongClickListener listener) {
-                return listeners.remove(listener);
-            }
-
-            @Override
-            public boolean onLongClick(View view) {
-                for (final View.OnLongClickListener listener : listeners) {
-                    listener.onLongClick(view);
-                }
-                return true;
-            }
-        }
-
-        private static class CachedListeners {
-            private static final Map<View, CompositeOnLongClickListener> sCachedListeners = new WeakHashMap<>();
-
-            public static CompositeOnLongClickListener getFromViewOrCreate(final View view) {
-                final CompositeOnLongClickListener cached = sCachedListeners.get(view);
-
-                if (cached != null) {
-                    return cached;
-                }
-
-                final CompositeOnLongClickListener listener = new CompositeOnLongClickListener();
-
-                sCachedListeners.put(view, listener);
-                view.setOnLongClickListener(listener);
-
-                return listener;
-            }
-        }
-    }
-
-    public static class OnLongClickEvent {
-        private final View view;
-
-        public OnLongClickEvent(View view) {
-            checkNotNull(view != null, "View is null!");
-            this.view = view;
-        }
-
-        public View view() {
-            return view;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            final OnLongClickEvent that = (OnLongClickEvent) o;
-
-            return view.equals(that.view);
-
-        }
-
-        @Override
-        public int hashCode() {
-            return view.hashCode();
-        }
-
-        @Override
-        public String toString() {
-            return "OnLongClickEvent{" +
-                    "view=" + view +
-                    '}';
-        }
-    }
 }
