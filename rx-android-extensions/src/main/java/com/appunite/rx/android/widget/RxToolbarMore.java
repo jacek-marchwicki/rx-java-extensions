@@ -1,6 +1,7 @@
 package com.appunite.rx.android.widget;
 
 import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
@@ -40,14 +41,13 @@ public class RxToolbarMore {
     }
 
     @Nonnull
-    public static Observable<ToolbarMenuEvent> toolbarMenuClick(@Nonnull Toolbar toolbar, @IdRes final int menuId) {
-        return toolbarMenuClick(toolbar)
-                .filter(new Func1<ToolbarMenuEvent, Boolean>() {
-                    @Override
-                    public Boolean call(ToolbarMenuEvent toolbarMenuEvent) {
-                        return toolbarMenuEvent.menuItem().getItemId() == menuId;
-                    }
-                });
+    public static Func1<ToolbarMenuEvent, Boolean> filterMenuClick(@IdRes final int menuId) {
+        return new Func1<ToolbarMenuEvent, Boolean>() {
+            @Override
+            public Boolean call(ToolbarMenuEvent toolbarMenuEvent) {
+                return toolbarMenuEvent.menuItem().getItemId() == menuId;
+            }
+        };
     }
 
     @Nonnull

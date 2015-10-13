@@ -20,14 +20,13 @@ public class RxPopupMore {
     }
 
     @Nonnull
-    public static Observable<PopupMenuEvent> popupMenuClick(@Nonnull PopupMenu popupMenu, @IdRes final int menuId) {
-        return popupMenuClick(popupMenu)
-                .filter(new Func1<PopupMenuEvent, Boolean>() {
-                    @Override
-                    public Boolean call(PopupMenuEvent popupMenuEvent) {
-                        return popupMenuEvent.menuItem().getItemId() == menuId;
-                    }
-                });
+    public static Func1<PopupMenuEvent, Boolean> filterMenuItem(@IdRes final int menuId) {
+        return new Func1<PopupMenuEvent, Boolean>() {
+            @Override
+            public Boolean call(PopupMenuEvent popupMenuEvent) {
+                return popupMenuEvent.menuItem().getItemId() == menuId;
+            }
+        };
     }
 
     public static class PopupMenuEvent {
