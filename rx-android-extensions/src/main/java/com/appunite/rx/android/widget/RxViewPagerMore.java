@@ -12,7 +12,7 @@ import rx.Subscriber;
 
 public class RxViewPagerMore {
     @Nonnull
-    public static Observable<Integer> onPageSelected(@Nonnull final ViewPager viewPager) {
+    public static Observable<Integer> pageSelected(@Nonnull final ViewPager viewPager) {
         return Observable.create(new OnSubscribePageSelected(viewPager));
     }
 

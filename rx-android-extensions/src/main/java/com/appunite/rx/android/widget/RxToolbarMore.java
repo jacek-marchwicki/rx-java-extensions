@@ -36,7 +36,7 @@ public class RxToolbarMore {
     }
 
     @Nonnull
-    public static Observable<ToolbarMenuEvent> toolbarMenuClick(@Nonnull Toolbar toolbar) {
+    public static Observable<ToolbarMenuEvent> menuClick(@Nonnull Toolbar toolbar) {
         return Observable.create(new OnSubscribeToolbarMenuClick(toolbar));
     }
 

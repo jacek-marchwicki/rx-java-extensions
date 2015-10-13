@@ -15,7 +15,7 @@ import rx.functions.Func1;
 
 public class RxPopupMore {
     @Nonnull
-    public static Observable<PopupMenuEvent> popupMenuClick(@Nonnull PopupMenu popupMenu) {
+    public static Observable<PopupMenuEvent> menuClick(@Nonnull PopupMenu popupMenu) {
         return Observable.create(new OnSubscribePopupMenuClick(popupMenu));
     }
 

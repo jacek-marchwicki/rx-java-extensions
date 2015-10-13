@@ -54,8 +54,8 @@ public class RxViewMore {
     }
 
     @Nonnull
-    public static Observable<Integer> viewWidth(@Nonnull final View view) {
-        return viewSize(view)
+    public static Observable<Integer> width(@Nonnull final View view) {
+        return size(view)
                 .map(new Func1<ViewSize, Integer>() {
                     @Override
                     public Integer call(ViewSize viewSize) {
@@ -66,8 +66,8 @@ public class RxViewMore {
     }
 
     @Nonnull
-    public static Observable<Integer> viewHeight(@Nonnull final View view) {
-        return viewSize(view)
+    public static Observable<Integer> height(@Nonnull final View view) {
+        return size(view)
                 .map(new Func1<ViewSize, Integer>() {
                     @Override
                     public Integer call(ViewSize viewSize) {
@@ -78,7 +78,7 @@ public class RxViewMore {
     }
 
     @Nonnull
-    public static Observable<ViewSize> viewSize(@Nonnull final View view) {
+    public static Observable<ViewSize> size(@Nonnull final View view) {
         return Observable.create(new OnViewSize(view))
                 .distinctUntilChanged();
     }
