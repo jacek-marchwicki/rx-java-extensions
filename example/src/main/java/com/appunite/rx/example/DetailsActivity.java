@@ -8,9 +8,9 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
 
-import com.appunite.rx.android.MoreActivityActions;
-import com.appunite.rx.android.MoreViewActions;
+import com.appunite.rx.android.widget.RxActivityMore;
 import com.appunite.rx.android.MyAndroidSchedulers;
+import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
 import com.jakewharton.rxbinding.view.RxView;
@@ -60,7 +60,7 @@ public class DetailsActivity extends BaseActivity {
 
         presenter.titleObservable()
                 .compose(this.<String>bindToLifecycle())
-                .subscribe(MoreViewActions.title(toolbar));
+                .subscribe(RxToolbarMore.title(toolbar));
 
         presenter.bodyObservable()
                 .compose(this.<String>bindToLifecycle())
@@ -79,7 +79,7 @@ public class DetailsActivity extends BaseActivity {
         ActivityCompat.postponeEnterTransition(this);
         presenter.startPostponedEnterTransitionObservable()
                 .compose(bindToLifecycle())
-                .subscribe(MoreActivityActions.startPostponedEnterTransition(this));
+                .subscribe(RxActivityMore.startPostponedEnterTransition(this));
     }
 
 }

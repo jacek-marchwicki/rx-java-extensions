@@ -12,14 +12,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.appunite.rx.android.MoreViewActions;
-import com.appunite.rx.android.MoreViewObservables;
+import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.android.adapter.UniversalAdapter;
 import com.appunite.rx.android.adapter.ViewHolderManager;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
+import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 
@@ -114,7 +114,7 @@ public class MainActivity extends BaseActivity {
 
         presenter.titleObservable()
                 .compose(this.<String>bindToLifecycle())
-                .subscribe(MoreViewActions.title(toolbar));
+                .subscribe(RxToolbarMore.title(toolbar));
 
         presenter.itemsObservable()
                 .compose(this.<List<BaseAdapterItem>>bindToLifecycle())
@@ -133,7 +133,7 @@ public class MainActivity extends BaseActivity {
                 .compose(this.<MainPresenter.AdapterItem>bindToLifecycle())
                 .subscribe(startDetailsActivityAction(this));
 
-        MoreViewObservables.scroll(recyclerView)
+        RxRecyclerView.scrollEvents(recyclerView)
                 .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
                 .compose(this.bindToLifecycle())
                 .subscribe(presenter.loadMoreObserver());

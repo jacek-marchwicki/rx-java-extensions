@@ -14,7 +14,7 @@
  * the License.
  */
 
-package com.appunite.rx.android;
+package com.appunite.rx.android.widget;
 
 import android.app.Activity;
 import android.support.v4.app.ActivityCompat;
@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 
 import rx.functions.Action1;
 
-public class MoreActivityActions {
+public class RxActivityMore {
 
     @Nonnull
     public static Action1<? super Object> startPostponedEnterTransition(@Nonnull final Activity activity) {
