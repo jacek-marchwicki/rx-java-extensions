@@ -390,9 +390,25 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable<List<T>> newCombineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
-            return Observable.just((List<T>)ImmutableList.<T>of());
+            return Observable.<List<T>>just(ImmutableList.<T>of());
         }
-        return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(observables, new FuncN<List<T>>() {
+        if (observables.size() > 10) {
+            // RxJava has some limitation that can only handle up to 128 arguments in combineLast
+            // Additionally on android there is a bug so this limit is cut to 16 arguments - on
+            // android we will not get any throw so rxjava fail sailent
+            final int size = observables.size();
+            final int left = size / 2;
+            return Observable.combineLatest(
+                    newCombineAll(observables.subList(0, left)),
+                    newCombineAll(observables.subList(left, size)),
+                    new Func2<List<T>, List<T>, List<T>>() {
+                        @Override
+                        public List<T> call(final List<T> ts, final List<T> ts2) {
+                            return ImmutableList.<T>builder().addAll(ts).addAll(ts2).build();
+                        }
+                    });
+        }
+        return Observable.combineLatest(observables, new FuncN<List<T>>() {
             @Override
             public List<T> call(final Object... args) {
                 final ImmutableList.Builder<T> builder = ImmutableList.builder();
