@@ -43,4 +43,12 @@ public class BothParams<T1, T2> {
         result = 31 * result + (param2 != null ? param2.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "BothParams{" +
+                "param1=" + param1 +
+                ", param2=" + param2 +
+                '}';
+    }
 }

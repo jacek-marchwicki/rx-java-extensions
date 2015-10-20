@@ -35,4 +35,12 @@ public class Size {
         result = 31 * result + height;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "Size{" +
+                "width=" + width +
+                ", height=" + height +
+                '}';
+    }
 }

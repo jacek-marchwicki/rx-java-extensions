@@ -39,4 +39,13 @@ public class ThreeParams<T1, T2, T3> extends BothParams<T1, T2> {
         result = 31 * result + (param3 != null ? param3.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "ThreeParams{" +
+                "param1=" + param1() +
+                ", param2=" + param2() +
+                ", param3=" + param3 +
+                "} ";
+    }
 }
