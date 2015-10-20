@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.util.List;
+
 import javax.annotation.Nullable;
 
 import rx.Observable;
@@ -44,9 +46,9 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 public class MoreOperatorsCombineAllTest {
 
     @Mock
-    Observer<? super ImmutableList<String>> stringListObserver;
+    Observer<? super List<String>> stringListObserver;
     @Mock
-    Observer<? super ImmutableList<Integer>> integerListObserver;
+    Observer<? super List<Integer>> integerListObserver;
 
     @Before
     public void setUp() throws Exception {
@@ -56,9 +58,9 @@ public class MoreOperatorsCombineAllTest {
     @Test
     public void testCombineTwoObservables_returnsList() throws Exception {
         final ImmutableList<Observable<String>> of = ImmutableList.of(Observable.just("krowa"), Observable.just("pies"));
-        final Observable<ImmutableList<String>> immutableListObservable = MoreOperators.combineAll(of);
+        final Observable<List<String>> listObservable = MoreOperators.newCombineAll(of);
 
-        immutableListObservable.subscribe(stringListObserver);
+        listObservable.subscribe(stringListObserver);
 
         verify(stringListObserver).onNext(ImmutableList.of("krowa", "pies"));
         verify(stringListObserver).onCompleted();
@@ -69,9 +71,9 @@ public class MoreOperatorsCombineAllTest {
     public void testCombineNeverObservable_neverReturns() throws Exception {
 
         final ImmutableList<Observable<String>> of = ImmutableList.of(Observable.just("krowa"), Observable.<String>never());
-        final Observable<ImmutableList<String>> immutableListObservable = MoreOperators.combineAll(of);
+        final Observable<List<String>> listObservable = MoreOperators.newCombineAll(of);
 
-        immutableListObservable.subscribe(stringListObserver);
+        listObservable.subscribe(stringListObserver);
 
         verifyZeroInteractions(stringListObserver);
     }
@@ -80,8 +82,8 @@ public class MoreOperatorsCombineAllTest {
     public void testOneObservableChange_notifyChangeBooth() throws Exception {
         final BehaviorSubject<String> first = BehaviorSubject.create("krowa");
         final ImmutableList<Observable<String>> of = ImmutableList.of(first, Observable.just("pies"));
-        final Observable<ImmutableList<String>> immutableListObservable = MoreOperators.combineAll(of);
-        immutableListObservable.subscribe(stringListObserver);
+        final Observable<List<String>> listObservable = MoreOperators.newCombineAll(of);
+        listObservable.subscribe(stringListObserver);
         verify(stringListObserver).onNext(ImmutableList.of("krowa", "pies"));
         reset(stringListObserver);
 
@@ -105,7 +107,7 @@ public class MoreOperatorsCombineAllTest {
                     }
                 })
                 .toList();
-        final Observable<ImmutableList<Integer>> observable = MoreOperators.combineAll(of);
+        final Observable<List<Integer>> observable = MoreOperators.newCombineAll(of);
 
         observable.subscribe(integerListObserver);
 
@@ -116,7 +118,7 @@ public class MoreOperatorsCombineAllTest {
 
     @Test
     public void testSubscribeToEmpty_notifyEmpty() throws Exception {
-        final Observable<ImmutableList<String>> observable = MoreOperators.combineAll(ImmutableList.<Observable<String>>of());
+        final Observable<List<String>> observable = MoreOperators.newCombineAll(ImmutableList.<Observable<String>>of());
 
         observable.subscribe(stringListObserver);
 

@@ -18,9 +18,9 @@ package com.appunite.rx.operators;
 
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.observables.NetworkObservableProvider;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -322,58 +322,6 @@ public class MoreOperators {
     }
 
     @Nonnull
-    public static <T> Observable.Transformer<T, Optional<T>> firstOrAbsent() {
-        return new Observable.Transformer<T, Optional<T>>() {
-            @Override
-            public Observable<Optional<T>> call(Observable<T> observable) {
-                return observable
-                        .map(new Func1<T, Optional<T>>() {
-                            @Override
-                            public Optional<T> call(T item) {
-                                return Optional.of(item);
-                            }
-                        })
-                        .firstOrDefault(Optional.<T>absent());
-            }
-        };
-    }
-
-    /**
-     * Use {@link #newCombineAll()}
-     */
-    @Deprecated
-    @Nonnull
-    public static <T> Observable.Transformer<List<Observable<T>>, ImmutableList<T>> combineAll() {
-        return new Observable.Transformer<List<Observable<T>>, ImmutableList<T>>() {
-            @Override
-            public Observable<ImmutableList<T>> call(Observable<List<Observable<T>>> listObservable) {
-                return listObservable
-                        .compose(MoreOperators.<T>newCombineAll())
-                        .map(new Func1<List<T>, ImmutableList<T>>() {
-                            @Override
-                            public ImmutableList<T> call(List<T> ts) {
-                                return ImmutableList.copyOf(ts);
-                            }
-                        });
-            }
-        };
-    }
-
-    /**
-     * Use {@link #newCombineAll(List)}
-     */
-    @Deprecated
-    @Nonnull
-    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
-        return newCombineAll(observables).map(new Func1<List<T>, ImmutableList<T>>() {
-            @Override
-            public ImmutableList<T> call(List<T> ts) {
-                return ImmutableList.copyOf(ts);
-            }
-        });
-    }
-
-    @Nonnull
     public static <T> Observable.Transformer<List<Observable<T>>, List<T>> newCombineAll() {
         return new Observable.Transformer<List<Observable<T>>, List<T>>() {
             @Override
@@ -391,7 +339,7 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable<List<T>> newCombineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
-            return Observable.<List<T>>just(ImmutableList.<T>of());
+            return Observable.just(Collections.<T>emptyList());
         }
         if (observables.size() > RxRingBuffer.SIZE) {
             // RxJava has some limitation that can only handle up to 128 arguments in combineLast
@@ -405,19 +353,22 @@ public class MoreOperators {
                     new Func2<List<T>, List<T>, List<T>>() {
                         @Override
                         public List<T> call(final List<T> ts, final List<T> ts2) {
-                            return ImmutableList.<T>builder().addAll(ts).addAll(ts2).build();
+                            final ArrayList<T> ret = new ArrayList<>(ts.size() + ts2.size());
+                            ret.addAll(ts);
+                            ret.addAll(ts2);
+                            return Collections.unmodifiableList(ret);
                         }
                     });
         }
         return Observable.combineLatest(observables, new FuncN<List<T>>() {
             @Override
             public List<T> call(final Object... args) {
-                final ImmutableList.Builder<T> builder = ImmutableList.builder();
+                final ArrayList<T> ret = new ArrayList<>(args.length);
                 for (Object arg : args) {
                     //noinspection unchecked
-                    builder.add((T) arg);
+                    ret.add((T) arg);
                 }
-                return builder.build();
+                return Collections.unmodifiableList(ret);
             }
         });
     }

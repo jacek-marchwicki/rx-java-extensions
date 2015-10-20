@@ -1,8 +1,5 @@
 package com.appunite.rx.functions;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-
 import javax.annotation.Nonnull;
 
 public class ThreeParams<T1, T2, T3> extends BothParams<T1, T2> {
@@ -22,24 +19,24 @@ public class ThreeParams<T1, T2, T3> extends BothParams<T1, T2> {
         return param3;
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ThreeParams)) return false;
+        //noinspection EqualsBetweenInconvertibleTypes
         if (!super.equals(o)) return false;
+
         ThreeParams<?, ?, ?> that = (ThreeParams<?, ?, ?>) o;
-        return Objects.equal(param3, that.param3);
+
+        return !(param3 != null ? !param3.equals(that.param3) : that.param3 != null);
+
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(super.hashCode(), param3);
-    }
-
-    @Nonnull
-    @Override
-    protected MoreObjects.ToStringHelper toStringHelper() {
-        return super.toStringHelper()
-                .add("param3", param3);
+        int result = super.hashCode();
+        result = 31 * result + (param3 != null ? param3.hashCode() : 0);
+        return result;
     }
 }
