@@ -13,7 +13,7 @@ repositories {
 dependencies {
     compile "javax.annotation:javax.annotation-api:1.2"
     compile "com.google.code.findbugs:jsr305:2.0.1"
-    compile "io.reactivex:rxjava:1.0.8"
+    compile "io.reactivex:rxjava:1.0.14"
     compile 'com.google.guava:guava:18.0'
     compile 'javax.inject:javax.inject:1'
 
