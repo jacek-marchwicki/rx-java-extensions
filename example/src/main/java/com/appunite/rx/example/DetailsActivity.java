@@ -8,17 +8,18 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
 
-import com.appunite.rx.android.MoreActivityActions;
-import com.appunite.rx.android.MoreViewActions;
+import com.appunite.rx.android.widget.RxActivityMore;
+import com.appunite.rx.android.MyAndroidSchedulers;
+import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.DetailsPresenters;
+import com.jakewharton.rxbinding.view.RxView;
+import com.jakewharton.rxbinding.widget.RxTextView;
 
 import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.android.view.ViewActions;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
@@ -50,7 +51,7 @@ public class DetailsActivity extends BaseActivity {
         ButterKnife.inject(this);
 
         // Normally use dagger
-        final DetailsPresenters detailsPresenters = new DetailsPresenters(AndroidSchedulers.mainThread(),
+        final DetailsPresenters detailsPresenters = new DetailsPresenters(MyAndroidSchedulers.mainThread(),
                 FakeDagger.getPostsDaoInstance(getApplicationContext()));
 
 
@@ -58,27 +59,27 @@ public class DetailsActivity extends BaseActivity {
                 .getPresenter(id);
 
         presenter.titleObservable()
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(MoreViewActions.setTitle(toolbar));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxToolbarMore.title(toolbar));
 
         presenter.bodyObservable()
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(ViewActions.setText(body));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxTextView.text(body));
 
         presenter.progressObservable()
-                .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
-                .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
+                .compose(this.<Boolean>bindToLifecycle())
+                .subscribe(RxView.visibility(progress, View.INVISIBLE));
 
         presenter.errorObservable()
                 .map(ErrorHelper.mapThrowableToStringError())
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(ViewActions.setText(error));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxTextView.text(error));
 
 
         ActivityCompat.postponeEnterTransition(this);
         presenter.startPostponedEnterTransitionObservable()
-                .compose(lifecycleMainObservable.bindLifecycle())
-                .subscribe(MoreActivityActions.startPostponedEnterTransition(this));
+                .compose(bindToLifecycle())
+                .subscribe(RxActivityMore.startPostponedEnterTransition(this));
     }
 
 }

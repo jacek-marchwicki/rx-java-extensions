@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
+import com.appunite.rx.android.MyAndroidNetworkSchedulers;
 import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
@@ -29,7 +30,6 @@ import retrofit.RestAdapter;
 import retrofit.android.AndroidLog;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
-import rx.android.schedulers.AndroidSchedulers;
 
 /**
  * Normally we rather use dagger instead of static, but for testing purposes is ok
@@ -57,7 +57,7 @@ public class FakeDagger {
             final RestAdapter restAdapter = getRestAdapter(gson, client);
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
             final CacheProvider cacheProvider = getCacheProvider(context, gson);
-            postsDao = new PostsDao(MyAndroidSchedulers.networkScheduler(), AndroidSchedulers.mainThread(), guestbookService, cacheProvider);
+            postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), MyAndroidSchedulers.mainThread(), guestbookService, cacheProvider);
             return postsDao;
         }
     }
