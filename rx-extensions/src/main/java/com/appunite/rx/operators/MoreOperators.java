@@ -38,6 +38,7 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
 import rx.functions.FuncN;
+import rx.internal.util.RxRingBuffer;
 import rx.subscriptions.Subscriptions;
 
 import static com.appunite.rx.ObservableExtensions.behavior;
@@ -392,7 +393,7 @@ public class MoreOperators {
         if (observables.isEmpty()) {
             return Observable.<List<T>>just(ImmutableList.<T>of());
         }
-        if (observables.size() > 10) {
+        if (observables.size() > RxRingBuffer.SIZE) {
             // RxJava has some limitation that can only handle up to 128 arguments in combineLast
             // Additionally on android there is a bug so this limit is cut to 16 arguments - on
             // android we will not get any throw so rxjava fail sailent
