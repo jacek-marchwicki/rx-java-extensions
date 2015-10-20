@@ -1,5 +1,6 @@
 /*
  * Copyright 2015 Jacek Marchwicki <jacek.marchwicki@gmail.com>
+ *                Paweł Schmidt <paw3l.schmidt@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -24,6 +25,16 @@ import javax.annotation.Nonnull;
 import rx.functions.Action1;
 
 public class RxActivityMore {
+
+    @Nonnull
+    public static Action1<? super Object> finish(@Nonnull final Activity activity) {
+        return new Action1<Object>() {
+            @Override
+            public void call(Object o) {
+                activity.finish();
+            }
+        };
+    }
 
     @Nonnull
     public static Action1<? super Object> startPostponedEnterTransition(@Nonnull final Activity activity) {

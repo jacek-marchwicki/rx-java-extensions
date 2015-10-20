@@ -100,6 +100,7 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
                 lock.lock();
                 try {
                     if (skip) {
+                        request(1);
                         return;
                     }
                     skip = true;
