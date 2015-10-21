@@ -2,6 +2,7 @@ package com.appunite.rx.example;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -44,6 +45,8 @@ public class MainActivity extends BaseActivity {
     View progress;
     @InjectView(R.id.main_activity_error)
     TextView error;
+    @InjectView(R.id.main_activity_fab)
+    FloatingActionButton fab;
 
     public static class AdapterItemManager implements ViewHolderManager {
 
@@ -137,6 +140,14 @@ public class MainActivity extends BaseActivity {
                 .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
                 .compose(this.bindToLifecycle())
                 .subscribe(presenter.loadMoreObserver());
+
+        RxView.clicks(fab)
+                .compose(this.bindToLifecycle())
+                .subscribe(presenter.clickOnFabObserver());
+
+        presenter.startCreatePostActivityObservable()
+                .compose(this.bindToLifecycle())
+                .subscribe(startPostActivityAction(this));
     }
 
     @Nonnull
@@ -150,6 +161,17 @@ public class MainActivity extends BaseActivity {
                 ActivityCompat.startActivity(activity,
                         DetailsActivity.getIntent(activity, adapterItem.id()),
                         bundle);
+            }
+        };
+    }
+
+    @Nonnull
+    private static Action1<Object> startPostActivityAction(final Activity activity) {
+        return new Action1<Object>() {
+            @Override
+            public void call(Object o) {
+
+                activity.startActivity(CreatePostActivity.newIntent(activity));
             }
         };
     }
