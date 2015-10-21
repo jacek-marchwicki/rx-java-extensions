@@ -15,10 +15,17 @@
  */
 package com.appunite.rx.operators;
 
+import com.appunite.rx.functions.Functions1;
+
 import org.junit.Test;
 
+import rx.Observable;
+import rx.Subscription;
 import rx.observers.TestObserver;
+import rx.observers.TestSubscriber;
+import rx.schedulers.TestScheduler;
 import rx.subjects.PublishSubject;
+import rx.subjects.TestSubject;
 
 import static com.google.common.truth.Truth.assert_;
 
@@ -85,5 +92,72 @@ public class OperatorSampleWithLastWithObservableTest {
         buttonClick.onNext(new Object());
 
         assert_().that(observer.getOnNextEvents()).containsExactly("ja", "jacek");
+    }
+
+    @Test
+    public void testAfterUnsubscribe_sourceIsUnsubscribed() throws Exception {
+        final TestScheduler scheduler = new TestScheduler();
+        final TestSubject<String> name = TestSubject.create(scheduler);
+        final TestSubject<Object> buttonClick = TestSubject.create(scheduler);
+
+        final Subscription subscription = name
+                .lift(OperatorSampleWithLastWithObservable.<String>create(buttonClick))
+                .subscribe(new TestSubscriber<String>());
+
+        assert_().that(name.hasObservers()).isTrue();
+        assert_().that(buttonClick.hasObservers()).isTrue();
+
+        subscription.unsubscribe();
+
+        assert_().that(name.hasObservers()).isFalse();
+        assert_().that(buttonClick.hasObservers()).isFalse();
+    }
+
+
+    @Test
+    public void testPullFromSource_whenBackpressure() throws Exception {
+        final TestSubscriber<Integer> result = new TestSubscriber<>();
+        result.requestMore(0);
+
+        Observable.range(1, 100)
+                .lift(OperatorSampleWithLastWithObservable.<Integer>create(
+                        Observable.range(1, 2).map(Functions1.toObject())))
+                .subscribe(result);
+
+        result.assertNoErrors();
+        assert_().that(result.getOnNextEvents()).isEmpty();
+
+        result.requestMore(1);
+
+        result.assertNoErrors();
+        assert_().that(result.getOnNextEvents()).containsExactly(100);
+
+        result.requestMore(1);
+
+        result.assertNoErrors();
+        assert_().that(result.getOnNextEvents()).containsExactly(100, 100);
+    }
+
+    @Test
+    public void testIfClickComplete_returnOnCompleted() throws Exception {
+        final PublishSubject<String> name = PublishSubject.create();
+        final PublishSubject<Object> buttonClick = PublishSubject.create();
+
+        final TestSubscriber<String> result = new TestSubscriber<>();
+
+        name
+                .lift(OperatorSampleWithLastWithObservable.<String>create(buttonClick))
+                .subscribe(result);
+
+        assert_().that(result.getOnCompletedEvents()).isEmpty();
+
+        name.onCompleted();
+
+        assert_().that(result.getOnCompletedEvents()).isEmpty();
+
+        buttonClick.onCompleted();
+
+        assert_().that(result.getOnCompletedEvents()).hasSize(1);
+
     }
 }
