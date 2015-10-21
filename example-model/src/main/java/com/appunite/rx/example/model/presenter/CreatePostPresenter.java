@@ -84,7 +84,8 @@ public class CreatePostPresenter {
                     public void call(Throwable throwable) {
                         showProgress.onNext(false);
                     }
-                }).subscribe(postErrorSubject);
+                })
+                .subscribe(postErrorSubject);
 
         nameSubject.startWith("")
                 .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
