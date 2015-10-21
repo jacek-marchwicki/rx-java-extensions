@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:transitionGroup="false">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/create_post_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="@style/Toolbar"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:gravity="end"
+        android:title="@string/create_post_title"
+        android:navigationIcon="@drawable/ic_close_white_24dp"
+        android:transitionName="@string/transition_toolbar">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/create_post_name_text"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="@string/create_post_name_hint"
+                android:maxLines="1" />
+
+            <ImageButton
+                android:id="@+id/accept_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:background="?android:attr/selectableItemBackground"
+                android:contentDescription="@string/create_post_accept_button_content_description"
+                android:src="@drawable/ic_check_white_24dp" />
+
+        </LinearLayout>
+
+
+    </android.support.v7.widget.Toolbar>
+
+
+    <EditText
+        android:id="@+id/create_post_body_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="top"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:padding="16dp"
+        android:hint="@string/create_post_body_hint"
+        android:background="@android:color/transparent"
+        android:transitionGroup="false" />
+
+
+    <FrameLayout
+        android:id="@+id/create_post_loading_frame"
+        android:layout_width="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:clickable="true"
+        android:background="@color/black_87"
+        android:alpha="0.5"
+        android:transitionGroup="false">
+
+        <ProgressBar
+            android:id="@+id/create_post_activity_progress"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:transitionName="@string/transition_progress"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+</FrameLayout>

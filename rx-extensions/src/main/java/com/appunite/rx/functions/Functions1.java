@@ -106,4 +106,24 @@ public class Functions1 {
             }
         };
     }
+
+    @Nonnull
+    public static <T> Func1<Object, T> returnJust(final T value) {
+        return new Func1<Object, T>() {
+            @Override
+            public T call(Object o) {
+                return value;
+            }
+        };
+    }
+
+    @Nonnull
+    public static Func1<? super CharSequence, String> charSequenceToString() {
+        return new Func1<CharSequence, String>() {
+            @Override
+            public String call(CharSequence charSequence) {
+                return charSequence instanceof String ? (String) charSequence : String.valueOf(charSequence);
+            }
+        };
+    }
 }
