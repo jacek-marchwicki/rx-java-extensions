@@ -12,43 +12,39 @@ import javax.annotation.Nonnull;
 
 import rx.Observable;
 import rx.Observer;
-import rx.functions.Action1;
+import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.observables.ConnectableObservable;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 public class CreatePostPresenter {
 
     @Nonnull
-    private final PublishSubject<CharSequence> nameSubject = PublishSubject.create();
+    private final BehaviorSubject<CharSequence> nameSubject = BehaviorSubject.<CharSequence>create("");
     @Nonnull
-    private final PublishSubject<CharSequence> bodySubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> sendSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> closeActivitySubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> navigationClickSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> nameErrorSubject = PublishSubject.create();
-    @Nonnull
-    private final PublishSubject<Object> bodyErrorSubject = PublishSubject.create();
+    private final BehaviorSubject<CharSequence> bodySubject = BehaviorSubject.<CharSequence>create("");
     @Nonnull
     private final BehaviorSubject<Boolean> showProgress = BehaviorSubject.create(false);
     @Nonnull
-    private final PublishSubject<Throwable> postErrorSubject = PublishSubject.create();
+    private final PublishSubject<Object> sendSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> navigationClickSubject = PublishSubject.create();
+    @Nonnull
+    private final ConnectableObservable<ResponseOrError<PostWithBody>> addPostResult;
 
-    public CreatePostPresenter(@Nonnull PostsDao postsDao) {
-        Observable.combineLatest(
-                nameSubject,
-                bodySubject,
-                new Func2<CharSequence, CharSequence, AddPost>() {
-                    @Override
-                    public AddPost call(CharSequence name, CharSequence body) {
-                        return new AddPost(name.toString(), body.toString());
-                    }
-                })
+    public CreatePostPresenter(@Nonnull final PostsDao postsDao) {
+        addPostResult = Observable
+                .combineLatest(
+                        nameSubject,
+                        bodySubject,
+                        new Func2<CharSequence, CharSequence, AddPost>() {
+                            @Override
+                            public AddPost call(CharSequence name, CharSequence body) {
+                                return new AddPost(name.toString(), body.toString());
+                            }
+                        })
                 .lift(OperatorSampleWithLastWithObservable.<AddPost>create(sendSubject))
                 .filter(new Func1<AddPost, Boolean>() {
                     @Override
@@ -58,46 +54,27 @@ public class CreatePostPresenter {
                         return (nameIsPresent && bodyIsPresent);
                     }
                 })
-                .doOnNext(new Action1<AddPost>() {
+                .flatMap(new Func1<AddPost, Observable<ResponseOrError<PostWithBody>>>() {
                     @Override
-                    public void call(AddPost addPost) {
-                        showProgress.onNext(true);
+                    public Observable<ResponseOrError<PostWithBody>> call(AddPost addPost) {
+                        return postsDao.postRequestObserver(addPost)
+                                .doOnSubscribe(new Action0() {
+                                    @Override
+                                    public void call() {
+                                        showProgress.onNext(true);
+                                    }
+                                })
+                                .doOnTerminate(new Action0() {
+                                    @Override
+                                    public void call() {
+                                        showProgress.onNext(false);
+                                    }
+                                });
                     }
                 })
-                .subscribe(postsDao.postRequestObserver());
+                .publish();
 
-        Observable.merge(
-                postsDao.postSuccesObservable().compose(ResponseOrError.<PostWithBody>onlySuccess()),
-                navigationClickSubject)
-                .doOnNext(new Action1<Object>() {
-                    @Override
-                    public void call(Object o) {
-                        showProgress.onNext(false);
-                    }
-                })
-                .subscribe(closeActivitySubject);
-
-        postsDao.postSuccesObservable()
-                .compose(ResponseOrError.<PostWithBody>onlyError())
-                .doOnNext(new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        showProgress.onNext(false);
-                    }
-                })
-                .subscribe(postErrorSubject);
-
-        nameSubject.startWith("")
-                .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
-                .map(Functions1.charSequenceToString())
-                .filter(fieldNullOrEmpty())
-                .subscribe(nameErrorSubject);
-
-        bodySubject.startWith("")
-                .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
-                .map(Functions1.charSequenceToString())
-                .filter(fieldNullOrEmpty())
-                .subscribe(bodyErrorSubject);
+        addPostResult.connect();
     }
 
     @Nonnull
@@ -117,12 +94,15 @@ public class CreatePostPresenter {
 
     @Nonnull
     public Observable<Object> finishActivityObservable() {
-        return closeActivitySubject;
+        return Observable.merge(
+                addPostResult.compose(ResponseOrError.<PostWithBody>onlySuccess()),
+                navigationClickSubject);
     }
 
     @Nonnull
     public Observable<Throwable> postErrorObservable() {
-        return postErrorSubject;
+        return addPostResult
+                .compose(ResponseOrError.<PostWithBody>onlyError());
     }
 
     @Nonnull
@@ -132,12 +112,20 @@ public class CreatePostPresenter {
 
     @Nonnull
     public Observable<Object> showBodyIsEmptyErrorObservable() {
-        return bodyErrorSubject;
+        return bodySubject
+                .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
+                .map(Functions1.charSequenceToString())
+                .filter(fieldNullOrEmpty())
+                .map(Functions1.toObject());
     }
 
     @Nonnull
     public Observable<Object> showNameIsEmptyErrorObservable() {
-        return nameErrorSubject;
+        return nameSubject
+                .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
+                .map(Functions1.charSequenceToString())
+                .filter(fieldNullOrEmpty())
+                .map(Functions1.toObject());
     }
 
     @Nonnull
