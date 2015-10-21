@@ -18,11 +18,9 @@ package com.appunite.rx;
 
 import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.functions.FunctionsN;
-import com.google.common.base.Function;
-import com.google.common.base.MoreObjects;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -33,9 +31,9 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static com.appunite.rx.internal.Preconditions.checkArgument;
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
+import static com.appunite.rx.internal.Preconditions.checkState;
 
 /**
  * Class that represents data or error
@@ -194,10 +192,10 @@ public class ResponseOrError<T> {
 
     @Override
     public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("data", data)
-                .add("error", error)
-                .toString();
+        return "ResponseOrError{" +
+                "data=" + data +
+                ", error=" + error +
+                '}';
     }
 
     /**
@@ -445,47 +443,22 @@ public class ResponseOrError<T> {
         };
     }
 
-    /**
-     * Use {@link #newFromListObservable()}
-     */
-    @Deprecated
-    @Nonnull
-    public static <T> Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>> fromListObservable() {
-        return new Observable.Transformer<ImmutableList<ResponseOrError<T>>, ResponseOrError<ImmutableList<T>>>() {
-            @Override
-            public Observable<ResponseOrError<ImmutableList<T>>> call(final Observable<ImmutableList<ResponseOrError<T>>> observable) {
-                return observable
-                        .map(new Func1<ImmutableList<ResponseOrError<T>>, List<ResponseOrError<T>>>() {
-                            @Override
-                            public List<ResponseOrError<T>> call(ImmutableList<ResponseOrError<T>> responseOrErrors) {
-                                return responseOrErrors;
-                            }
-                        })
-                        .compose(ResponseOrError.<T>newFromListObservable())
-                        .compose(ResponseOrError.map(new Func1<List<T>, ImmutableList<T>>() {
-                            @Override
-                            public ImmutableList<T> call(List<T> ts) {
-                                return ImmutableList.copyOf(ts);
-                            }
-                        }));
-            }
-        };
-    }
-
     @Nonnull
     private static <T> Observable<ResponseOrError<List<T>>> fromListObservable(
             @Nonnull final Observable<List<ResponseOrError<T>>> observable) {
         return observable.map(new Func1<List<ResponseOrError<T>>, ResponseOrError<List<T>>>() {
             @Override
             public ResponseOrError<List<T>> call(final List<ResponseOrError<T>> responses) {
-                final ImmutableList.Builder<T> builder = ImmutableList.builder();
                 for (ResponseOrError<T> response : responses) {
                     if (response.isError()) {
                         return ResponseOrError.fromError(response.error());
                     }
-                    builder.add(response.data());
                 }
-                return ResponseOrError.fromData((List<T>)builder.build());
+                final ArrayList<T> ret = new ArrayList<>(responses.size());
+                for (ResponseOrError<T> response : responses) {
+                    ret.add(response.data());
+                }
+                return ResponseOrError.fromData(Collections.unmodifiableList(ret));
             }
         });
     }
@@ -530,17 +503,11 @@ public class ResponseOrError<T> {
      */
     @Nonnull
     public static Observable<Throwable> combineErrorsObservable(@Nonnull List<Observable<ResponseOrError<?>>> observables) {
-        final ImmutableList<Observable<Throwable>> ob = FluentIterable
-                .from(observables)
-                .transform(new Function<Observable<ResponseOrError<?>>, Observable<Throwable>>() {
-                    @Nonnull
-                    @Override
-                    public Observable<Throwable> apply(Observable<ResponseOrError<?>> input) {
-                        return input.map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null);
-                    }
-                })
-                .toList();
-        return Observable.combineLatest(ob,
+        final ArrayList<Observable<Throwable>> ret = new ArrayList<>();
+        for (int i = 0; i < observables.size(); i++) {
+            ret.add(observables.get(i).map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null));
+        }
+        return Observable.combineLatest(Collections.unmodifiableList(ret),
                 FunctionsN.combineFirstThrowable());
     }
 

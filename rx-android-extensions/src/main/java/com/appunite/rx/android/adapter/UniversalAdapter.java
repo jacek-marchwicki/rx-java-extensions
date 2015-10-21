@@ -22,8 +22,8 @@ import android.view.ViewGroup;
 
 import com.appunite.detector.ChangesDetector;
 import com.appunite.detector.SimpleDetector;
-import com.google.common.collect.ImmutableList;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,7 @@ public class UniversalAdapter extends RecyclerView.Adapter<ViewHolderManager.Bas
     @Nonnull
     private final List<ViewHolderManager> managers;
     @Nonnull
-    private List<BaseAdapterItem> items = ImmutableList.of();
+    private List<BaseAdapterItem> items = Collections.emptyList();
 
     /**
      * Usage:

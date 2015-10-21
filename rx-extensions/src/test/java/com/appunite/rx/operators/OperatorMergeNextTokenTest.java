@@ -16,7 +16,6 @@
 
 package com.appunite.rx.operators;
 
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import org.junit.Before;
@@ -218,10 +217,10 @@ public class OperatorMergeNextTokenTest {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("data", data)
-                    .add("nextPage", nextPage)
-                    .toString();
+            return "Data{" +
+                    "data=" + data +
+                    ", nextPage=" + nextPage +
+                    '}';
         }
     }
 }

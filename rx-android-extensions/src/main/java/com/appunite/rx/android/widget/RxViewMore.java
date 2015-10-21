@@ -7,8 +7,6 @@ import android.view.ViewTreeObserver;
 import com.appunite.rx.Size;
 import com.appunite.rx.android.internal.MainThreadSubscription;
 import com.appunite.rx.android.internal.Preconditions;
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
 
@@ -98,23 +96,29 @@ public class RxViewMore {
         }
 
         @Override
-        protected MoreObjects.ToStringHelper toStringHelper() {
-            return super.toStringHelper()
-                    .add("view", view);
-        }
-
-        @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof ViewSize)) return false;
             if (!super.equals(o)) return false;
+
             ViewSize viewSize = (ViewSize) o;
-            return Objects.equal(view, viewSize.view);
+
+            return view.equals(viewSize.view);
+
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(super.hashCode(), view);
+            int result = super.hashCode();
+            result = 31 * result + view.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "ViewSize{" +
+                    "view=" + view +
+                    '}';
         }
     }
 

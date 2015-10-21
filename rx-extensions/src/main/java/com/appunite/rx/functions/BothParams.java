@@ -1,8 +1,5 @@
 package com.appunite.rx.functions;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Objects;
-
 import javax.annotation.Nonnull;
 
 public class BothParams<T1, T2> {
@@ -27,30 +24,31 @@ public class BothParams<T1, T2> {
         return param2;
     }
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof BothParams)) return false;
+
         BothParams<?, ?> that = (BothParams<?, ?>) o;
-        return Objects.equal(param1, that.param1) &&
-                Objects.equal(param2, that.param2);
+
+        return !(param1 != null ? !param1.equals(that.param1) : that.param1 != null)
+                && !(param2 != null ? !param2.equals(that.param2) : that.param2 != null);
+
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(param1, param2);
+        int result = param1 != null ? param1.hashCode() : 0;
+        result = 31 * result + (param2 != null ? param2.hashCode() : 0);
+        return result;
     }
 
     @Override
     public String toString() {
-        return toStringHelper()
-                .toString();
-    }
-
-    @Nonnull
-    protected MoreObjects.ToStringHelper toStringHelper() {
-        return MoreObjects.toStringHelper(this)
-                .add("param1", param1)
-                .add("param2", param2);
+        return "BothParams{" +
+                "param1=" + param1 +
+                ", param2=" + param2 +
+                '}';
     }
 }

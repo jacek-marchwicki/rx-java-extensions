@@ -19,7 +19,6 @@ package com.appunite.rx.simpletests;
 import com.appunite.rx.ObservableExtensions;
 import com.appunite.rx.operators.OnSubscribeRefCountDelayed;
 import com.appunite.rx.operators.OperatorCounter;
-import com.google.common.base.MoreObjects;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -104,10 +103,10 @@ public class NotificationObservableTest {
 
         @Override
         public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("name", name)
-                    .add("commentsCount", commentsCount)
-                    .toString();
+            return "User{" +
+                    "name='" + name + '\'' +
+                    ", commentsCount=" + commentsCount +
+                    '}';
         }
     }
 
