@@ -122,7 +122,10 @@ public class Functions1 {
         return new Func1<CharSequence, String>() {
             @Override
             public String call(CharSequence charSequence) {
-                return charSequence instanceof String ? (String) charSequence : String.valueOf(charSequence);
+                if (charSequence == null) {
+                    return null;
+                }
+                return charSequence instanceof String ? (String) charSequence : charSequence.toString();
             }
         };
     }
