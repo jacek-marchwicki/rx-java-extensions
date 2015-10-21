@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Action0;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.observables.ConnectableObservable;
@@ -37,12 +38,12 @@ public class CreatePostPresenter {
     public CreatePostPresenter(@Nonnull final PostsDao postsDao) {
         addPostResult = Observable
                 .combineLatest(
-                        nameSubject,
-                        bodySubject,
-                        new Func2<CharSequence, CharSequence, AddPost>() {
+                        nameSubject.map(Functions1.charSequenceToString()),
+                        bodySubject.map(Functions1.charSequenceToString()),
+                        new Func2<String, String, AddPost>() {
                             @Override
-                            public AddPost call(CharSequence name, CharSequence body) {
-                                return new AddPost(name.toString(), body.toString());
+                            public AddPost call(String name, String body) {
+                                return new AddPost(name, body);
                             }
                         })
                 .lift(OperatorSampleWithLastWithObservable.<AddPost>create(sendSubject))
@@ -64,9 +65,9 @@ public class CreatePostPresenter {
                                         showProgress.onNext(true);
                                     }
                                 })
-                                .doOnTerminate(new Action0() {
+                                .doOnNext(new Action1<ResponseOrError<PostWithBody>>() {
                                     @Override
-                                    public void call() {
+                                    public void call(ResponseOrError<PostWithBody> postWithBodyResponseOrError) {
                                         showProgress.onNext(false);
                                     }
                                 });

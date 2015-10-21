@@ -14,13 +14,15 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
 
-import rx.observers.TestObserver;
 import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 import rx.subjects.TestSubject;
 
 import static com.google.common.truth.Truth.assert_;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class CreatePostPresenterTest {
@@ -31,16 +33,14 @@ public class CreatePostPresenterTest {
     private TestScheduler testScheduler = Schedulers.test();
     private CreatePostPresenter postPresenter;
     private TestSubject<ResponseOrError<PostsResponse>> postsSubject = TestSubject.create(testScheduler);
-    private TestSubject<ResponseOrError<PostWithBody>> postSuccessSubject = TestSubject.create(testScheduler);
-    private TestObserver<AddPost> postRequestObserver = new TestObserver<>();
+    private TestSubject<ResponseOrError<PostWithBody>> addPostResult = TestSubject.create(testScheduler);
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         when(postsDao.postsObservable()).thenReturn(postsSubject);
-        when(postsDao.postSuccesObservable()).thenReturn(postSuccessSubject);
-        when(postsDao.postRequestObserver()).thenReturn(postRequestObserver);
+        when(postsDao.postRequestObserver(any(AddPost.class))).thenReturn(addPostResult);
 
         postPresenter = new CreatePostPresenter(postsDao);
     }
@@ -73,16 +73,14 @@ public class CreatePostPresenterTest {
     public void testAfterFillingDataAndClickSend_postIsSent() throws Exception {
         fillDataAndSubmit();
 
-        assert_().that(postRequestObserver.getOnNextEvents())
-                .containsExactly(new AddPost("pies", "body"));
+        verify(postsDao).postRequestObserver(new AddPost("pies", "body"));
     }
 
     @Test
     public void testClickSendWithoutData_postIsNotSend() throws Exception {
         postPresenter.sendObservable().onNext(null);
 
-        assert_().that(postRequestObserver.getOnNextEvents())
-                .isEmpty();
+        verify(postsDao, never()).postRequestObserver(any(AddPost.class));
     }
 
     @Test
@@ -92,8 +90,7 @@ public class CreatePostPresenterTest {
 
         postPresenter.sendObservable().onNext(null);
 
-        assert_().that(postRequestObserver.getOnNextEvents())
-                .isEmpty();
+        verify(postsDao, never()).postRequestObserver(any(AddPost.class));
     }
 
     @Test
@@ -254,13 +251,13 @@ public class CreatePostPresenterTest {
     }
 
     private void returnCorrectResponse() {
-        postSuccessSubject.onNext(ResponseOrError.fromData(new PostWithBody("id", "krowa", "123")), 0);
+        addPostResult.onNext(ResponseOrError.fromData(new PostWithBody("id", "krowa", "123")), 0);
         testScheduler.triggerActions();
     }
 
     private void returnException() {
         final IOException e = new IOException("xyz");
-        postSuccessSubject.onNext(ResponseOrError.<PostWithBody>fromError(e), 0);
+        addPostResult.onNext(ResponseOrError.<PostWithBody>fromError(e), 0);
         testScheduler.triggerActions();
     }
 
