@@ -23,15 +23,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nonnull;
 
 import rx.Notification;
 import rx.Observable;
 import rx.Observer;
+import rx.Producer;
 import rx.Scheduler;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.exceptions.Exceptions;
+import rx.exceptions.OnErrorThrowable;
 import rx.functions.Action0;
 import rx.functions.Func0;
 import rx.functions.Func1;
@@ -310,13 +314,39 @@ public class MoreOperators {
     public static <T> Observable.OnSubscribe<T> fromAction(@Nonnull final Func0<T> call) {
         return new Observable.OnSubscribe<T>() {
             @Override
-            public void call(Subscriber<? super T> subscriber) {
+            public void call(final Subscriber<? super T> child) {
+                final AtomicBoolean produce = new AtomicBoolean(true);
+                child.setProducer(new Producer() {
+                    @Override
+                    public void request(long n) {
+                        if (n <= 0) {
+                            return;
+                        }
+                        if (produce.getAndSet(false)) {
+                            produceValue(child);
+                        }
+                    }
+                });
+            }
+
+            private void produceValue(Subscriber<? super T> child) {
                 try {
-                    subscriber.onNext(call.call());
+                    if (child.isUnsubscribed()) {
+                        return;
+                    }
+                    final T result = call.call();
+                    if (child.isUnsubscribed()) {
+                        return;
+                    }
+                    child.onNext(result);
                 } catch (Throwable e) {
-                    subscriber.onError(e);
+                    Exceptions.throwIfFatal(e);
+                    child.onError(OnErrorThrowable.addValueAsLastCause(e, call));
                 }
-                subscriber.onCompleted();
+                if (child.isUnsubscribed()) {
+                    return;
+                }
+                child.onCompleted();
             }
         };
     }
