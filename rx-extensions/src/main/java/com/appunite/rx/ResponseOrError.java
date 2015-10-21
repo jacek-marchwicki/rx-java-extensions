@@ -505,7 +505,7 @@ public class ResponseOrError<T> {
     public static Observable<Throwable> combineErrorsObservable(@Nonnull List<Observable<ResponseOrError<?>>> observables) {
         final ArrayList<Observable<Throwable>> ret = new ArrayList<>();
         for (int i = 0; i < observables.size(); i++) {
-            ret.set(i, observables.get(i).map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null));
+            ret.add(observables.get(i).map(ResponseOrError.toNullableThrowable()).startWith((Throwable) null));
         }
         return Observable.combineLatest(Collections.unmodifiableList(ret),
                 FunctionsN.combineFirstThrowable());

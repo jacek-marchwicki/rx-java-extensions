@@ -127,7 +127,7 @@ public class ChangesDetector<T, H> {
         final ArrayList<H> result = new ArrayList<>(values.size());
         for (int i = 0; i < values.size(); i++) {
             T value = values.get(i);
-            result.set(i, mDetector.apply(value));
+            result.add(mDetector.apply(value));
         }
 
         return Collections.unmodifiableList(result);
