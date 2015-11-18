@@ -48,4 +48,15 @@ public class RxContextMore {
             }
         };
     }
+
+    @Nonnull
+    public static Action1<? super CharSequence> showToast(@Nonnull final Context context) {
+        checkNotNull(context);
+        return new Action1<CharSequence>() {
+            @Override
+            public void call(CharSequence text) {
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
+            }
+        };
+    }
 }
