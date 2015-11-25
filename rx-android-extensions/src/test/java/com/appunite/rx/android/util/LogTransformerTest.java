@@ -9,13 +9,14 @@ import rx.Observable;
 import rx.functions.Action1;
 
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.verify;
 
 public class LogTransformerTest {
 
     @Mock
-    LogTransformer.Logger mLogger;
+    LogTransformer.Logger logger;
 
     @Before
     public void setUp() throws Exception {
@@ -25,16 +26,17 @@ public class LogTransformerTest {
     @Test
     public void testNextAndCompleted() throws Exception {
         Observable.just(1)
-                .compose(LogTransformer.transformer("tag", "test", mLogger))
+                .compose(LogTransformer.transformer("tag", "test", logger))
                 .subscribe();
-        verify(mLogger).logNext(matches("tag"), anyString());
-        verify(mLogger).logCompleted(matches("tag"), anyString());
+        verify(logger).logNext(matches("tag"), anyString(), eq(1));
+        verify(logger).logCompleted(matches("tag"), anyString());
     }
 
     @Test
     public void testError() throws Exception {
-        Observable.error(new RuntimeException())
-                .compose(LogTransformer.transformer("tag", "test", mLogger))
+        final RuntimeException exception = new RuntimeException();
+        Observable.error(exception)
+                .compose(LogTransformer.transformer("tag", "test", logger))
                 .subscribe(
                         new Action1<Object>() {
                             @Override
@@ -48,6 +50,6 @@ public class LogTransformerTest {
 
                             }
                         });
-        verify(mLogger).logError(matches("tag"), anyString());
+        verify(logger).logError(matches("tag"), anyString(), eq(exception));
     }
 }
