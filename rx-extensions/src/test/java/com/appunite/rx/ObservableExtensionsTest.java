@@ -16,90 +16,188 @@
 
 package com.appunite.rx;
 
+import com.google.common.collect.ImmutableList;
+
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import javax.annotation.Nonnull;
+
 import rx.Observable;
-import rx.Observer;
 import rx.Subscription;
+import rx.observers.TestSubscriber;
 import rx.subjects.PublishSubject;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static com.google.common.truth.Truth.assert_;
 
 public class ObservableExtensionsTest {
 
-    private PublishSubject<String> subject;
-    private Observable<String> behaviorCountObservable;
-
-    @Mock
-    Observer<? super String> stringObserver1;
-    @Mock
-    Observer<? super String> stringObserver2;
+    @Nonnull
+    private final PublishSubject<String> subject = PublishSubject.create();
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
-        subject = PublishSubject.create();
-
-        behaviorCountObservable = ObservableExtensions.behavior(subject).refCount();
-
     }
 
     @Test
-    public void testBehaviorWithTwoParallelSchedulers_returnsSameValue() throws Exception {
-        behaviorCountObservable.subscribe(stringObserver1);
-        behaviorCountObservable.subscribe(stringObserver2);
+    public void testBehaviorRefCountWithTwoParallelSchedulers_returnsSameValue() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorRefCount());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+
+        refCount.subscribe(stringSubscriber1);
+        refCount.subscribe(stringSubscriber2);
 
         subject.onNext("test1");
 
-        verify(stringObserver1).onNext("test1");
-        verify(stringObserver2).onNext("test1");
-        verifyZeroInteractions(stringObserver1);
-        verifyZeroInteractions(stringObserver2);
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber1.assertNoErrors();
+        stringSubscriber2.assertNoErrors();
     }
 
     @Test
-    public void testBehaviorAfterUnsubscribinAllSubscribers_newSchedulerWillNotGetData() throws Exception {
-        final Subscription s1 = behaviorCountObservable.subscribe(stringObserver1);
+    public void testBehaviorConnectedWithTwoParallelSchedulers_returnsSameValue() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+
+        refCount.subscribe(stringSubscriber1);
+        refCount.subscribe(stringSubscriber2);
+
         subject.onNext("test1");
-        verify(stringObserver1).onNext("test1");
+
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber1.assertNoErrors();
+        stringSubscriber2.assertNoErrors();
+    }
+
+    @Test
+    public void testBehaviorRefCountNextValueBeforeSubscription_isIgnoredAfterSubscribe() throws Exception {
+        final Observable<String> connected = subject.compose(ObservableExtensions.<String>behaviorRefCount());
+        final TestSubscriber<String> stringSubscriber = new TestSubscriber<>();
+
+        subject.onNext("test1");
+
+        connected.subscribe(stringSubscriber);
+
+        assert_().that(stringSubscriber.getOnNextEvents()).isEqualTo(ImmutableList.of());
+    }
+
+    @Test
+    public void testBehaviorConnectedNextValueBeforeSubscription_returnResultAfterSubscribe() throws Exception {
+        final Observable<String> connected = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        final TestSubscriber<String> stringSubscriber = new TestSubscriber<>();
+
+        subject.onNext("test1");
+
+        connected.subscribe(stringSubscriber);
+
+        assert_().that(stringSubscriber.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+    }
+
+    @Test
+    public void testBehaviorRefCountAfterUnsubscribinAllSubscribers_newSchedulerWillNotGetData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorRefCount());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+
+        final Subscription s1 = refCount.subscribe(stringSubscriber1);
+        subject.onNext("test1");
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
         s1.unsubscribe();
 
-        behaviorCountObservable.subscribe(stringObserver2);
+        refCount.subscribe(stringSubscriber2);
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEmpty();
 
-        verifyZeroInteractions(stringObserver1);
-        verifyZeroInteractions(stringObserver2);
+        stringSubscriber1.assertNoErrors();
+        stringSubscriber2.assertNoErrors();
     }
 
     @Test
-    public void testBehaviorAfterSubsribingToAlreadySubscribedScheduler_getSameData() throws Exception {
-        behaviorCountObservable.subscribe(stringObserver1);
+    public void testBehaviorConnectedAfterUnsubscribinAllSubscribers_newSchedulerWillGetData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+
+        final Subscription s1 = refCount.subscribe(stringSubscriber1);
         subject.onNext("test1");
-        verify(stringObserver1).onNext("test1");
-        verifyZeroInteractions(stringObserver1);
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        s1.unsubscribe();
 
-        behaviorCountObservable.subscribe(stringObserver2);
+        refCount.subscribe(stringSubscriber2);
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
 
-        verify(stringObserver2).onNext("test1");
-        verifyZeroInteractions(stringObserver2);
+        stringSubscriber1.assertNoErrors();
+        stringSubscriber2.assertNoErrors();
     }
 
     @Test
-    public void testBehaviorAfterGettingTwoDataOnFirstSubscription_newWillOnlyGetLastData() throws Exception {
-        behaviorCountObservable.subscribe(stringObserver1);
+    public void testBehaviorRefCountAfterSubsribingToAlreadySubscribedScheduler_getSameData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorRefCount());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+        refCount.subscribe(stringSubscriber1);
+        subject.onNext("test1");
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber1.assertNoErrors();
+
+        refCount.subscribe(stringSubscriber2);
+
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber2.assertNoErrors();
+    }
+
+    @Test
+    public void testBehaviorConnectedAfterSubsribingToAlreadySubscribedScheduler_getSameData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+        refCount.subscribe(stringSubscriber1);
+        subject.onNext("test1");
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber1.assertNoErrors();
+
+        refCount.subscribe(stringSubscriber2);
+
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test1"));
+        stringSubscriber2.assertNoErrors();
+    }
+
+    @Test
+    public void testBehaviorRefCountAfterGettingTwoDataOnFirstSubscription_newWillOnlyGetLastData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorRefCount());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+        refCount.subscribe(stringSubscriber1);
         subject.onNext("test1");
         subject.onNext("test2");
-        verify(stringObserver1).onNext("test1");
-        verify(stringObserver1).onNext("test2");
-        verifyZeroInteractions(stringObserver1);
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1", "test2"));
+        stringSubscriber1.assertNoErrors();
 
-        behaviorCountObservable.subscribe(stringObserver2);
+        refCount.subscribe(stringSubscriber2);
 
-        verify(stringObserver2).onNext("test2");
-        verifyZeroInteractions(stringObserver2);
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test2"));
+        stringSubscriber2.assertNoErrors();
+    }
+
+    @Test
+    public void testBehaviorConnectedAfterGettingTwoDataOnFirstSubscription_newWillOnlyGetLastData() throws Exception {
+        final Observable<String> refCount = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        final TestSubscriber<String> stringSubscriber1 = new TestSubscriber<>();
+        final TestSubscriber<String> stringSubscriber2 = new TestSubscriber<>();
+        refCount.subscribe(stringSubscriber1);
+        subject.onNext("test1");
+        subject.onNext("test2");
+        assert_().that(stringSubscriber1.getOnNextEvents()).isEqualTo(ImmutableList.of("test1", "test2"));
+        stringSubscriber1.assertNoErrors();
+
+        refCount.subscribe(stringSubscriber2);
+
+        assert_().that(stringSubscriber2.getOnNextEvents()).isEqualTo(ImmutableList.of("test2"));
+        stringSubscriber2.assertNoErrors();
     }
 }
