@@ -18,26 +18,31 @@ package com.appunite.rx.operators;
 
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.observables.NetworkObservableProvider;
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nonnull;
 
 import rx.Notification;
 import rx.Observable;
 import rx.Observer;
+import rx.Producer;
 import rx.Scheduler;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.exceptions.Exceptions;
+import rx.exceptions.OnErrorThrowable;
 import rx.functions.Action0;
 import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
 import rx.functions.FuncN;
+import rx.internal.util.RxRingBuffer;
 import rx.subscriptions.Subscriptions;
 
 import static com.appunite.rx.ObservableExtensions.behavior;
@@ -309,67 +314,41 @@ public class MoreOperators {
     public static <T> Observable.OnSubscribe<T> fromAction(@Nonnull final Func0<T> call) {
         return new Observable.OnSubscribe<T>() {
             @Override
-            public void call(Subscriber<? super T> subscriber) {
+            public void call(final Subscriber<? super T> child) {
+                final AtomicBoolean produce = new AtomicBoolean(true);
+                child.setProducer(new Producer() {
+                    @Override
+                    public void request(long n) {
+                        if (n <= 0) {
+                            return;
+                        }
+                        if (produce.getAndSet(false)) {
+                            produceValue(child);
+                        }
+                    }
+                });
+            }
+
+            private void produceValue(Subscriber<? super T> child) {
                 try {
-                    subscriber.onNext(call.call());
+                    if (child.isUnsubscribed()) {
+                        return;
+                    }
+                    final T result = call.call();
+                    if (child.isUnsubscribed()) {
+                        return;
+                    }
+                    child.onNext(result);
                 } catch (Throwable e) {
-                    subscriber.onError(e);
+                    Exceptions.throwIfFatal(e);
+                    child.onError(OnErrorThrowable.addValueAsLastCause(e, call));
                 }
-                subscriber.onCompleted();
+                if (child.isUnsubscribed()) {
+                    return;
+                }
+                child.onCompleted();
             }
         };
-    }
-
-    @Nonnull
-    public static <T> Observable.Transformer<T, Optional<T>> firstOrAbsent() {
-        return new Observable.Transformer<T, Optional<T>>() {
-            @Override
-            public Observable<Optional<T>> call(Observable<T> observable) {
-                return observable
-                        .map(new Func1<T, Optional<T>>() {
-                            @Override
-                            public Optional<T> call(T item) {
-                                return Optional.of(item);
-                            }
-                        })
-                        .firstOrDefault(Optional.<T>absent());
-            }
-        };
-    }
-
-    /**
-     * Use {@link #newCombineAll()}
-     */
-    @Deprecated
-    @Nonnull
-    public static <T> Observable.Transformer<List<Observable<T>>, ImmutableList<T>> combineAll() {
-        return new Observable.Transformer<List<Observable<T>>, ImmutableList<T>>() {
-            @Override
-            public Observable<ImmutableList<T>> call(Observable<List<Observable<T>>> listObservable) {
-                return listObservable
-                        .compose(MoreOperators.<T>newCombineAll())
-                        .map(new Func1<List<T>, ImmutableList<T>>() {
-                            @Override
-                            public ImmutableList<T> call(List<T> ts) {
-                                return ImmutableList.copyOf(ts);
-                            }
-                        });
-            }
-        };
-    }
-
-    /**
-     * Use {@link #newCombineAll(List)}
-     */
-    @Deprecated
-    @Nonnull
-    public static <T> Observable<ImmutableList<T>> combineAll(@Nonnull List<Observable<T>> observables) {
-        return newCombineAll(observables).map(new Func1<List<T>, ImmutableList<T>>() {
-            @Override
-            public ImmutableList<T> call(List<T> ts) {
-                return ImmutableList.copyOf(ts);
-            }
-        });
     }
 
     @Nonnull
@@ -390,17 +369,36 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable<List<T>> newCombineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
-            return Observable.just((List<T>)ImmutableList.<T>of());
+            return Observable.just(Collections.<T>emptyList());
         }
-        return OnSubscribeCombineLatestWithoutBackPressure.combineLatest(observables, new FuncN<List<T>>() {
+        if (observables.size() > RxRingBuffer.SIZE) {
+            // RxJava has some limitation that can only handle up to 128 arguments in combineLast
+            // Additionally on android there is a bug so this limit is cut to 16 arguments - on
+            // android we will not get any throw so rxjava fail sailent
+            final int size = observables.size();
+            final int left = size / 2;
+            return Observable.combineLatest(
+                    newCombineAll(observables.subList(0, left)),
+                    newCombineAll(observables.subList(left, size)),
+                    new Func2<List<T>, List<T>, List<T>>() {
+                        @Override
+                        public List<T> call(final List<T> ts, final List<T> ts2) {
+                            final ArrayList<T> ret = new ArrayList<>(ts.size() + ts2.size());
+                            ret.addAll(ts);
+                            ret.addAll(ts2);
+                            return Collections.unmodifiableList(ret);
+                        }
+                    });
+        }
+        return Observable.combineLatest(observables, new FuncN<List<T>>() {
             @Override
             public List<T> call(final Object... args) {
-                final ImmutableList.Builder<T> builder = ImmutableList.builder();
+                final ArrayList<T> ret = new ArrayList<>(args.length);
                 for (Object arg : args) {
                     //noinspection unchecked
-                    builder.add((T) arg);
+                    ret.add((T) arg);
                 }
-                return builder.build();
+                return Collections.unmodifiableList(ret);
             }
         });
     }

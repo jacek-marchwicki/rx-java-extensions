@@ -3,6 +3,7 @@ package com.appunite.rx.example.model.dao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.helpers.CacheProvider;
+import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostWithBody;
@@ -23,6 +24,7 @@ import javax.inject.Singleton;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 
@@ -36,7 +38,6 @@ public class PostsDao {
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
     private final LoadingCache<String, PostDao> cache;
-
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -149,6 +150,20 @@ public class PostsDao {
     @Nonnull
     public Observer<Object> refreshObserver() {
         return refreshSubject;
+    }
+
+    @Nonnull
+    public Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull AddPost post) {
+        return guestbookService.createPost(post)
+                .subscribeOn(networkScheduler)
+                .doOnNext(new Action1<PostWithBody>() {
+                    @Override
+                    public void call(PostWithBody postWithBody) {
+                        refreshSubject.doOnNext(null);
+                    }
+                })
+                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
+                .observeOn(uiScheduler);
     }
 
     public class PostDao {

@@ -16,15 +16,14 @@
 
 package com.appunite.detector;
 
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
+
 
 /**
  * Detector for adapter items that can find what was changed and call recycler adapter methods
@@ -45,7 +44,7 @@ public class ChangesDetector<T, H> {
     }
 
     @Nonnull
-    public List<H> mItems = ImmutableList.of();
+    public List<H> mItems = new ArrayList<>();
     @Nonnull
     public final Detector<T, H> mDetector;
 
@@ -57,9 +56,8 @@ public class ChangesDetector<T, H> {
         mDetector = checkNotNull(detector);
     }
 
-    public interface Detector<T, H> extends Function<T, H> {
+    public interface Detector<T, H> {
 
-        @SuppressWarnings("NullableProblems")
         @Nonnull
         H apply(@Nonnull T item);
 
@@ -92,9 +90,7 @@ public class ChangesDetector<T, H> {
         checkNotNull(adapter);
         checkNotNull(values);
 
-        final ImmutableList<H> list = FluentIterable.from(values)
-                .transform(mDetector)
-                .toList();
+        final List<H> list = apply(values);
 
         int firstListPosition = 0;
         int secondListPosition = 0;
@@ -124,6 +120,17 @@ public class ChangesDetector<T, H> {
         int itemsInserted = values.size() - secondListPosition;
         notify(adapter, counter, toRemove, itemsInserted);
         mItems = list;
+    }
+
+    @Nonnull
+    private List<H> apply(@Nonnull List<T> values) {
+        final ArrayList<H> result = new ArrayList<>(values.size());
+        for (int i = 0; i < values.size(); i++) {
+            T value = values.get(i);
+            result.add(mDetector.apply(value));
+        }
+
+        return Collections.unmodifiableList(result);
     }
 
     private int notify(@Nonnull ChangesAdapter adapter,

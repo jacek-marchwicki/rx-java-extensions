@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import rx.Observable;
 import rx.Observable.Operator;
+import rx.Producer;
 import rx.Subscriber;
 import rx.observers.SerializedSubscriber;
 
@@ -48,35 +49,20 @@ public final class OperatorSampleWithLastWithObservable<T, U> implements Operato
     
         final AtomicReference<Object> value = new AtomicReference<>(EMPTY_TOKEN);
 
-        final Subscriber<U> samplerSub = new Subscriber<U>(child) {
-            @Override
-            public void onNext(U t) {
-                final Object localValue = value.get();
-                if (localValue != EMPTY_TOKEN) {
-                    @SuppressWarnings("unchecked")
-                    T v = (T)localValue;
-                    s.onNext(v);
-                }
-            }
+        final Subscriber<U> samplerSub = new MySubscriber<>(s, value);
+
+
+        final Subscriber<T> result = new Subscriber<T>(s) {
 
             @Override
-            public void onError(Throwable e) {
-                s.onError(e);
-                unsubscribe();
+            public void onStart() {
+                request(Long.MAX_VALUE);
             }
 
-            @Override
-            public void onCompleted() {
-                s.onCompleted();
-                unsubscribe();
-            }
-            
-        };
-        
-        final Subscriber<T> result = new Subscriber<T>(child) {
             @Override
             public void onNext(T t) {
                 value.set(t);
+                request(1);
             }
 
             @Override
@@ -87,13 +73,58 @@ public final class OperatorSampleWithLastWithObservable<T, U> implements Operato
 
             @Override
             public void onCompleted() {
-                s.onCompleted();
-                unsubscribe();
             }
+
         };
 
-        sampler.unsafeSubscribe(samplerSub);
+        result.add(sampler.unsafeSubscribe(samplerSub));
         
         return result;
+    }
+
+    private class MySubscriber<U, T> extends Subscriber<U> {
+
+        private final SerializedSubscriber<T> child;
+        private final AtomicReference<Object> value;
+
+        public MySubscriber(SerializedSubscriber<T> child, AtomicReference<Object> value) {
+            super(child);
+            this.child = child;
+            this.value = value;
+            child.setProducer(new Producer() {
+                @Override
+                public void request(long n) {
+                    requestMe(n);
+                }
+            });
+        }
+
+        @Override
+        public void onNext(U t) {
+            final Object localValue = value.get();
+            if (localValue != EMPTY_TOKEN) {
+                @SuppressWarnings("unchecked")
+                T v = (T)localValue;
+                child.onNext(v);
+            } else {
+                request(1);
+            }
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            child.onError(e);
+            unsubscribe();
+        }
+
+        @Override
+        public void onCompleted() {
+            child.onCompleted();
+            unsubscribe();
+        }
+
+        private void requestMe(long n) {
+            request(n);
+        }
     }
 }

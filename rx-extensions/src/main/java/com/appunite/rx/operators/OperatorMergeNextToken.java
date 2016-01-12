@@ -53,7 +53,7 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
 
     @Override
     public Subscriber<? super K> call(final Subscriber<? super T> child) {
-        return new Subscriber<K>() {
+        return new Subscriber<K>(child) {
             private final ReentrantLock lock = new ReentrantLock();
             private T previous = initialValue;
             private boolean skip = false;
@@ -100,6 +100,7 @@ public class OperatorMergeNextToken<T, K> implements Observable.Operator<T, K> {
                 lock.lock();
                 try {
                     if (skip) {
+                        request(1);
                         return;
                     }
                     skip = true;

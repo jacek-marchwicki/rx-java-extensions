@@ -17,11 +17,11 @@ repositories {
 dependencies {
     compile project(":rx-extensions")
 
-    compile 'com.android.support:support-v4:22.2.1'
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:recyclerview-v7:22.2.1'
-
+    compile 'com.android.support:support-v4:23.0.1'
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.android.support:recyclerview-v7:23.0.1'
     compile 'io.reactivex:rxandroid:0.24.0'
+
     compile "io.reactivex:rxjava:1.0.8"
 
     testCompile 'junit:junit:4.11'
@@ -34,12 +34,12 @@ dependencies {
 }
 
 android {
-    buildToolsVersion "22.0.1"
-    compileSdkVersion 22
+    buildToolsVersion "23.0.1"
+    compileSdkVersion 23
 
     defaultConfig {
         minSdkVersion 8
-        targetSdkVersion 22
+        targetSdkVersion 23
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 

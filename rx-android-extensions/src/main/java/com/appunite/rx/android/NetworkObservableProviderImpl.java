@@ -34,7 +34,7 @@ import rx.Subscriber;
 import rx.functions.Action1;
 import rx.observers.Subscribers;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class NetworkObservableProviderImpl implements NetworkObservableProvider {
 

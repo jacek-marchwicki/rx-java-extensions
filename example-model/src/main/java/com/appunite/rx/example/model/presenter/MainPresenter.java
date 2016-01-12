@@ -38,6 +38,8 @@ public class MainPresenter {
     private final Subject<AdapterItem, AdapterItem> openDetailsSubject = PublishSubject.create();
     @Nonnull
     private final PostsDao postsDao;
+    @Nonnull
+    private final PublishSubject<Object> clickOnFabSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull PostsDao postsDao) {
         this.postsDao = postsDao;
@@ -135,6 +137,16 @@ public class MainPresenter {
         return postsDao.loadMoreObserver();
     }
 
+    @Nonnull
+    public Observer<Object> clickOnFabObserver() {
+        return clickOnFabSubject;
+    }
+
+    @Nonnull
+    public Observable<Object> startCreatePostActivityObservable() {
+        return clickOnFabSubject;
+    }
+
     public class AdapterItem implements BaseAdapterItem {
 
         @Nonnull
@@ -199,5 +211,6 @@ public class MainPresenter {
                 }
             });
         }
+
     }
 }

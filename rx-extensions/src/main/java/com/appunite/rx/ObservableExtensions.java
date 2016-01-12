@@ -33,7 +33,7 @@ public class ObservableExtensions {
 
             @Override
             public Subject<? super T, ? extends T> call() {
-                return BehaviorSubject.<T> create();
+                return BehaviorSubject.<T>create();
             }
         });
     }
@@ -44,6 +44,18 @@ public class ObservableExtensions {
             @Override
             public Observable<T> call(final Observable<T> tObservable) {
                 return behavior(tObservable).refCount();
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T> Observable.Transformer<T, T> behaviorConnected() {
+        return new Observable.Transformer<T, T>() {
+            @Override
+            public Observable<T> call(Observable<T> tObservable) {
+                final ConnectableObservable<T> behavior = behavior(tObservable);
+                behavior.connect();
+                return behavior;
             }
         };
     }

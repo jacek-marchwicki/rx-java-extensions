@@ -2,6 +2,7 @@ package com.appunite.rx.example;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,14 +13,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.appunite.rx.android.MoreViewActions;
-import com.appunite.rx.android.MoreViewObservables;
+import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.android.adapter.UniversalAdapter;
 import com.appunite.rx.android.adapter.ViewHolderManager;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
+import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
+import com.jakewharton.rxbinding.view.RxView;
+import com.jakewharton.rxbinding.widget.RxTextView;
 
 import java.util.List;
 
@@ -27,8 +30,6 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import rx.android.view.ViewActions;
-import rx.android.view.ViewObservable;
 import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
@@ -44,6 +45,8 @@ public class MainActivity extends BaseActivity {
     View progress;
     @InjectView(R.id.main_activity_error)
     TextView error;
+    @InjectView(R.id.main_activity_fab)
+    FloatingActionButton fab;
 
     public static class AdapterItemManager implements ViewHolderManager {
 
@@ -75,7 +78,7 @@ public class MainActivity extends BaseActivity {
                 text.setText(item.text());
                 unsubscribe();
                 subscription = new CompositeSubscription(
-                        ViewObservable.clicks(text)
+                        RxView.clicks(text)
                                 .subscribe(item.clickObserver())
                 );
             }
@@ -113,30 +116,38 @@ public class MainActivity extends BaseActivity {
 
 
         presenter.titleObservable()
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(MoreViewActions.setTitle(toolbar));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxToolbarMore.title(toolbar));
 
         presenter.itemsObservable()
-                .compose(lifecycleMainObservable.<List<BaseAdapterItem>>bindLifecycle())
+                .compose(this.<List<BaseAdapterItem>>bindToLifecycle())
                 .subscribe(mainAdapter);
 
         presenter.progressObservable()
-                .compose(lifecycleMainObservable.<Boolean>bindLifecycle())
-                .subscribe(ViewActions.setVisibility(progress, View.INVISIBLE));
+                .compose(this.<Boolean>bindToLifecycle())
+                .subscribe(RxView.visibility(progress, View.INVISIBLE));
 
         presenter.errorObservable()
                 .map(ErrorHelper.mapThrowableToStringError())
-                .compose(lifecycleMainObservable.<String>bindLifecycle())
-                .subscribe(ViewActions.setText(error));
+                .compose(this.<String>bindToLifecycle())
+                .subscribe(RxTextView.text(error));
 
         presenter.openDetailsObservable()
-                .compose(lifecycleMainObservable.<MainPresenter.AdapterItem>bindLifecycle())
+                .compose(this.<MainPresenter.AdapterItem>bindToLifecycle())
                 .subscribe(startDetailsActivityAction(this));
 
-        MoreViewObservables.scroll(recyclerView)
+        RxRecyclerView.scrollEvents(recyclerView)
                 .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
-                .compose(lifecycleMainObservable.bindLifecycle())
+                .compose(this.bindToLifecycle())
                 .subscribe(presenter.loadMoreObserver());
+
+        RxView.clicks(fab)
+                .compose(this.bindToLifecycle())
+                .subscribe(presenter.clickOnFabObserver());
+
+        presenter.startCreatePostActivityObservable()
+                .compose(this.bindToLifecycle())
+                .subscribe(startPostActivityAction(this));
     }
 
     @Nonnull
@@ -150,6 +161,17 @@ public class MainActivity extends BaseActivity {
                 ActivityCompat.startActivity(activity,
                         DetailsActivity.getIntent(activity, adapterItem.id()),
                         bundle);
+            }
+        };
+    }
+
+    @Nonnull
+    private static Action1<Object> startPostActivityAction(final Activity activity) {
+        return new Action1<Object>() {
+            @Override
+            public void call(Object o) {
+
+                activity.startActivity(CreatePostActivity.newIntent(activity));
             }
         };
     }
