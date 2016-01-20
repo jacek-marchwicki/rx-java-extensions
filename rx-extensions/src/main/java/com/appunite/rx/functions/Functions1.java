@@ -19,9 +19,11 @@ package com.appunite.rx.functions;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import rx.functions.Func1;
+
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
+import static com.appunite.rx.internal.Preconditions.checkState;
 
 public class Functions1 {
 
@@ -58,6 +60,16 @@ public class Functions1 {
     @Nonnull
     public static Func1<? super Object, Boolean> isNotNull() {
         return neg(isNull());
+    }
+
+    @Nonnull
+    public static Func1<? super CharSequence, Boolean> isNullOrEmpty() {
+        return new Func1<CharSequence, Boolean>() {
+            @Override
+            public Boolean call(CharSequence charSequence) {
+                return charSequence == null || charSequence.length() == 0;
+            }
+        };
     }
 
     @Nonnull
@@ -143,30 +155,20 @@ public class Functions1 {
         };
     }
 
-    @Nonnull
-    public static Func1<CharSequence, Boolean> isEmpty() {
-        return new Func1<CharSequence, Boolean>() {
-            @Override
-            public Boolean call(CharSequence charSequence) {
-                return charSequence.length() == 0;
-            }
-        };
-    }
-
     /**
      * Checks if propagated value is equal to any of passed values.
+     *
      * @param values values which are compared to propagated value.
      * @return true if propagated value is equal to at least one of passed values, false otherwise.
      * If values length is equal to 0 or passed null reference this method returns false.
      */
     @Nonnull
-    public static Func1<? super Object, Boolean> isEqualTo(@Nullable final Object... values) {
+    public static Func1<? super Object, Boolean> isEqualTo(@Nonnull final Object... values) {
+        checkNotNull(values, "Values cannot be null");
+        checkState(values.length > 0, "You need to specify at least one object.");
         return new Func1<Object, Boolean>() {
             @Override
             public Boolean call(final Object o) {
-                if (values == null) {
-                    return false;
-                }
                 for (final Object value : values) {
                     if (Objects.equals(o, value)) {
                         return true;
