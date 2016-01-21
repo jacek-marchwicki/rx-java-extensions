@@ -118,6 +118,15 @@ public class Functions1 {
     }
 
     /**
+     * Use {@link #toStringFunction()}
+     */
+    @Deprecated
+    @Nonnull
+    public static Func1<? super CharSequence, String> charSequenceToString() {
+        return toStringFunction();
+    }
+
+    /**
      * Converts propagated value to string.
      * @return propagated value as string converted by its toString() method. If propagated
      * value is null, null is returned.
