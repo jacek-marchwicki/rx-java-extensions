@@ -1,62 +1,61 @@
 package com.appunite.rx.functions;
 
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.HashMap;
-import java.util.Map;
 
-import rx.Observer;
-import rx.subjects.PublishSubject;
+import rx.Observable;
+import rx.observers.TestSubscriber;
 
-import static org.mockito.Mockito.verify;
+import static com.google.common.truth.Truth.assert_;
 
 public class Functions1Test {
 
-    private PublishSubject<Object> subject;
-    @Mock
-    Observer<String> observer;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-
-        subject = PublishSubject.create();
-        subject.map(Functions1.toStringFunction()).subscribe(observer);
-    }
-
     @Test
     public void testToStringFunction_null() throws Exception {
-        subject.onNext(null);
+        final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
 
-        verify(observer).onNext(null);
+        Observable.just(null)
+                .map(Functions1.toStringFunction())
+                .subscribe(toStringFunctionResult);
+
+        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly((String) null);
     }
 
     @Test
     public void testToStringFunction_string() throws Exception {
-        subject.onNext("Awesome string!");
+        final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
 
-        verify(observer).onNext("Awesome string!");
+        Observable.just("Awesome string!")
+                .map(Functions1.toStringFunction())
+                .subscribe(toStringFunctionResult);
+
+        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("Awesome string!");
     }
 
     @Test
     public void testToStringFunction_int() throws Exception {
-        subject.onNext(1337);
+        final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
 
-        verify(observer).onNext("1337");
+        Observable.just(1337)
+                .map(Functions1.toStringFunction())
+                .subscribe(toStringFunctionResult);
+
+        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("1337");
     }
 
     @Test
     public void testToStringFunction_hashMap() throws Exception {
-        final Map<String, Integer> map = new HashMap<>();
-        map.put("a", 1);
-        map.put("b", 4);
-        map.put("c", 7);
+        final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
+        final HashMap<String, Integer> hashMap = new HashMap<>();
+        hashMap.put("a", 1);
+        hashMap.put("b", 4);
+        hashMap.put("c", 7);
 
-        subject.onNext(map);
+       Observable.just(hashMap)
+               .map(Functions1.toStringFunction())
+               .subscribe(toStringFunctionResult);
 
-        verify(observer).onNext("{b=4, c=7, a=1}");
+        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("{b=4, c=7, a=1}");
     }
 }
