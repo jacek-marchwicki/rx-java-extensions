@@ -16,14 +16,14 @@
 
 package com.appunite.rx.functions;
 
-import java.util.Objects;
-
 import javax.annotation.Nonnull;
 
 import rx.functions.Func1;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 import static com.appunite.rx.internal.Preconditions.checkState;
+
+import com.appunite.rx.internal.Objects;
 
 public class Functions1 {
 
@@ -170,7 +170,7 @@ public class Functions1 {
             @Override
             public Boolean call(final Object o) {
                 for (final Object value : values) {
-                    if (Objects.equals(o, value)) {
+                    if (Objects.equal(o, value)) {
                         return true;
                     }
                 }
