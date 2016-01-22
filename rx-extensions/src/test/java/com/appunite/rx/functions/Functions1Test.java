@@ -12,6 +12,39 @@ import static com.google.common.truth.Truth.assert_;
 public class Functions1Test {
 
     @Test
+    public void testIsNullOrEmpty_null() throws Exception {
+        final TestSubscriber<Boolean> isNullOrEmptyResult = new TestSubscriber<>();
+
+        Observable.just((String) null)
+                .map(Functions1.isNullOrEmpty())
+                .subscribe(isNullOrEmptyResult);
+
+        assert_().that(isNullOrEmptyResult.getOnNextEvents()).containsExactly(true);
+    }
+
+    @Test
+    public void testIsNullOrEmpty_emptyString() throws Exception {
+        final TestSubscriber<Boolean> isNullOrEmptyResult = new TestSubscriber<>();
+
+        Observable.just("")
+                .map(Functions1.isNullOrEmpty())
+                .subscribe(isNullOrEmptyResult);
+
+        assert_().that(isNullOrEmptyResult.getOnNextEvents()).containsExactly(true);
+    }
+
+    @Test
+    public void testIsNullOrEmpty_nonEmptyString() throws Exception {
+        final TestSubscriber<Boolean> isNullOrEmptyResult = new TestSubscriber<>();
+
+        Observable.just("Super string!")
+                .map(Functions1.isNullOrEmpty())
+                .subscribe(isNullOrEmptyResult);
+
+        assert_().that(isNullOrEmptyResult.getOnNextEvents()).containsExactly(false);
+    }
+
+    @Test
     public void testToStringFunction_null() throws Exception {
         final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
 
@@ -52,9 +85,9 @@ public class Functions1Test {
         hashMap.put("b", 4);
         hashMap.put("c", 7);
 
-       Observable.just(hashMap)
-               .map(Functions1.toStringFunction())
-               .subscribe(toStringFunctionResult);
+        Observable.just(hashMap)
+                .map(Functions1.toStringFunction())
+                .subscribe(toStringFunctionResult);
 
         assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("{b=4, c=7, a=1}");
     }
