@@ -117,15 +117,29 @@ public class Functions1 {
         };
     }
 
+    /**
+     * Use {@link #toStringFunction()}
+     */
+    @Deprecated
     @Nonnull
     public static Func1<? super CharSequence, String> charSequenceToString() {
-        return new Func1<CharSequence, String>() {
+        return toStringFunction();
+    }
+
+    /**
+     * Converts propagated value to string.
+     * @return propagated value as string converted by its toString() method. If propagated
+     * value is null, null is returned.
+     */
+    @Nonnull
+    public static Func1<Object, String> toStringFunction() {
+        return new Func1<Object, String>() {
             @Override
-            public String call(CharSequence charSequence) {
-                if (charSequence == null) {
+            public String call(Object o) {
+                if (o == null) {
                     return null;
                 }
-                return charSequence instanceof String ? (String) charSequence : charSequence.toString();
+                return o.toString();
             }
         };
     }
