@@ -178,6 +178,11 @@ public class UniversalAdapter extends RecyclerView.Adapter<ViewHolderManager.Bas
         return items.get(position).adapterId();
     }
 
+    @Nonnull
+    public BaseAdapterItem getItem(int position) {
+        return items.get(position);
+    }
+
     @Override
     public boolean onFailedToRecycleView(ViewHolderManager.BaseViewHolder holder) {
         return holder.onFailedToRecycleView();
