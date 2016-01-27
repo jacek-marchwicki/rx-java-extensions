@@ -21,12 +21,15 @@ import com.google.common.collect.ImmutableList;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InOrder;
 
 import javax.annotation.Nonnull;
 
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class ChangesDetectorTest {
     private ChangesDetector<Cat, Cat> mDetector;
@@ -49,6 +52,13 @@ public class ChangesDetectorTest {
             return mName;
         }
 
+        @Override
+        public String toString() {
+            return "Cat{" +
+                    "id=" + mId +
+                    ", name='" + mName + '\'' +
+                    '}';
+        }
     }
 
     @Before
@@ -81,6 +91,78 @@ public class ChangesDetectorTest {
     }
 
     @Test
+    public void testAfterChangeOrder_orderIsChangeIsNotified1() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(0, "zero")), false);
+        verify(mAdapter).notifyItemMoved(1, 0);
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrder_orderIsChangeIsNotified2() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one"), new Cat(2, "two")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(0, "zero"), new Cat(2, "two")), false);
+        verify(mAdapter).notifyItemMoved(1, 0);
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrder_orderIsChangeIsNotified3() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one"), new Cat(2, "two")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(2, "two"), new Cat(0, "zero")), false);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemMoved(1, 0); // one, zero, two
+        inOrder.verify(mAdapter).notifyItemMoved(2, 1); // one, two, zero
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrderAndModifyItem_orderAndChangeAreNotified() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(0, "zero_")), false);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemMoved(1, 0); // one, zero
+        inOrder.verify(mAdapter).notifyItemRangeChanged(1, 1); // one, zero_
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrderAndDeleteSomeItem_orderAndDeleteAreNotified1() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one"), new Cat(2, "two")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(0, "zero")), false);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemMoved(1, 0);
+        inOrder.verify(mAdapter).notifyItemRangeRemoved(2, 1);
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrderAndDeleteSomeItem_orderAndDeleteAreNotified2() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one"), new Cat(2, "two")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(2, "two")), false);
+        verify(mAdapter).notifyItemRangeRemoved(0, 1);
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+    @Test
+    public void testAfterChangeOrderAndDeleteSomeItem_orderAndDeleteAreNotified3() throws Exception {
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(0, "zero"), new Cat(1, "one"), new Cat(2, "two")), false);
+        reset(mAdapter);
+        mDetector.newData(mAdapter, ImmutableList.of(new Cat(2, "two"), new Cat(0, "zero")), false);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemMoved(2, 0); // two, one, zero
+        inOrder.verify(mAdapter).notifyItemRangeRemoved(1, 1); //  two, zero
+        verifyNoMoreInteractions(mAdapter);
+    }
+
+
+    @Test
     public void testAfterInsertAtFirstPlace_firstPlaceIsMarkedAsInserted() throws Exception {
         mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one")), false);
         reset(mAdapter);
@@ -101,8 +183,9 @@ public class ChangesDetectorTest {
         mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one")), false);
         reset(mAdapter);
         mDetector.newData(mAdapter, ImmutableList.of(new Cat(1, "one"), new Cat(2, "two")), true);
-        verify(mAdapter).notifyItemRangeChanged(0, 1);
-        verify(mAdapter).notifyItemRangeInserted(1, 1);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemRangeChanged(0, 1);
+        inOrder.verify(mAdapter).notifyItemRangeInserted(1, 1);
     }
 
     @Test
@@ -171,7 +254,9 @@ public class ChangesDetectorTest {
         reset(mAdapter);
 
         mDetector.newData(mAdapter, ImmutableList.of(new Cat(2, "two"), new Cat(3, "tree")), false);
-        verify(mAdapter).notifyItemRangeChanged(0, 1);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemRangeInserted(0, 1); // two, one, tree
+        inOrder.verify(mAdapter).notifyItemRangeRemoved(1, 1); // two, tree
     }
 
     @Test
@@ -180,7 +265,9 @@ public class ChangesDetectorTest {
         reset(mAdapter);
 
         mDetector.newData(mAdapter, ImmutableList.of(new Cat(2, "two"), new Cat(3, "tree"), new Cat(4, "four")), false);
-        verify(mAdapter).notifyItemRangeChanged(0, 1);
-        verify(mAdapter).notifyItemRangeInserted(1, 1);
+        final InOrder inOrder = inOrder(mAdapter);
+        inOrder.verify(mAdapter).notifyItemRangeInserted(0, 1); // two, one, four
+        inOrder.verify(mAdapter).notifyItemRangeInserted(1, 1); // two, tree, one, four
+        inOrder.verify(mAdapter).notifyItemRangeRemoved(2, 1); // tow, tree, four
     }
 }
