@@ -20,6 +20,11 @@ import javax.annotation.Nonnull;
 
 import rx.functions.Func1;
 
+import static com.appunite.rx.internal.Preconditions.checkNotNull;
+import static com.appunite.rx.internal.Preconditions.checkState;
+
+import com.appunite.rx.internal.Objects;
+
 public class Functions1 {
 
     @Nonnull
@@ -58,11 +63,31 @@ public class Functions1 {
     }
 
     @Nonnull
+    public static Func1<? super CharSequence, Boolean> isNullOrEmpty() {
+        return new Func1<CharSequence, Boolean>() {
+            @Override
+            public Boolean call(CharSequence charSequence) {
+                return charSequence == null || charSequence.length() == 0;
+            }
+        };
+    }
+
+    @Nonnull
     public static Func1<? super Object, ?> toObject() {
         return new Func1<Object, Object>() {
             @Override
             public Object call(final Object o) {
                 return new Object();
+            }
+        };
+    }
+
+    @Nonnull
+    public static Func1<? super Object, Void> toVoid() {
+        return new Func1<Object, Void>() {
+            @Override
+            public Void call(final Object ignore) {
+                return null;
             }
         };
     }
@@ -117,15 +142,53 @@ public class Functions1 {
         };
     }
 
+    /**
+     * Use {@link #toStringFunction()}
+     */
+    @Deprecated
     @Nonnull
     public static Func1<? super CharSequence, String> charSequenceToString() {
-        return new Func1<CharSequence, String>() {
+        return toStringFunction();
+    }
+
+    /**
+     * Converts propagated value to string.
+     * @return propagated value as string converted by its toString() method. If propagated
+     * value is null, null is returned.
+     */
+    @Nonnull
+    public static Func1<Object, String> toStringFunction() {
+        return new Func1<Object, String>() {
             @Override
-            public String call(CharSequence charSequence) {
-                if (charSequence == null) {
+            public String call(Object o) {
+                if (o == null) {
                     return null;
                 }
-                return charSequence instanceof String ? (String) charSequence : charSequence.toString();
+                return o.toString();
+            }
+        };
+    }
+
+    /**
+     * Checks if propagated value is equal to any of passed values.
+     *
+     * @param values values which are compared to propagated value.
+     * @return true if propagated value is equal to at least one of passed values, false otherwise.
+     * If values length is equal to 0 or passed null reference this method returns false.
+     */
+    @Nonnull
+    public static Func1<? super Object, Boolean> isEqualTo(@Nonnull final Object... values) {
+        checkNotNull(values, "Values cannot be null");
+        checkState(values.length > 0, "You need to specify at least one object.");
+        return new Func1<Object, Boolean>() {
+            @Override
+            public Boolean call(final Object o) {
+                for (final Object value : values) {
+                    if (Objects.equal(o, value)) {
+                        return true;
+                    }
+                }
+                return false;
             }
         };
     }

@@ -21,8 +21,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:23.0.1'
     compile 'com.android.support:recyclerview-v7:23.0.1'
 
-    compile "javax.annotation:javax.annotation-api:1.2"
-    compile 'com.google.code.findbugs:annotations:3.0.0'
+    compile 'com.google.code.findbugs:jsr305:3.0.1'
     compile "io.reactivex:rxjava:1.0.8"
 
     testCompile 'junit:junit:4.11'
