@@ -120,7 +120,8 @@ public class ChangesDetector<T, H> {
                     if (force || !mDetector.same(item, objects.get(i))) {
                         adapter.notifyItemRangeChanged(successPosition, 1);
                     }
-                    objects.set(i - 1, objects.remove(0));
+                    objects.remove(i);
+//                    objects.set(i - 1, objects.remove(0));
                     successPosition += 1;
                 } else {
                     adapter.notifyItemRangeRemoved(successPosition, 1);
