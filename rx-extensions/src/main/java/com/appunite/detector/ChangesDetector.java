@@ -121,7 +121,6 @@ public class ChangesDetector<T, H> {
                         adapter.notifyItemRangeChanged(successPosition, 1);
                     }
                     objects.remove(i);
-//                    objects.set(i - 1, objects.remove(0));
                     successPosition += 1;
                 } else {
                     adapter.notifyItemRangeRemoved(successPosition, 1);
