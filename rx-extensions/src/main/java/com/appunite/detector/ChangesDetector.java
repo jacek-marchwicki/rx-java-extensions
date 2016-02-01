@@ -16,7 +16,7 @@
 
 package com.appunite.detector;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,6 +27,7 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 /**
  * Detector for adapter items that can find what was changed and call recycler adapter methods
+ *
  * @param <T> type of items to detect
  */
 public class ChangesDetector<T, H> {
@@ -47,12 +48,13 @@ public class ChangesDetector<T, H> {
 
     @SuppressWarnings("unchecked")
     @Nonnull
-    public H[] mItems = (H[])new Object[0];
+    public List<H> mItems = new ArrayList<>();
     @Nonnull
     public final Detector<T, H> mDetector;
 
     /**
      * Created {@link ChangesDetector} with {@link ChangesDetector.Detector}
+     *
      * @param detector detector
      */
     public ChangesDetector(@Nonnull Detector<T, H> detector) {
@@ -69,23 +71,12 @@ public class ChangesDetector<T, H> {
         boolean same(@Nonnull H item, @Nonnull H newOne);
     }
 
-    private int indexOfItem(@Nonnull List<H> list,
-                            @Nonnull H search) {
-        int counter = 0;
-        for (H item : list) {
-            if (mDetector.matches(item, search)) {
-                return counter;
-            }
-            counter += 1;
-        }
-        return -1;
-    }
-
     /**
      * Inform adapter about new data
+     *
      * @param adapter adapter to be informed about changes
-     * @param values items for adapter
-     * @param force true if you need to force all data reload
+     * @param values  items for adapter
+     * @param force   true if you need to force all data reload
      */
     public void newData(@Nonnull ChangesAdapter adapter,
                         @Nonnull List<T> values,
@@ -93,14 +84,13 @@ public class ChangesDetector<T, H> {
         checkNotNull(adapter);
         checkNotNull(values);
 
-        final H[] list = apply(values);
+        final List<H> list = apply(values);
 
-        final LinkedList<H> objects = new LinkedList<>();
-        Collections.addAll(objects, mItems);
+        final LinkedList<H> objects = new LinkedList<>(mItems);
 
         int successPosition = 0;
-        for (; successPosition < list.length;) {
-            final H item = list[successPosition];
+        for (; successPosition < list.size(); ) {
+            final H item = list.get(successPosition);
             final int i = indexOfItem(objects, item);
             if (i < 0) {
                 adapter.notifyItemRangeInserted(successPosition, 1);
@@ -113,7 +103,7 @@ public class ChangesDetector<T, H> {
                 successPosition += 1;
             } else {
                 final H first = objects.get(0);
-                if (existInList(list, successPosition + 1, first)) {
+                if (existInList(list, first, successPosition + 1)) {
                     // changed order
                     adapter.notifyItemMoved(i + successPosition, successPosition);
 
@@ -136,23 +126,34 @@ public class ChangesDetector<T, H> {
         mItems = list;
     }
 
-    private boolean existInList(H[] list, int start, H search) {
-        for (int i = start, listLength = list.length; i < listLength; i++) {
-            final H item = list[i];
+
+    private int indexOfItem(@Nonnull List<H> list,
+                            @Nonnull H search,
+                            int start) {
+        for (int i = start, listLength = list.size(); i < listLength; i++) {
+            final H item = list.get(i);
             if (mDetector.matches(item, search)) {
-                return true;
+                return i;
             }
         }
-        return false;
+        return -1;
+    }
+
+    private int indexOfItem(@Nonnull List<H> list,
+                            @Nonnull H search) {
+        return indexOfItem(list, search, 0);
+    }
+
+    private boolean existInList(@Nonnull List<H> elements, @Nonnull H search, int start) {
+        return indexOfItem(elements, search, start) >= 0;
     }
 
     @Nonnull
-    private H[] apply(@Nonnull List<T> values) {
-        @SuppressWarnings("unchecked")
-        final H[] result = (H[])new Object[values.size()];
+    private List<H> apply(@Nonnull List<T> values) {
+        final List<H> result = new ArrayList<>();
         for (int i = 0; i < values.size(); i++) {
             T value = values.get(i);
-            result[i] = mDetector.apply(value);
+            result.add(mDetector.apply(value));
         }
 
         return result;
