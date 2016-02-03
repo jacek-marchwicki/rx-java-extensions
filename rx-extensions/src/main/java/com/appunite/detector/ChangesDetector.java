@@ -16,8 +16,8 @@
 
 package com.appunite.detector;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -41,10 +41,13 @@ public class ChangesDetector<T, H> {
         void notifyItemRangeChanged(int start, int count);
 
         void notifyItemRangeRemoved(int start, int count);
+
+        void notifyItemMoved(int fromPosition, int toPosition);
     }
 
+    @SuppressWarnings("unchecked")
     @Nonnull
-    public List<H> mItems = new ArrayList<>();
+    public H[] mItems = (H[])new Object[0];
     @Nonnull
     public final Detector<T, H> mDetector;
 
@@ -66,14 +69,14 @@ public class ChangesDetector<T, H> {
         boolean same(@Nonnull H item, @Nonnull H newOne);
     }
 
-    private int indexOf(@Nonnull List<H> list,
-                        int start,
-                        @Nonnull H item) {
-        for (int i = start, listSize = list.size(); i < listSize; i++) {
-            H t = list.get(i);
-            if (mDetector.matches(t, item)) {
-                return i;
+    private int indexOfItem(@Nonnull List<H> list,
+                            @Nonnull H search) {
+        int counter = 0;
+        for (H item : list) {
+            if (mDetector.matches(item, search)) {
+                return counter;
             }
+            counter += 1;
         }
         return -1;
     }
@@ -90,68 +93,69 @@ public class ChangesDetector<T, H> {
         checkNotNull(adapter);
         checkNotNull(values);
 
-        final List<H> list = apply(values);
+        final H[] list = apply(values);
 
-        int firstListPosition = 0;
-        int secondListPosition = 0;
+        final LinkedList<H> objects = new LinkedList<>();
+        Collections.addAll(objects, mItems);
 
-        int counter = 0;
-        int toRemove = 0;
-
-        for (;firstListPosition < mItems.size(); ++firstListPosition) {
-            final H first = mItems.get(firstListPosition);
-            final int indexOf = indexOf(list, secondListPosition, first);
-            if (indexOf >= 0) {
-                int itemsInserted = indexOf - secondListPosition;
-                counter = notify(adapter, counter, toRemove, itemsInserted);
-                toRemove = 0;
-                secondListPosition = indexOf + 1;
-
-                final H second = list.get(indexOf);
-                if (force || !mDetector.same(first, second)) {
-                    adapter.notifyItemRangeChanged(counter, 1);
+        int successPosition = 0;
+        for (; successPosition < list.length;) {
+            final H item = list[successPosition];
+            final int i = indexOfItem(objects, item);
+            if (i < 0) {
+                adapter.notifyItemRangeInserted(successPosition, 1);
+                successPosition += 1;
+            } else if (i == 0) {
+                if (force || !mDetector.same(item, objects.get(0))) {
+                    adapter.notifyItemRangeChanged(successPosition, 1);
                 }
-                counter += 1;
+                objects.remove(0);
+                successPosition += 1;
             } else {
-                toRemove += 1;
+                final H first = objects.get(0);
+                if (existInList(list, successPosition + 1, first)) {
+                    // changed order
+                    adapter.notifyItemMoved(i + successPosition, successPosition);
+
+                    if (force || !mDetector.same(item, objects.get(i))) {
+                        adapter.notifyItemRangeChanged(successPosition, 1);
+                    }
+                    objects.remove(i);
+                    successPosition += 1;
+                } else {
+                    adapter.notifyItemRangeRemoved(successPosition, 1);
+                    objects.remove(0);
+                }
             }
         }
+        if (objects.size() > 0) {
+            adapter.notifyItemRangeRemoved(successPosition, objects.size());
+            objects.clear();
+        }
 
-        int itemsInserted = values.size() - secondListPosition;
-        notify(adapter, counter, toRemove, itemsInserted);
         mItems = list;
     }
 
-    @Nonnull
-    private List<H> apply(@Nonnull List<T> values) {
-        final ArrayList<H> result = new ArrayList<>(values.size());
-        for (int i = 0; i < values.size(); i++) {
-            T value = values.get(i);
-            result.add(mDetector.apply(value));
+    private boolean existInList(H[] list, int start, H search) {
+        for (int i = start, listLength = list.length; i < listLength; i++) {
+            final H item = list[i];
+            if (mDetector.matches(item, search)) {
+                return true;
+            }
         }
-
-        return Collections.unmodifiableList(result);
+        return false;
     }
 
-    private int notify(@Nonnull ChangesAdapter adapter,
-                       int counter,
-                       int toRemove,
-                       int itemsInserted) {
-        final int itemsChanged = Math.min(itemsInserted, toRemove);
-        toRemove -= itemsChanged;
-        itemsInserted -= itemsChanged;
-        if (itemsChanged > 0) {
-            adapter.notifyItemRangeChanged(counter, itemsChanged);
-            counter += itemsChanged;
+    @Nonnull
+    private H[] apply(@Nonnull List<T> values) {
+        @SuppressWarnings("unchecked")
+        final H[] result = (H[])new Object[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            T value = values.get(i);
+            result[i] = mDetector.apply(value);
         }
-        if (toRemove > 0) {
-            adapter.notifyItemRangeRemoved(counter, toRemove);
-        }
-        if (itemsInserted > 0) {
-            adapter.notifyItemRangeInserted(counter, itemsInserted);
-            counter += itemsInserted;
-        }
-        return counter;
+
+        return result;
     }
 
 }
