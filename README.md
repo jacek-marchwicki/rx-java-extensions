@@ -17,12 +17,12 @@ repositories {
 dependencies {
 
     // snapshot version
-    compile 'com.github.jacek-marchwicki:rx-extensions:master-SNAPSHOT'
-    compile 'com.github.jacek-marchwicki:rx-android-extensions:master-SNAPSHOT'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-extensions:master-SNAPSHOT'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-android-extensions:master-SNAPSHOT'
 
     // or use specific version
-    compile 'com.github.jacek-marchwicki:rx-extensions:1.0.0'
-    compile 'com.github.jacek-marchwicki:rx-android-extensions:1.0.0'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-extensions:1.0.0'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-android-extensions:1.0.0'
 }
 ```
 
