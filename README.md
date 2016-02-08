@@ -5,6 +5,30 @@ This project is in very-hight development so everything can chenge. Because of t
 
 [![Build Status](https://travis-ci.org/jacek-marchwicki/rx-java-extensions.svg?branch=master)](https://travis-ci.org/jacek-marchwicki/rx-java-extensions)
 
+
+# Usage
+Add library to project dependencies.
+
+```groovy
+repositories {
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+
+    // snapshot version
+    compile 'com.github.jacek-marchwicki:rx-extensions:master-SNAPSHOT'
+    compile 'com.github.jacek-marchwicki:rx-android-extensions:master-SNAPSHOT'
+
+    // or use specific version
+    compile 'com.github.jacek-marchwicki:rx-extensions:1.0.0'
+    compile 'com.github.jacek-marchwicki:rx-android-extensions:1.0.0'
+}
+```
+
+If you have separate project for java you can use there only `rx-extensions`, and add
+`rx-android-extensions` to android module.
+
 # Examples
 
 In examples we use [sample rest guestbok python server](python-server/README.md)
@@ -121,35 +145,8 @@ presenter.errorObservable()
 
 # Build instructions
 
-	./gradlew build
-
-# How to integrate with your project
-In your poject directory
-
 ```bash
-git submodule add <repo> rx-java-extensions
-```
-
-add to settings your settings gradle:
-
-```groovy
-include ":rx-android-extensions"
-include ":rx-extensions"
-
-project(':rx-android-extensions').projectDir = new File('rx-java-extensions/rx-android-extensions')
-project(':rx-extensions').projectDir = new File('rx-java-extensions/rx-extensions')
-```
-
-In your api project `build.gradle`:
-
-```groovy
-compile project(":rx-extensions")
-```
-
-In your android project `build.gradle`:
-
-```bash
-compile project(":rx-android-extensions")
+./gradlew build
 ```
 
 # License

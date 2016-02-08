@@ -9,6 +9,12 @@ buildscript {
 }
 
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+
+
+group='com.github.jacek-marchwicki'
+// When changing update README file
+version='1.0.0'
 
 repositories {
     mavenCentral()
