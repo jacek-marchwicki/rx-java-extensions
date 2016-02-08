@@ -5,6 +5,11 @@ buildscript {
 }
 
 apply plugin: 'java'
+apply plugin: 'maven'
+
+group='com.github.jacek-marchwicki.rx-java-extensions'
+// When changing update README file
+version='1.0.0'
 
 repositories {
     mavenCentral()
