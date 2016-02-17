@@ -132,6 +132,16 @@ public class CacheSubjectTest {
     }
 
     @Test
+    public void testOnNextNullWhenNotSkipping_doCallObserver() throws Exception {
+        final CacheSubject<String> subject = CacheSubject.create(new CacheSubject.InMemoryCache<>("krowa"), true, false);
+        subject.subscribe(observer);
+
+        subject.onNext(null);
+
+        verify(observer).onNext(null);
+    }
+
+    @Test
     public void testOnError_callOnError() throws Exception {
         final CacheSubject<String> subject = CacheSubject.create(new CacheSubject.InMemoryCache<String>(null));
         subject.subscribe(observer);
