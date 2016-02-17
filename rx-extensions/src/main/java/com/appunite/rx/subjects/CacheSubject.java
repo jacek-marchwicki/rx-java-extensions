@@ -38,6 +38,7 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     @Nonnull
     private final List<Subscriber<? super T>> subscribers = new ArrayList<>();
+    private final boolean skipNextNull;
 
     @Nonnull
     public static <T> CacheSubject<T> create(@Nonnull CacheCreator<T> cacheCreator) {
@@ -46,7 +47,12 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     @Nonnull
     public static <T> CacheSubject<T> create(@Nonnull CacheCreator<T> cacheCreator, final boolean skipFirstNull) {
-        return new CacheSubject<>(cacheCreator, new DelegateOnSubscribe<T>(), skipFirstNull);
+        return create(cacheCreator, skipFirstNull, true);
+    }
+
+    @Nonnull
+    public static <T> CacheSubject<T> create(@Nonnull CacheCreator<T> cacheCreator, final boolean skipFirstNull, final boolean skipNextNull) {
+        return new CacheSubject<>(cacheCreator, new DelegateOnSubscribe<T>(), skipFirstNull, skipNextNull);
     }
 
     @Nonnull
@@ -74,8 +80,10 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     private CacheSubject(@Nonnull final CacheCreator<T> cacheCreator,
                          @Nonnull DelegateOnSubscribe<T> delegateOnSubscribe,
-                         final boolean skipFirstNull) {
+                         final boolean skipFirstNull,
+                         final boolean skipNextNull) {
         super(delegateOnSubscribe);
+        this.skipNextNull = skipNextNull;
         delegateOnSubscribe.setDelegate(new OnSubscribe<T>() {
             @Override
             public void call(final Subscriber<? super T> child) {
@@ -139,7 +147,7 @@ public class CacheSubject<T> extends Subject<T, T> {
 
     @Override
     public void onNext(T t) {
-        if (t != null) {
+        if (!skipNextNull || t != null) {
             final List<Subscriber<? super T>> subscribers = getSubscribers();
             for (Subscriber<? super T> subscriber : subscribers) {
                 subscriber.onNext(t);
