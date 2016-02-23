@@ -98,4 +98,9 @@ android {
         htmlOutput file("${reportsDir}/lint/lint-results.html")
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
 }
