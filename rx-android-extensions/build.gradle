@@ -15,7 +15,7 @@ apply plugin: 'com.github.dcendents.android-maven'
 
 group='com.github.jacek-marchwicki.rx-java-extensions'
 // When changing update README file
-version='1.0.1'
+version='1.0.2'
 
 repositories {
     mavenCentral()
@@ -55,4 +55,8 @@ android {
         exclude 'LICENSE.txt'
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
 }
