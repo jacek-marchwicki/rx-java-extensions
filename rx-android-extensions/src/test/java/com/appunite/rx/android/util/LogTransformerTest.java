@@ -6,6 +6,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import rx.Observable;
+import rx.Subscription;
 import rx.functions.Action1;
 
 import static org.mockito.Matchers.anyString;
@@ -21,6 +22,18 @@ public class LogTransformerTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testSubscribeAndUnsubscribe() throws Exception {
+        final Subscription subscription = Observable.just(1)
+                .compose(LogTransformer.transformer("tag", "test", logger))
+                .subscribe();
+
+        subscription.unsubscribe();
+
+        verify(logger).logSubscribe(matches("tag"), anyString());
+        verify(logger).logUnsubscribe(matches("tag"), anyString());
     }
 
     @Test

@@ -34,6 +34,18 @@ public class LogTransformer {
 
         Logger DEFAULT = new Logger() {
             @Override
+            public void logSubscribe(@NonNull String tag, @Nonnull String observableTag) {
+                final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
+                logger.log(Level.INFO, observableTag + " -> onSubscribe");
+            }
+
+            @Override
+            public void logUnsubscribe(@NonNull String tag, @Nonnull String observableTag) {
+                final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
+                logger.log(Level.INFO, observableTag + " -> onUnsubscribe");
+            }
+
+            @Override
             public void logNext(@NonNull String tag, @Nonnull String observableTag, @Nullable Object object) {
                 final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
                 if (logger.isLoggable(Level.INFO)) {
@@ -56,32 +68,50 @@ public class LogTransformer {
         };
 
         /**
-         * Log onNext event.
-         * @param tag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         * Log onSubscribe
+         *
+         * @param tag           Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
          * @param observableTag Used to identify transformed observable.
-         * @param object Object passed to onNext method.
+         */
+        void logSubscribe(@NonNull String tag, @Nonnull String observableTag);
+
+        /**
+         * Log onUnsubscribe
+         *
+         * @param tag           Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         * @param observableTag Used to identify transformed observable.
+         */
+        void logUnsubscribe(@NonNull String tag, @Nonnull String observableTag);
+
+        /**
+         * Log onNext event.
+         *
+         * @param tag           Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         * @param observableTag Used to identify transformed observable.
+         * @param object        Object passed to onNext method.
          */
         void logNext(@NonNull String tag, @Nonnull String observableTag, @Nullable Object object);
 
         /**
          * Log onError event.
-         * @param tag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         *
+         * @param tag           Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
          * @param observableTag Used to identify transformed observable.
-         * @param throwable Throwable passed to onError method.
+         * @param throwable     Throwable passed to onError method.
          */
         void logError(@NonNull String tag, @Nonnull String observableTag, @Nullable Throwable throwable);
 
         /**
          * Log onCompleted event.
-         * @param tag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         *
+         * @param tag           Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
          * @param observableTag Used to identify transformed observable.
          */
         void logCompleted(@NonNull String tag, @Nonnull String observableTag);
     }
 
     /**
-     *
-     * @param logTag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+     * @param logTag        Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
      * @param observableTag Used to identify transformed observable.
      * @return Transformer adding logging onNext/onError/onCompleted events to observable.
      */
@@ -92,12 +122,11 @@ public class LogTransformer {
     }
 
     /**
-     *
-     * @param logTag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+     * @param logTag        Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
      * @param observableTag Used to identify transformed observable.
-     * @param logger Logger instance used to print messages.
-     * @see Logger
+     * @param logger        Logger instance used to print messages.
      * @return Transformer adding logging onNext/onError/onCompleted events to observable.
+     * @see Logger
      */
     @Nonnull
     public static <T> Observable.Transformer<T, T> transformer(@Nonnull final String logTag,
@@ -107,6 +136,18 @@ public class LogTransformer {
             @Override
             public Observable<T> call(Observable<T> observable) {
                 return observable
+                        .doOnUnsubscribe(new Action0() {
+                            @Override
+                            public void call() {
+                                logger.logUnsubscribe(logTag, observableTag);
+                            }
+                        })
+                        .doOnSubscribe(new Action0() {
+                            @Override
+                            public void call() {
+                                logger.logSubscribe(logTag, observableTag);
+                            }
+                        })
                         .doOnNext(new Action1<T>() {
                             @Override
                             public void call(T value) {
