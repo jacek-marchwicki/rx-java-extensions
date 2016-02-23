@@ -34,6 +34,22 @@ public class LogTransformer {
 
         Logger DEFAULT = new Logger() {
             @Override
+            public void logSubscribe(@NonNull String tag, @Nonnull String observableTag) {
+                final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log(Level.INFO, observableTag + " -> onSubscribe");
+                }
+            }
+
+            @Override
+            public void logUnsubscribe(@NonNull String tag, @Nonnull String observableTag) {
+                final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log(Level.INFO, observableTag + " -> onUnsubscribe");
+                }
+            }
+
+            @Override
             public void logNext(@NonNull String tag, @Nonnull String observableTag, @Nullable Object object) {
                 final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(tag);
                 if (logger.isLoggable(Level.INFO)) {
@@ -54,6 +70,20 @@ public class LogTransformer {
                 Log.i(tag, observableTag + " -> onCompleted");
             }
         };
+
+        /**
+         * Log onSubscribe
+         * @param tag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         * @param observableTag Used to identify transformed observable.
+         */
+        void logSubscribe(@NonNull String tag, @Nonnull String observableTag);
+
+        /**
+         * Log onUnsubscribe
+         * @param tag Used to identify the source of a log message. It usually identifies the class or activity where the log call occurs.
+         * @param observableTag Used to identify transformed observable.
+         */
+        void logUnsubscribe(@NonNull String tag, @Nonnull String observableTag);
 
         /**
          * Log onNext event.
@@ -107,6 +137,18 @@ public class LogTransformer {
             @Override
             public Observable<T> call(Observable<T> observable) {
                 return observable
+                        .doOnUnsubscribe(new Action0() {
+                            @Override
+                            public void call() {
+                                logger.logUnsubscribe(logTag, observableTag);
+                            }
+                        })
+                        .doOnSubscribe(new Action0() {
+                            @Override
+                            public void call() {
+                                logger.logSubscribe(logTag, observableTag);
+                            }
+                        })
                         .doOnNext(new Action1<T>() {
                             @Override
                             public void call(T value) {
