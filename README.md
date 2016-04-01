@@ -1,8 +1,6 @@
 # Extensions to RxJava
 This library allow simple implementation for some tasks in android
 
-This project is in very-hight development so everything can chenge. Because of this is not distributed as stand alone project, rather like submodule for your project.
-
 [![Build Status](https://travis-ci.org/jacek-marchwicki/rx-java-extensions.svg?branch=master)](https://travis-ci.org/jacek-marchwicki/rx-java-extensions)
 
 
