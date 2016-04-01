@@ -74,10 +74,18 @@ public class MoreOperators {
     @Nonnull
     public static <T> Observable.Transformer<T, T> cacheWithTimeout(
             @Nonnull final Scheduler scheduler) {
+        return cacheWithTimeout(scheduler, 5, TimeUnit.SECONDS);
+    }
+
+    @Nonnull
+    public static <T> Observable.Transformer<T, T> cacheWithTimeout(
+            @Nonnull final Scheduler scheduler,
+            final int keepTime,
+            @Nonnull final TimeUnit timeUnit) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                return cacheWithTimeout(observable, scheduler);
+                return cacheWithTimeout(observable, scheduler, keepTime, timeUnit);
             }
         };
     }
@@ -85,9 +93,11 @@ public class MoreOperators {
     @Nonnull
     private static <T> Observable<T> cacheWithTimeout(
             @Nonnull Observable<T> observable,
-            @Nonnull Scheduler scheduler) {
+            @Nonnull Scheduler scheduler,
+            int keepTime,
+            @Nonnull TimeUnit timeUnit) {
         return OnSubscribeRefCountDelayed.create(
-                behavior(observable), 5, TimeUnit.SECONDS, scheduler);
+                behavior(observable), keepTime, timeUnit, scheduler);
     }
 
     @Nonnull
