@@ -19,8 +19,8 @@ dependencies {
     compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-android-extensions:master-SNAPSHOT'
 
     // or use specific version
-    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-extensions:1.0.3'
-    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-android-extensions:1.0.3'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-extensions:1.0.4'
+    compile 'com.github.jacek-marchwicki.rx-java-extensions:rx-android-extensions:1.0.4'
 }
 ```
 

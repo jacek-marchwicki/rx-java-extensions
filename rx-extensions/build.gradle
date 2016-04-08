@@ -9,7 +9,7 @@ apply plugin: 'maven'
 
 group='com.github.jacek-marchwicki.rx-java-extensions'
 // When changing update README file
-version='1.0.3'
+version='1.0.4'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
