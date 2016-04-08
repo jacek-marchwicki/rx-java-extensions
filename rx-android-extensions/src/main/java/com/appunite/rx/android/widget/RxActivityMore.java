@@ -37,6 +37,16 @@ public class RxActivityMore {
     }
 
     @Nonnull
+    public static Action1<? super Object> finishAfterTransition(@Nonnull final Activity activity) {
+        return new Action1<Object>() {
+            @Override
+            public void call(Object o) {
+                ActivityCompat.finishAfterTransition(activity);
+            }
+        };
+    }
+
+    @Nonnull
     public static Action1<? super Object> startPostponedEnterTransition(@Nonnull final Activity activity) {
         return new Action1<Object>() {
             @Override
