@@ -178,6 +178,21 @@ public class UniversalAdapter extends RecyclerView.Adapter<ViewHolderManager.Bas
         return items.get(position).adapterId();
     }
 
+    /**
+     * Return item at position
+     *
+     * Tip: Should not be used in reactive code because it's not a function
+     * Tip: Need to be called from UIThread - because it can change
+     *
+     * @param position of item on the list
+     * @return item at position
+     * @throws IndexOutOfBoundsException if location < 0 || location >= getItemCount()
+     */
+    @Nonnull
+    public BaseAdapterItem getItemAtPosition(int position) {
+        return items.get(position);
+    }
+
     @Override
     public boolean onFailedToRecycleView(ViewHolderManager.BaseViewHolder holder) {
         return holder.onFailedToRecycleView();
