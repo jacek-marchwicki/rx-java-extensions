@@ -2,7 +2,7 @@ package com.appunite.rx.functions;
 
 import org.junit.Test;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import rx.Observable;
 import rx.observers.TestSubscriber;
@@ -80,7 +80,7 @@ public class Functions1Test {
     @Test
     public void testToStringFunction_hashMap() throws Exception {
         final TestSubscriber<String> toStringFunctionResult = new TestSubscriber<>();
-        final HashMap<String, Integer> hashMap = new HashMap<>();
+        final LinkedHashMap<String, Integer> hashMap = new LinkedHashMap<>();
         hashMap.put("a", 1);
         hashMap.put("b", 4);
         hashMap.put("c", 7);
@@ -89,6 +89,6 @@ public class Functions1Test {
                 .map(Functions1.toStringFunction())
                 .subscribe(toStringFunctionResult);
 
-        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("{b=4, c=7, a=1}");
+        assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("{a=1, b=4, c=7}");
     }
 }
