@@ -2,21 +2,22 @@ package com.appunite.rx.example;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.android.adapter.UniversalAdapter;
 import com.appunite.rx.android.adapter.ViewHolderManager;
+import com.appunite.rx.android.adapter.utils.BaseViewHolderManager;
+import com.appunite.rx.android.adapter.utils.SubscriptionViewHolder;
+import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.example.dagger.FakeDagger;
 import com.appunite.rx.example.model.presenter.MainPresenter;
 import com.google.common.collect.ImmutableList;
@@ -30,6 +31,7 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import rx.Subscription;
 import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
 
@@ -48,52 +50,23 @@ public class MainActivity extends BaseActivity {
     @InjectView(R.id.main_activity_fab)
     FloatingActionButton fab;
 
-    public static class AdapterItemManager implements ViewHolderManager {
-
-        @Override
-        public boolean matches(@Nonnull BaseAdapterItem baseAdapterItem) {
-            return baseAdapterItem instanceof MainPresenter.AdapterItem;
-        }
+    private class MainViewHolder extends SubscriptionViewHolder<MainPresenter.AdapterItem> {
 
         @Nonnull
-        @Override
-        public BaseViewHolder createViewHolder(@Nonnull ViewGroup parent,
-                                               @Nonnull LayoutInflater inflater) {
-            return new MainViewHolder(inflater.inflate(R.layout.main_adapter_item, parent, false));
+        private final TextView text;
+
+        public MainViewHolder(@Nonnull View itemView) {
+            super(itemView);
+            text = checkNotNull((TextView) itemView.findViewById(R.id.main_adapter_item_text));
         }
 
-        private class MainViewHolder extends BaseViewHolder<MainPresenter.AdapterItem> {
-
-            @Nonnull
-            private final TextView text;
-            private CompositeSubscription subscription;
-
-            public MainViewHolder(@Nonnull View itemView) {
-                super(itemView);
-                text = checkNotNull((TextView) itemView.findViewById(R.id.main_adapter_item_text));
-            }
-
-            @Override
-            public void bind(@Nonnull MainPresenter.AdapterItem item) {
-                text.setText(item.text());
-                unsubscribe();
-                subscription = new CompositeSubscription(
-                        RxView.clicks(text)
-                                .subscribe(item.clickObserver())
-                );
-            }
-
-            @Override
-            public void onViewRecycled() {
-                unsubscribe();
-            }
-
-            private void unsubscribe() {
-                if (subscription != null) {
-                    subscription.unsubscribe();
-                }
-            }
-
+        @Override
+        protected Subscription bindItem(MainPresenter.AdapterItem adapterItem) {
+            text.setText(adapterItem.text());
+            return new CompositeSubscription(
+                    RxView.clicks(text)
+                            .subscribe(adapterItem.clickObserver())
+            );
         }
     }
 
@@ -103,7 +76,12 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.main_activity);
 
         final UniversalAdapter mainAdapter = new UniversalAdapter(
-                ImmutableList.<ViewHolderManager>of(new AdapterItemManager()));
+                ImmutableList.<ViewHolderManager>of(new BaseViewHolderManager<>(R.layout.main_adapter_item, new BaseViewHolderManager.ViewHolderFactory() {
+                    @Override
+                    public ViewHolderManager.BaseViewHolder createViewHolder(@NonNull View view) {
+                        return new MainViewHolder(view);
+                    }
+                }, MainPresenter.AdapterItem.class)));
 
         ButterKnife.inject(this);
         final LinearLayoutManager layoutManager = new LinearLayoutManager(this,
