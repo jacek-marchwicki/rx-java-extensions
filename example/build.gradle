@@ -94,6 +94,10 @@ android {
         disable 'InvalidPackage'
         xmlOutput file("${reportsDir}/lint/lint-results.xml")
         htmlOutput file("${reportsDir}/lint/lint-results.html")
+        textOutput "stdout"
+        textReport true
+
+
     }
 
     compileOptions {
