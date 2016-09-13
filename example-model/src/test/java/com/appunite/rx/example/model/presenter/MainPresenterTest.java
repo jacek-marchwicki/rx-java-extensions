@@ -20,6 +20,7 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
+import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
 import com.google.common.collect.ImmutableList;
 
@@ -32,6 +33,7 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import rx.Observable;
 import rx.observers.TestSubscriber;
 import rx.schedulers.TestScheduler;
 import rx.subjects.TestSubject;
@@ -55,8 +57,9 @@ public class MainPresenterTest {
         MockitoAnnotations.initMocks(this);
 
         when(postsDao.postsObservable()).thenReturn(postsSubject);
+        when(postsDao.postsIdsObservable()).thenReturn(Observable.<ResponseOrError<PostsIdsResponse>>never());
 
-        mainPresenter = new MainPresenter(postsDao);
+        mainPresenter = new MainPresenter(postsDao, scheduler);
     }
 
     @Test
