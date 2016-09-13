@@ -42,7 +42,7 @@ public class CreatePostPresenterTest {
         when(postsDao.postsObservable()).thenReturn(postsSubject);
         when(postsDao.postRequestObserver(any(AddPost.class))).thenReturn(addPostResult);
 
-        postPresenter = new CreatePostPresenter(postsDao);
+        postPresenter = new CreatePostPresenter(postsDao, testScheduler);
     }
 
     @Test

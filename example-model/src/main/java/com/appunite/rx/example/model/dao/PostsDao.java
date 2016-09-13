@@ -41,18 +41,14 @@ public class PostsDao {
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
-    private final Scheduler uiScheduler;
-    @Nonnull
     private final GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
 
     public PostsDao(@Nonnull final Scheduler networkScheduler,
-                    @Nonnull final Scheduler uiScheduler,
                     @Nonnull final GuestbookService guestbookService,
                     @Nonnull final CacheProvider cacheProvider) {
         this.networkScheduler = networkScheduler;
-        this.uiScheduler = uiScheduler;
         this.guestbookService = guestbookService;
 
         final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken =
@@ -84,10 +80,10 @@ public class PostsDao {
                 .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
                 .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
                 .subscribeOn(networkScheduler)
-                .observeOn(uiScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(uiScheduler));
+                .unsubscribeOn(networkScheduler)
+                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
+                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
 
         final OperatorMergeNextToken<PostsIdsResponse, Object> mergePostsIdsNextToken = OperatorMergeNextToken
                 .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
@@ -113,10 +109,10 @@ public class PostsDao {
                 .lift(mergePostsIdsNextToken)
                 .compose(ResponseOrError.<PostsIdsResponse>toResponseOrErrorObservable())
                 .compose(MoreOperators.<PostsIdsResponse>repeatOnError(networkScheduler))
-                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
                 .subscribeOn(networkScheduler)
-                .observeOn(uiScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(uiScheduler));
+                .unsubscribeOn(networkScheduler)
+                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
+                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(networkScheduler));
 
         cache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<String, PostDao>() {
@@ -162,8 +158,7 @@ public class PostsDao {
                         refreshSubject.doOnNext(null);
                     }
                 })
-                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
-                .observeOn(uiScheduler);
+                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable());
     }
 
     public class PostDao {
@@ -176,10 +171,10 @@ public class PostsDao {
             postWithBodyObservable = guestbookService.getPost(id)
                     .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
-                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
                     .subscribeOn(networkScheduler)
-                    .observeOn(uiScheduler)
-                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(uiScheduler));
+                    .unsubscribeOn(networkScheduler)
+                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
+                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
         }
 
         @Nonnull

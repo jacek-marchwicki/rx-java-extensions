@@ -17,85 +17,77 @@ import rx.Observable;
 import rx.Scheduler;
 import rx.functions.Func1;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 public class DetailsPresenters {
 
     @Nonnull
     private final Scheduler uiScheduler;
     @Nonnull
-    private final PostsDao postsDao;
+    private final Observable<ResponseOrError<String>> nameObservable;
+    @Nonnull
+    private final Observable<ResponseOrError<String>> bodyObservable;
 
     public DetailsPresenters(@Nonnull @UiScheduler Scheduler uiScheduler,
-                             @Nonnull PostsDao postsDao) {
+                             @Nonnull PostsDao postsDao,
+                             /* for dagger: @Named("post_id") */@Nonnull final String postId) {
 
         this.uiScheduler = uiScheduler;
-        this.postsDao = postsDao;
+        final PostsDao.PostDao postDao = postsDao.postDao(postId);
+
+        final Observable<ResponseOrError<PostWithBody>> postWithBodyObservable = postDao.postWithBodyObservable()
+                .observeOn(uiScheduler)
+                .replay(1)
+                .refCount();
+        nameObservable = postWithBodyObservable
+                .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
+                    @Override
+                    public String call(PostWithBody item) {
+                        return Strings.nullToEmpty(item.name());
+                    }
+                }))
+                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+
+        bodyObservable = postWithBodyObservable
+                .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
+                    @Override
+                    public String call(PostWithBody item) {
+                        return Strings.nullToEmpty(item.body());
+                    }
+                }))
+                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
     }
 
     @Nonnull
-    public DetailsPresenter getPresenter(@Nonnull final String id) {
-        checkNotNull(id);
-        return new DetailsPresenter(id);
+    public Observable<String> bodyObservable() {
+        return bodyObservable
+                .compose(ResponseOrError.<String>onlySuccess());
     }
 
-    public class DetailsPresenter {
+    @Nonnull
+    public Observable<String> titleObservable() {
+        return nameObservable
+                .compose(ResponseOrError.<String>onlySuccess());
+    }
 
-        private final PostsDao.PostDao postDao;
-        private final Observable<ResponseOrError<String>> nameObservable;
-        private final Observable<ResponseOrError<String>> bodyObservable;
+    @Nonnull
+    public Observable<Boolean> progressObservable() {
+        return ResponseOrError.combineProgressObservable(ImmutableList.of(
+                ResponseOrError.transform(nameObservable),
+                ResponseOrError.transform(bodyObservable)));
+    }
 
-        public DetailsPresenter(@Nonnull String id) {
-            postDao = postsDao.postDao(id);
+    @Nonnull
+    public Observable<Throwable> errorObservable() {
+        return ResponseOrError.combineErrorsObservable(ImmutableList.of(
+                ResponseOrError.transform(nameObservable),
+                ResponseOrError.transform(bodyObservable)));
+    }
 
-            nameObservable = postDao.postWithBodyObservable()
-                    .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
-                        @Override
-                        public String call(PostWithBody item) {
-                            return Strings.nullToEmpty(item.name());
-                        }
-                    }))
-                    .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
-
-            bodyObservable = postDao.postWithBodyObservable()
-                    .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
-                        @Override
-                        public String call(PostWithBody item) {
-                            return Strings.nullToEmpty(item.body());
-                        }
-                    }))
-                    .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
-        }
-
-        public Observable<String> bodyObservable() {
-            return bodyObservable
-                    .compose(ResponseOrError.<String>onlySuccess());
-        }
-
-        public Observable<String> titleObservable() {
-            return nameObservable
-                    .compose(ResponseOrError.<String>onlySuccess());
-        }
-
-        public Observable<Boolean> progressObservable() {
-            return ResponseOrError.combineProgressObservable(ImmutableList.of(
-                    ResponseOrError.transform(nameObservable),
-                    ResponseOrError.transform(bodyObservable)));
-        }
-
-        public Observable<Throwable> errorObservable() {
-            return ResponseOrError.combineErrorsObservable(ImmutableList.of(
-                    ResponseOrError.transform(nameObservable),
-                    ResponseOrError.transform(bodyObservable)));
-        }
-
-
-        public Observable<Object> startPostponedEnterTransitionObservable() {
-            final Observable<Boolean> filter = progressObservable().filter(Functions1.isFalse());
-            final Observable<Throwable> error = errorObservable().filter(Functions1.isNotNull());
-            final Observable<String> timeout = Observable.just("").delay(500, TimeUnit.MILLISECONDS, uiScheduler);
-            return Observable.<Object>amb(filter, error, timeout).first();
-        }
+    @Nonnull
+    public Observable<Object> startPostponedEnterTransitionObservable() {
+        final Observable<Boolean> filter = progressObservable().filter(Functions1.isFalse());
+        final Observable<Throwable> error = errorObservable().filter(Functions1.isNotNull());
+        final Observable<String> timeout = Observable.just("").delay(500, TimeUnit.MILLISECONDS, uiScheduler);
+        return Observable.<Object>amb(filter, error, timeout).first();
     }
 
 }

@@ -18,8 +18,8 @@ import com.jakewharton.rxbinding.widget.RxTextView;
 
 import javax.annotation.Nonnull;
 
-import butterknife.ButterKnife;
-import butterknife.InjectView;
+import rx.subscriptions.SerialSubscription;
+import rx.subscriptions.Subscriptions;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
@@ -32,54 +32,42 @@ public class DetailsActivity extends BaseActivity {
                 .putExtra(EXTRA_ID, checkNotNull(id));
     }
 
-    @InjectView(R.id.details_activity_toolbar)
-    Toolbar toolbar;
-    @InjectView(R.id.details_activity_progress)
-    View progress;
-    @InjectView(R.id.details_activity_error)
-    TextView error;
-    @InjectView(R.id.details_activity_body)
-    TextView body;
+    @Nonnull
+    private final SerialSubscription subscription = new SerialSubscription();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.details_activity);
 
-        final String id = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
-
-        ButterKnife.inject(this);
+        final String postId = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
 
         // Normally use dagger
-        final DetailsPresenters detailsPresenters = new DetailsPresenters(MyAndroidSchedulers.mainThread(),
-                FakeDagger.getPostsDaoInstance(getApplicationContext()));
-
-
-        final DetailsPresenters.DetailsPresenter presenter = detailsPresenters
-                .getPresenter(id);
-
-        presenter.titleObservable()
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxToolbarMore.title(toolbar));
-
-        presenter.bodyObservable()
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxTextView.text(body));
-
-        presenter.progressObservable()
-                .compose(this.<Boolean>bindToLifecycle())
-                .subscribe(RxView.visibility(progress, View.INVISIBLE));
-
-        presenter.errorObservable()
-                .map(ErrorHelper.mapThrowableToStringError())
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxTextView.text(error));
-
+        final DetailsPresenters presenter = new DetailsPresenters(
+                MyAndroidSchedulers.mainThread(),
+                FakeDagger.getPostsDaoInstance(getApplicationContext()),
+                postId);
 
         ActivityCompat.postponeEnterTransition(this);
-        presenter.startPostponedEnterTransitionObservable()
-                .compose(bindToLifecycle())
-                .subscribe(RxActivityMore.startPostponedEnterTransition(this));
+
+        subscription.set(Subscriptions.from(
+                presenter.titleObservable()
+                        .subscribe(RxToolbarMore.title(checkNotNull((Toolbar)findViewById(R.id.details_activity_toolbar)))),
+                presenter.bodyObservable()
+                        .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.details_activity_body)))),
+                presenter.progressObservable()
+                        .subscribe(RxView.visibility(checkNotNull(findViewById(R.id.details_activity_progress)), View.INVISIBLE)),
+                presenter.errorObservable()
+                        .map(ErrorHelper.mapThrowableToStringError())
+                        .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.details_activity_error)))),
+                presenter.startPostponedEnterTransitionObservable()
+                        .subscribe(RxActivityMore.startPostponedEnterTransition(this))
+        ));
     }
 
+    @Override
+    protected void onDestroy() {
+        subscription.set(Subscriptions.empty());
+        super.onDestroy();
+    }
 }
