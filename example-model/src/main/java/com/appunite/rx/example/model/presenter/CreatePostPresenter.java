@@ -12,6 +12,7 @@ import javax.annotation.Nonnull;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Scheduler;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -35,11 +36,12 @@ public class CreatePostPresenter {
     @Nonnull
     private final ConnectableObservable<ResponseOrError<PostWithBody>> addPostResult;
 
-    public CreatePostPresenter(@Nonnull final PostsDao postsDao) {
+    public CreatePostPresenter(@Nonnull final PostsDao postsDao,
+                               @Nonnull final Scheduler uiScheduler) {
         addPostResult = Observable
                 .combineLatest(
-                        nameSubject.map(Functions1.charSequenceToString()),
-                        bodySubject.map(Functions1.charSequenceToString()),
+                        nameSubject.map(Functions1.toStringFunction()),
+                        bodySubject.map(Functions1.toStringFunction()),
                         new Func2<String, String, AddPost>() {
                             @Override
                             public AddPost call(String name, String body) {
@@ -59,6 +61,7 @@ public class CreatePostPresenter {
                     @Override
                     public Observable<ResponseOrError<PostWithBody>> call(AddPost addPost) {
                         return postsDao.postRequestObserver(addPost)
+                                .observeOn(uiScheduler)
                                 .doOnSubscribe(new Action0() {
                                     @Override
                                     public void call() {
@@ -115,7 +118,7 @@ public class CreatePostPresenter {
     public Observable<Object> showBodyIsEmptyErrorObservable() {
         return bodySubject
                 .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
-                .map(Functions1.charSequenceToString())
+                .map(Functions1.toStringFunction())
                 .filter(fieldNullOrEmpty())
                 .map(Functions1.toObject());
     }
@@ -124,7 +127,7 @@ public class CreatePostPresenter {
     public Observable<Object> showNameIsEmptyErrorObservable() {
         return nameSubject
                 .lift(OperatorSampleWithLastWithObservable.<CharSequence>create(sendSubject))
-                .map(Functions1.charSequenceToString())
+                .map(Functions1.toStringFunction())
                 .filter(fieldNullOrEmpty())
                 .map(Functions1.toObject());
     }

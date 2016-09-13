@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Scheduler;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.observers.Observers;
@@ -41,42 +42,16 @@ public class MainPresenter {
     @Nonnull
     private final PublishSubject<Object> clickOnFabSubject = PublishSubject.create();
 
-    public MainPresenter(@Nonnull PostsDao postsDao) {
+    public MainPresenter(@Nonnull final PostsDao postsDao,
+                         @Nonnull Scheduler uiScheduler) {
         this.postsDao = postsDao;
-        titleObservable = postsObservable()
-                .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
-                    @Override
-                    public String call(PostsResponse postsResponse) {
-                        return Strings.nullToEmpty(postsResponse.title());
-                    }
-                }))
-                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-        itemsObservable = postsObservable()
-                .compose(ResponseOrError.map(new Func1<PostsResponse, List<BaseAdapterItem>>() {
-                    @Override
-                    public List<BaseAdapterItem> call(PostsResponse postsResponse) {
-                        final List<Post> posts = postsResponse.items();
-                        return FluentIterable.from(posts).transform(new Function<Post, BaseAdapterItem>() {
-                            @Nonnull
-                            @Override
-                            public BaseAdapterItem apply(Post input) {
-                                return new AdapterItem(input.id(), input.name());
-                            }
-                        }).toList();
-                    }
-                }))
-                .compose(ObservableExtensions.<ResponseOrError<List<BaseAdapterItem>>>behaviorRefCount());
-    }
+        final Observable<ResponseOrError<PostsResponse>> postsObservable = postsDao.postsObservable()
+                .observeOn(uiScheduler)
+                .replay(1)
+                .refCount();
 
-    @Nonnull
-    private Observable<ResponseOrError<PostsResponse>> postsObservable() {
-        return this.postsDao.postsObservable();
-    }
-
-    @Nonnull
-    private Observable<ResponseOrError<PostsResponse>> postsObservable2() {
-        return this.postsDao.postsIdsObservable()
+        final Observable<ResponseOrError<PostsResponse>> postsObservable2 = postsDao.postsIdsObservable()
                 .compose(ResponseOrError.switchMap(new Func1<PostsIdsResponse, Observable<ResponseOrError<PostsResponse>>>() {
                     @Override
                     public Observable<ResponseOrError<PostsResponse>> call(final PostsIdsResponse o) {
@@ -98,7 +73,35 @@ public class MainPresenter {
                                     }
                                 }));
                     }
-                }));
+                }))
+                .observeOn(uiScheduler)
+                .replay(1)
+                .refCount();
+
+        titleObservable = postsObservable
+                .compose(ResponseOrError.map(new Func1<PostsResponse, String>() {
+                    @Override
+                    public String call(PostsResponse postsResponse) {
+                        return Strings.nullToEmpty(postsResponse.title());
+                    }
+                }))
+                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+
+        itemsObservable = postsObservable
+                .compose(ResponseOrError.map(new Func1<PostsResponse, List<BaseAdapterItem>>() {
+                    @Override
+                    public List<BaseAdapterItem> call(PostsResponse postsResponse) {
+                        final List<Post> posts = postsResponse.items();
+                        return FluentIterable.from(posts).transform(new Function<Post, BaseAdapterItem>() {
+                            @Nonnull
+                            @Override
+                            public BaseAdapterItem apply(Post input) {
+                                return new AdapterItem(input.id(), input.name());
+                            }
+                        }).toList();
+                    }
+                }))
+                .compose(ObservableExtensions.<ResponseOrError<List<BaseAdapterItem>>>behaviorRefCount());
     }
 
     @Nonnull

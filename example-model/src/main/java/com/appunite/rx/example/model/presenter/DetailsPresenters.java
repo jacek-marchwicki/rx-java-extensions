@@ -48,7 +48,11 @@ public class DetailsPresenters {
         public DetailsPresenter(@Nonnull String id) {
             postDao = postsDao.postDao(id);
 
-            nameObservable = postDao.postWithBodyObservable()
+            final Observable<ResponseOrError<PostWithBody>> postWithBodyObservable = postDao.postWithBodyObservable()
+                    .observeOn(uiScheduler)
+                    .replay(1)
+                    .refCount();
+            nameObservable = postWithBodyObservable
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {
@@ -57,7 +61,7 @@ public class DetailsPresenters {
                     }))
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
 
-            bodyObservable = postDao.postWithBodyObservable()
+            bodyObservable = postWithBodyObservable
                     .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
                         @Override
                         public String call(PostWithBody item) {
@@ -67,29 +71,33 @@ public class DetailsPresenters {
                     .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
         }
 
+        @Nonnull
         public Observable<String> bodyObservable() {
             return bodyObservable
                     .compose(ResponseOrError.<String>onlySuccess());
         }
 
+        @Nonnull
         public Observable<String> titleObservable() {
             return nameObservable
                     .compose(ResponseOrError.<String>onlySuccess());
         }
 
+        @Nonnull
         public Observable<Boolean> progressObservable() {
             return ResponseOrError.combineProgressObservable(ImmutableList.of(
                     ResponseOrError.transform(nameObservable),
                     ResponseOrError.transform(bodyObservable)));
         }
 
+        @Nonnull
         public Observable<Throwable> errorObservable() {
             return ResponseOrError.combineErrorsObservable(ImmutableList.of(
                     ResponseOrError.transform(nameObservable),
                     ResponseOrError.transform(bodyObservable)));
         }
 
-
+        @Nonnull
         public Observable<Object> startPostponedEnterTransitionObservable() {
             final Observable<Boolean> filter = progressObservable().filter(Functions1.isFalse());
             final Observable<Throwable> error = errorObservable().filter(Functions1.isNotNull());

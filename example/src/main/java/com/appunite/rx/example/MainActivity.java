@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.android.adapter.UniversalAdapter;
@@ -112,7 +113,9 @@ public class MainActivity extends BaseActivity {
         recyclerView.setAdapter(mainAdapter);
 
         // Normally use dagger
-        final MainPresenter presenter = new MainPresenter(FakeDagger.getPostsDaoInstance(getApplication()));
+        final MainPresenter presenter = new MainPresenter(
+                FakeDagger.getPostsDaoInstance(getApplication()),
+                MyAndroidSchedulers.mainThread());
 
 
         presenter.titleObservable()

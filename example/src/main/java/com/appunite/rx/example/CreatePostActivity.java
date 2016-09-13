@@ -10,6 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.android.widget.RxActivityMore;
 import com.appunite.rx.android.widget.RxToolbarMore;
 import com.appunite.rx.example.dagger.FakeDagger;
@@ -47,8 +48,10 @@ public class CreatePostActivity extends BaseActivity {
 
         toolbar.setNavigationIcon(R.drawable.ic_close_white_24dp);
 
+        // Normally use dagger
         final CreatePostPresenter presenter = new CreatePostPresenter(
-                FakeDagger.getPostsDaoInstance(getApplicationContext()));
+                FakeDagger.getPostsDaoInstance(getApplicationContext()),
+                MyAndroidSchedulers.mainThread());
 
         RxToolbarMore.navigationClick(toolbar)
                 .compose(this.bindToLifecycle())
