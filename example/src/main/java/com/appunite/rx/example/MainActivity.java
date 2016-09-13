@@ -2,7 +2,6 @@ package com.appunite.rx.example;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -27,8 +26,6 @@ import com.jakewharton.rxbinding.widget.RxTextView;
 
 import javax.annotation.Nonnull;
 
-import butterknife.ButterKnife;
-import butterknife.InjectView;
 import rx.functions.Action1;
 import rx.subscriptions.SerialSubscription;
 import rx.subscriptions.Subscriptions;
@@ -37,16 +34,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class MainActivity extends BaseActivity {
 
-    @InjectView(R.id.main_activity_toolbar)
-    Toolbar toolbar;
-    @InjectView(R.id.main_activity_recycler_view)
-    RecyclerView recyclerView;
-    @InjectView(R.id.main_activity_progress)
-    View progress;
-    @InjectView(R.id.main_activity_error)
-    TextView error;
-    @InjectView(R.id.main_activity_fab)
-    FloatingActionButton fab;
 
     @Nonnull
     private final SerialSubscription subscription = new SerialSubscription();
@@ -102,7 +89,7 @@ public class MainActivity extends BaseActivity {
         final UniversalAdapter mainAdapter = new UniversalAdapter(
                 ImmutableList.<ViewHolderManager>of(new AdapterItemManager()));
 
-        ButterKnife.inject(this);
+        final RecyclerView recyclerView = checkNotNull((RecyclerView) findViewById(R.id.main_activity_recycler_view));
         final LinearLayoutManager layoutManager = new LinearLayoutManager(this,
                 LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
@@ -115,20 +102,20 @@ public class MainActivity extends BaseActivity {
 
         subscription.set(Subscriptions.from(
                 presenter.titleObservable()
-                        .subscribe(RxToolbarMore.title(toolbar)),
+                        .subscribe(RxToolbarMore.title(checkNotNull((Toolbar)findViewById(R.id.main_activity_toolbar)))),
                 presenter.itemsObservable()
                         .subscribe(mainAdapter),
                 presenter.progressObservable()
-                        .subscribe(RxView.visibility(progress, View.INVISIBLE)),
+                        .subscribe(RxView.visibility(checkNotNull(findViewById(R.id.main_activity_progress)), View.INVISIBLE)),
                 presenter.errorObservable()
                         .map(ErrorHelper.mapThrowableToStringError())
-                        .subscribe(RxTextView.text(error)),
+                        .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.main_activity_error)))),
                 presenter.openDetailsObservable()
                         .subscribe(startDetailsActivityAction(this)),
                 RxRecyclerView.scrollEvents(recyclerView)
                         .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
                         .subscribe(presenter.loadMoreObserver()),
-                RxView.clicks(fab)
+                RxView.clicks(checkNotNull(findViewById(R.id.main_activity_fab)))
                         .subscribe(presenter.clickOnFabObserver()),
                 presenter.startCreatePostActivityObservable()
                         .subscribe(startPostActivityAction(this))

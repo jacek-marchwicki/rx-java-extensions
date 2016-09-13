@@ -32,8 +32,6 @@ dependencies {
     compile 'com.jakewharton.rxbinding:rxbinding-support-v4:0.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding-appcompat-v7:0.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding-recyclerview-v7:0.2.0'
-
-    compile 'com.jakewharton:butterknife:4.0.1'
 }
 
 

@@ -18,8 +18,6 @@ import com.jakewharton.rxbinding.widget.RxTextView;
 
 import javax.annotation.Nonnull;
 
-import butterknife.ButterKnife;
-import butterknife.InjectView;
 import rx.subscriptions.SerialSubscription;
 import rx.subscriptions.Subscriptions;
 
@@ -34,15 +32,6 @@ public class DetailsActivity extends BaseActivity {
                 .putExtra(EXTRA_ID, checkNotNull(id));
     }
 
-    @InjectView(R.id.details_activity_toolbar)
-    Toolbar toolbar;
-    @InjectView(R.id.details_activity_progress)
-    View progress;
-    @InjectView(R.id.details_activity_error)
-    TextView error;
-    @InjectView(R.id.details_activity_body)
-    TextView body;
-
     @Nonnull
     private final SerialSubscription subscription = new SerialSubscription();
 
@@ -52,8 +41,6 @@ public class DetailsActivity extends BaseActivity {
         setContentView(R.layout.details_activity);
 
         final String postId = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
-
-        ButterKnife.inject(this);
 
         // Normally use dagger
         final DetailsPresenters presenter = new DetailsPresenters(
@@ -65,14 +52,14 @@ public class DetailsActivity extends BaseActivity {
 
         subscription.set(Subscriptions.from(
                 presenter.titleObservable()
-                        .subscribe(RxToolbarMore.title(toolbar)),
+                        .subscribe(RxToolbarMore.title(checkNotNull((Toolbar)findViewById(R.id.details_activity_toolbar)))),
                 presenter.bodyObservable()
-                        .subscribe(RxTextView.text(body)),
+                        .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.details_activity_body)))),
                 presenter.progressObservable()
-                        .subscribe(RxView.visibility(progress, View.INVISIBLE)),
+                        .subscribe(RxView.visibility(checkNotNull(findViewById(R.id.details_activity_progress)), View.INVISIBLE)),
                 presenter.errorObservable()
                         .map(ErrorHelper.mapThrowableToStringError())
-                        .subscribe(RxTextView.text(error)),
+                        .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.details_activity_error)))),
                 presenter.startPostponedEnterTransitionObservable()
                         .subscribe(RxActivityMore.startPostponedEnterTransition(this))
         ));
