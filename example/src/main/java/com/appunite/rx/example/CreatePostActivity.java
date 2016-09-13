@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.functions.Action1;
+import rx.subscriptions.SerialSubscription;
+import rx.subscriptions.Subscriptions;
 
 
 public class CreatePostActivity extends BaseActivity {
@@ -39,6 +41,9 @@ public class CreatePostActivity extends BaseActivity {
     @InjectView(R.id.create_post_loading_frame)
     View progress;
 
+    @Nonnull
+    private final SerialSubscription subscription = new SerialSubscription();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -53,48 +58,39 @@ public class CreatePostActivity extends BaseActivity {
                 FakeDagger.getPostsDaoInstance(getApplicationContext()),
                 MyAndroidSchedulers.mainThread());
 
-        RxToolbarMore.navigationClick(toolbar)
-                .compose(this.bindToLifecycle())
-                .subscribe(presenter.navigationClickObserver());
+        subscription.set(Subscriptions.from(
+                RxToolbarMore.navigationClick(toolbar)
+                        .subscribe(presenter.navigationClickObserver()),
+                RxView.clicks(acceptButton)
+                        .subscribe(presenter.sendObservable()),
+                RxTextView.textChanges(bodyText)
+                        .subscribe(presenter.bodyObservable()),
+                RxTextView.textChanges(nameText)
+                        .subscribe(presenter.nameObservable()),
+                presenter.finishActivityObservable()
+                        .subscribe(RxActivityMore.finish(this)),
+                presenter.postErrorObservable()
+                        .subscribe(new Action1<Throwable>() {
+                            @Override
+                            public void call(Throwable throwable) {
+                                Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
+                            }
+                        }),
+                presenter.progressObservable()
+                        .subscribe(RxView.visibility(progress, View.INVISIBLE)),
+                presenter.showBodyIsEmptyErrorObservable()
+                        .map(Functions1.returnJust(getString(R.string.create_post_empty_body_error)))
+                        .subscribe(showError(bodyText)),
+                presenter.showNameIsEmptyErrorObservable()
+                        .map(Functions1.returnJust(getString(R.string.create_post_empty_name_error)))
+                        .subscribe(showError(nameText))
+        ));
+    }
 
-        RxView.clicks(acceptButton)
-                .compose(this.bindToLifecycle())
-                .subscribe(presenter.sendObservable());
-
-        RxTextView.textChanges(bodyText)
-                .compose(this.<CharSequence>bindToLifecycle())
-                .subscribe(presenter.bodyObservable());
-
-        RxTextView.textChanges(nameText)
-                .compose(this.<CharSequence>bindToLifecycle())
-                .subscribe(presenter.nameObservable());
-
-        presenter.finishActivityObservable()
-                .compose(this.bindToLifecycle())
-                .subscribe(RxActivityMore.finish(this));
-
-        presenter.postErrorObservable()
-                .compose(this.<Throwable>bindToLifecycle())
-                .subscribe(new Action1<Throwable>() {
-                    @Override
-                    public void call(Throwable throwable) {
-                        Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
-                    }
-                });
-
-        presenter.progressObservable()
-                .compose(this.<Boolean>bindToLifecycle())
-                .subscribe(RxView.visibility(progress, View.INVISIBLE));
-
-        presenter.showBodyIsEmptyErrorObservable()
-                .compose(this.bindToLifecycle())
-                .map(Functions1.returnJust(getString(R.string.create_post_empty_body_error)))
-                .subscribe(showError(bodyText));
-
-        presenter.showNameIsEmptyErrorObservable()
-                .compose(this.bindToLifecycle())
-                .map(Functions1.returnJust(getString(R.string.create_post_empty_name_error)))
-                .subscribe(showError(nameText));
+    @Override
+    protected void onDestroy() {
+        subscription.set(Subscriptions.empty());
+        super.onDestroy();
     }
 
     @Nonnull

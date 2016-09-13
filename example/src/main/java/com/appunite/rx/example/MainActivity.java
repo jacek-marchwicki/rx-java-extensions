@@ -25,14 +25,13 @@ import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 
-import java.util.List;
-
 import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import rx.functions.Action1;
-import rx.subscriptions.CompositeSubscription;
+import rx.subscriptions.SerialSubscription;
+import rx.subscriptions.Subscriptions;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -48,6 +47,9 @@ public class MainActivity extends BaseActivity {
     TextView error;
     @InjectView(R.id.main_activity_fab)
     FloatingActionButton fab;
+
+    @Nonnull
+    private final SerialSubscription subscription = new SerialSubscription();
 
     public static class AdapterItemManager implements ViewHolderManager {
 
@@ -67,7 +69,7 @@ public class MainActivity extends BaseActivity {
 
             @Nonnull
             private final TextView text;
-            private CompositeSubscription subscription;
+            private final SerialSubscription subscription = new SerialSubscription();
 
             public MainViewHolder(@Nonnull View itemView) {
                 super(itemView);
@@ -77,22 +79,16 @@ public class MainActivity extends BaseActivity {
             @Override
             public void bind(@Nonnull MainPresenter.AdapterItem item) {
                 text.setText(item.text());
-                unsubscribe();
-                subscription = new CompositeSubscription(
+                subscription.set(Subscriptions.empty());
+                subscription.set(Subscriptions.from(
                         RxView.clicks(text)
                                 .subscribe(item.clickObserver())
-                );
+                ));
             }
 
             @Override
             public void onViewRecycled() {
-                unsubscribe();
-            }
-
-            private void unsubscribe() {
-                if (subscription != null) {
-                    subscription.unsubscribe();
-                }
+                subscription.set(Subscriptions.empty());
             }
 
         }
@@ -117,40 +113,32 @@ public class MainActivity extends BaseActivity {
                 FakeDagger.getPostsDaoInstance(getApplication()),
                 MyAndroidSchedulers.mainThread());
 
+        subscription.set(Subscriptions.from(
+                presenter.titleObservable()
+                        .subscribe(RxToolbarMore.title(toolbar)),
+                presenter.itemsObservable()
+                        .subscribe(mainAdapter),
+                presenter.progressObservable()
+                        .subscribe(RxView.visibility(progress, View.INVISIBLE)),
+                presenter.errorObservable()
+                        .map(ErrorHelper.mapThrowableToStringError())
+                        .subscribe(RxTextView.text(error)),
+                presenter.openDetailsObservable()
+                        .subscribe(startDetailsActivityAction(this)),
+                RxRecyclerView.scrollEvents(recyclerView)
+                        .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
+                        .subscribe(presenter.loadMoreObserver()),
+                RxView.clicks(fab)
+                        .subscribe(presenter.clickOnFabObserver()),
+                presenter.startCreatePostActivityObservable()
+                        .subscribe(startPostActivityAction(this))
+        ));
+    }
 
-        presenter.titleObservable()
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxToolbarMore.title(toolbar));
-
-        presenter.itemsObservable()
-                .compose(this.<List<BaseAdapterItem>>bindToLifecycle())
-                .subscribe(mainAdapter);
-
-        presenter.progressObservable()
-                .compose(this.<Boolean>bindToLifecycle())
-                .subscribe(RxView.visibility(progress, View.INVISIBLE));
-
-        presenter.errorObservable()
-                .map(ErrorHelper.mapThrowableToStringError())
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxTextView.text(error));
-
-        presenter.openDetailsObservable()
-                .compose(this.<MainPresenter.AdapterItem>bindToLifecycle())
-                .subscribe(startDetailsActivityAction(this));
-
-        RxRecyclerView.scrollEvents(recyclerView)
-                .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
-                .compose(this.bindToLifecycle())
-                .subscribe(presenter.loadMoreObserver());
-
-        RxView.clicks(fab)
-                .compose(this.bindToLifecycle())
-                .subscribe(presenter.clickOnFabObserver());
-
-        presenter.startCreatePostActivityObservable()
-                .compose(this.bindToLifecycle())
-                .subscribe(startPostActivityAction(this));
+    @Override
+    protected void onDestroy() {
+        subscription.set(Subscriptions.empty());
+        super.onDestroy();
     }
 
     @Nonnull

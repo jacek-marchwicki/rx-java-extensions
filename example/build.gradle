@@ -28,9 +28,6 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:23.0.1'
     compile 'com.android.support:cardview-v7:23.0.1'
 
-    compile 'com.trello:rxlifecycle:0.3.0'
-    compile 'com.trello:rxlifecycle-components:0.3.0'
-
     compile 'com.jakewharton.rxbinding:rxbinding:0.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding-support-v4:0.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding-appcompat-v7:0.2.0'

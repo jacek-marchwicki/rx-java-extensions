@@ -1,6 +1,6 @@
 package com.appunite.rx.example;
 
-import com.trello.rxlifecycle.components.support.RxAppCompatActivity;
+import android.support.v7.app.AppCompatActivity;
 
-public class BaseActivity extends RxAppCompatActivity {
+public class BaseActivity extends AppCompatActivity {
 }

@@ -20,6 +20,8 @@ import javax.annotation.Nonnull;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import rx.subscriptions.SerialSubscription;
+import rx.subscriptions.Subscriptions;
 
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
@@ -41,6 +43,9 @@ public class DetailsActivity extends BaseActivity {
     @InjectView(R.id.details_activity_body)
     TextView body;
 
+    @Nonnull
+    private final SerialSubscription subscription = new SerialSubscription();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,28 +63,26 @@ public class DetailsActivity extends BaseActivity {
         final DetailsPresenters.DetailsPresenter presenter = detailsPresenters
                 .getPresenter(id);
 
-        presenter.titleObservable()
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxToolbarMore.title(toolbar));
-
-        presenter.bodyObservable()
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxTextView.text(body));
-
-        presenter.progressObservable()
-                .compose(this.<Boolean>bindToLifecycle())
-                .subscribe(RxView.visibility(progress, View.INVISIBLE));
-
-        presenter.errorObservable()
-                .map(ErrorHelper.mapThrowableToStringError())
-                .compose(this.<String>bindToLifecycle())
-                .subscribe(RxTextView.text(error));
-
-
         ActivityCompat.postponeEnterTransition(this);
-        presenter.startPostponedEnterTransitionObservable()
-                .compose(bindToLifecycle())
-                .subscribe(RxActivityMore.startPostponedEnterTransition(this));
+
+        subscription.set(Subscriptions.from(
+                presenter.titleObservable()
+                        .subscribe(RxToolbarMore.title(toolbar)),
+                presenter.bodyObservable()
+                        .subscribe(RxTextView.text(body)),
+                presenter.progressObservable()
+                        .subscribe(RxView.visibility(progress, View.INVISIBLE)),
+                presenter.errorObservable()
+                        .map(ErrorHelper.mapThrowableToStringError())
+                        .subscribe(RxTextView.text(error)),
+                presenter.startPostponedEnterTransitionObservable()
+                        .subscribe(RxActivityMore.startPostponedEnterTransition(this))
+        ));
     }
 
+    @Override
+    protected void onDestroy() {
+        subscription.set(Subscriptions.empty());
+        super.onDestroy();
+    }
 }
