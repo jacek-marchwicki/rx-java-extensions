@@ -1,6 +1,5 @@
 package com.appunite.rx.example;
 
-import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -111,14 +110,29 @@ public class MainActivity extends BaseActivity {
                         .map(ErrorHelper.mapThrowableToStringError())
                         .subscribe(RxTextView.text(checkNotNull((TextView)findViewById(R.id.main_activity_error)))),
                 presenter.openDetailsObservable()
-                        .subscribe(startDetailsActivityAction(this)),
+                        .subscribe(new Action1<MainPresenter.AdapterItem>() {
+                            @Override
+                            public void call(MainPresenter.AdapterItem adapterItem) {
+                                //noinspection unchecked
+                                final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(MainActivity.this)
+                                        .toBundle();
+                                ActivityCompat.startActivity(MainActivity.this,
+                                        DetailsActivity.getIntent(MainActivity.this, adapterItem.id()),
+                                        bundle);
+                            }
+                        }),
                 RxRecyclerView.scrollEvents(recyclerView)
                         .filter(LoadMoreHelper.mapToNeedLoadMore(layoutManager, mainAdapter))
                         .subscribe(presenter.loadMoreObserver()),
                 RxView.clicks(checkNotNull(findViewById(R.id.main_activity_fab)))
                         .subscribe(presenter.clickOnFabObserver()),
                 presenter.startCreatePostActivityObservable()
-                        .subscribe(startPostActivityAction(this))
+                        .subscribe(new Action1<Object>() {
+                            @Override
+                            public void call(Object o) {
+                                startActivity(CreatePostActivity.newIntent(MainActivity.this));
+                            }
+                        })
         ));
     }
 
@@ -126,32 +140,6 @@ public class MainActivity extends BaseActivity {
     protected void onDestroy() {
         subscription.set(Subscriptions.empty());
         super.onDestroy();
-    }
-
-    @Nonnull
-    private static Action1<MainPresenter.AdapterItem> startDetailsActivityAction(final Activity activity) {
-        return new Action1<MainPresenter.AdapterItem>() {
-            @Override
-            public void call(MainPresenter.AdapterItem adapterItem) {
-                //noinspection unchecked
-                final Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(activity)
-                        .toBundle();
-                ActivityCompat.startActivity(activity,
-                        DetailsActivity.getIntent(activity, adapterItem.id()),
-                        bundle);
-            }
-        };
-    }
-
-    @Nonnull
-    private static Action1<Object> startPostActivityAction(final Activity activity) {
-        return new Action1<Object>() {
-            @Override
-            public void call(Object o) {
-
-                activity.startActivity(CreatePostActivity.newIntent(activity));
-            }
-        };
     }
 
 }

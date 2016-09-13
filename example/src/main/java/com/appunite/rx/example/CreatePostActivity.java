@@ -80,7 +80,7 @@ public class CreatePostActivity extends BaseActivity {
     }
 
     @Nonnull
-    private Action1<? super CharSequence> showError(@Nonnull final TextView editText) {
+    private static Action1<? super CharSequence> showError(@Nonnull final TextView editText) {
         return new Action1<CharSequence>() {
             @Override
             public void call(CharSequence error) {
