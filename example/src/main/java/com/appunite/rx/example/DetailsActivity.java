@@ -51,17 +51,15 @@ public class DetailsActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.details_activity);
 
-        final String id = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
+        final String postId = checkNotNull(getIntent().getStringExtra(EXTRA_ID));
 
         ButterKnife.inject(this);
 
         // Normally use dagger
-        final DetailsPresenters detailsPresenters = new DetailsPresenters(MyAndroidSchedulers.mainThread(),
-                FakeDagger.getPostsDaoInstance(getApplicationContext()));
-
-
-        final DetailsPresenters.DetailsPresenter presenter = detailsPresenters
-                .getPresenter(id);
+        final DetailsPresenters presenter = new DetailsPresenters(
+                MyAndroidSchedulers.mainThread(),
+                FakeDagger.getPostsDaoInstance(getApplicationContext()),
+                postId);
 
         ActivityCompat.postponeEnterTransition(this);
 
