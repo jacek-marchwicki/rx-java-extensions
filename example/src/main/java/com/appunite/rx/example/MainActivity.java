@@ -25,6 +25,7 @@ import com.jakewharton.rxbinding.widget.RxTextView;
 
 import javax.annotation.Nonnull;
 
+import rx.Observable;
 import rx.functions.Action1;
 import rx.subscriptions.SerialSubscription;
 import rx.subscriptions.Subscriptions;
@@ -55,19 +56,22 @@ public class MainActivity extends BaseActivity {
 
             @Nonnull
             private final TextView text;
+            @Nonnull
             private final SerialSubscription subscription = new SerialSubscription();
+            @Nonnull
+            private final Observable<Object> clickObservable;
 
             public MainViewHolder(@Nonnull View itemView) {
                 super(itemView);
                 text = checkNotNull((TextView) itemView.findViewById(R.id.main_adapter_item_text));
+                clickObservable = RxView.clicks(text).share();
             }
 
             @Override
             public void bind(@Nonnull MainPresenter.AdapterItem item) {
                 text.setText(item.text());
-                subscription.set(Subscriptions.empty());
                 subscription.set(Subscriptions.from(
-                        RxView.clicks(text)
+                        clickObservable
                                 .subscribe(item.clickObserver())
                 ));
             }
