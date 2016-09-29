@@ -90,6 +90,7 @@ public class ObservableExtensionsTest {
     @Test
     public void testBehaviorConnectedNextValueBeforeSubscription_returnResultAfterSubscribe() throws Exception {
         final Observable<String> connected = subject.compose(ObservableExtensions.<String>behaviorConnected());
+        connected.subscribe(); // without subscribe behavior will not connect
         final TestSubscriber<String> stringSubscriber = new TestSubscriber<>();
 
         subject.onNext("test1");
