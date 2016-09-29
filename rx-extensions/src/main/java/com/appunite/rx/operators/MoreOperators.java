@@ -21,7 +21,9 @@ import com.appunite.rx.observables.NetworkObservableProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,6 +44,7 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
 import rx.functions.FuncN;
+import rx.internal.operators.OperatorSwitchThenUnsubscribe;
 import rx.internal.util.RxRingBuffer;
 import rx.subscriptions.Subscriptions;
 
@@ -499,6 +502,64 @@ public class MoreOperators {
                         }));
                     }
                 });
+            }
+        };
+    }
+
+
+    private static class State<T, R> {
+        @Nonnull
+        private final Map<T, Observable<R>> items;
+        @Nonnull
+        private final List<Observable<R>> observables;
+
+        State(
+                @Nonnull Map<T, Observable<R>> items,
+                @Nonnull List<Observable<R>> observables) {
+            this.items = items;
+            this.observables = observables;
+        }
+
+        State() {
+            this(Collections.<T, Observable<R>>emptyMap(), Collections.<Observable<R>>emptyList());
+        }
+    }
+
+    /**
+     * Operator use func to covert T element in to list of R by applying Observable
+     * @param func fuc that convert T to Observable of R
+     * @param <T> input type
+     * @param <R> output type
+     * @return transformer
+     */
+    public static <T, R> Observable.Transformer<? super List<T>, List<R>> observableSwitch(final Func1<T, Observable<R>> func) {
+        return new Observable.Transformer<List<T>, List<R>>() {
+            @Override
+            public Observable<List<R>> call(Observable<List<T>> listObservable) {
+                return listObservable
+                        .serialize()
+                        .scan(new State<T, R>(), new Func2<State<T, R>, List<T>, State<T, R>>() {
+                            @Override
+                            public State<T, R> call(State<T, R> state, List<T> ts) {
+                                final HashMap<T, Observable<R>> items = new HashMap<>();
+                                final ArrayList<Observable<R>> observables = new ArrayList<>(ts.size());
+                                for (T t : ts) {
+                                    final Observable<R> fromMap = state.items.get(t);
+                                    final Observable<R> observable = fromMap != null ? fromMap : func.call(t).replay(1).refCount();
+                                    observables.add(observable);
+                                    items.put(t, observable);
+                                }
+                                return new State<T, R>(items, observables);
+                            }
+                        })
+                        .skip(1)
+                        .map(new Func1<State<T, R>, Observable<List<R>>>() {
+                            @Override
+                            public Observable<List<R>> call(State<T, R> rState) {
+                                return MoreOperators.newCombineAll(rState.observables);
+                            }
+                        })
+                        .lift(OperatorSwitchThenUnsubscribe.<List<R>>instance());
             }
         };
     }

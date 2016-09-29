@@ -61,7 +61,7 @@ public class MainActivity extends BaseActivity {
             @Nonnull
             private final Observable<Object> clickObservable;
 
-            public MainViewHolder(@Nonnull View itemView) {
+            MainViewHolder(@Nonnull View itemView) {
                 super(itemView);
                 text = checkNotNull((TextView) itemView.findViewById(R.id.main_adapter_item_text));
                 clickObservable = RxView.clicks(text).share();
@@ -84,13 +84,47 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    public static class ErrorItemManager implements ViewHolderManager {
+
+        @Override
+        public boolean matches(@Nonnull BaseAdapterItem baseAdapterItem) {
+            return baseAdapterItem instanceof MainPresenter.ErrorAdapterItem;
+        }
+
+        @Nonnull
+        @Override
+        public BaseViewHolder createViewHolder(@Nonnull ViewGroup parent,
+                                               @Nonnull LayoutInflater inflater) {
+            return new MainViewHolder(inflater.inflate(R.layout.main_error_item, parent, false));
+        }
+
+        private class MainViewHolder extends BaseViewHolder<MainPresenter.ErrorAdapterItem> {
+
+            @Nonnull
+            private final TextView text;
+
+            MainViewHolder(@Nonnull View itemView) {
+                super(itemView);
+                text = checkNotNull((TextView) itemView.findViewById(R.id.main_error_item_text));
+            }
+
+            @Override
+            public void bind(@Nonnull MainPresenter.ErrorAdapterItem item) {
+                //noinspection ThrowableResultOfMethodCallIgnored
+                text.setText(item.error().getMessage());
+            }
+
+        }
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
-        final UniversalAdapter mainAdapter = new UniversalAdapter(
-                ImmutableList.<ViewHolderManager>of(new AdapterItemManager()));
+        final UniversalAdapter mainAdapter = new UniversalAdapter(ImmutableList.of(
+                new AdapterItemManager(),
+                new ErrorItemManager()));
 
         final RecyclerView recyclerView = checkNotNull((RecyclerView) findViewById(R.id.main_activity_recycler_view));
         final LinearLayoutManager layoutManager = new LinearLayoutManager(this,
