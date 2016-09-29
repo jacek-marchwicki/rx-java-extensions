@@ -18,7 +18,7 @@ import rx.schedulers.Schedulers;
 import rx.schedulers.TestScheduler;
 import rx.subjects.PublishSubject;
 
-public class MoreOperatorsObservableSwitch {
+public class MoreOperatorsObservableSwitchTest {
 
     @Nonnull
     private Observable<String> postBody(@Nonnull final String post, @Nonnull Scheduler scheduler) {
