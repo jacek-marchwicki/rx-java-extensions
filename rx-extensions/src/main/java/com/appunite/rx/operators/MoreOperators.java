@@ -398,7 +398,7 @@ public class MoreOperators {
             //                      1 1 1 1
             final int buckets = Math.min(RxRingBuffer.SIZE, divCailing(size, RxRingBuffer.SIZE));
             final List<Observable<List<T>>> observableList = new ArrayList<>();
-            final int bucketSize = size / buckets;
+            final int bucketSize = divCailing(size, buckets);
             for (int bucket = 0; bucket < buckets; bucket++) {
                 int start = bucket * bucketSize;
                 int end = Math.min(size, start + bucketSize);
