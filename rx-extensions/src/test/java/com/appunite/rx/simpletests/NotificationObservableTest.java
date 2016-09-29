@@ -135,7 +135,7 @@ public class NotificationObservableTest {
                     }
                 });
 
-        userObservable = OnSubscribeRefCountDelayed.create(ObservableExtensions.behavior(userFromApiWithIncrement), 5, TimeUnit.SECONDS, scheduler);
+        userObservable = OnSubscribeRefCountDelayed.create(userFromApiWithIncrement.replay(1), 5, TimeUnit.SECONDS, scheduler);
     }
 
     @Test

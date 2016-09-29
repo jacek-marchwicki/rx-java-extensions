@@ -53,7 +53,7 @@ public class OnSubscribeRefCountDelayedTest {
 
         scheduler = new TestScheduler();
         apiResponse = PublishSubject.create();
-        userObservable = OnSubscribeRefCountDelayed.create(ObservableExtensions.behavior(apiResponse), 5, TimeUnit.SECONDS, scheduler);
+        userObservable = OnSubscribeRefCountDelayed.create(apiResponse.replay(1), 5, TimeUnit.SECONDS, scheduler);
     }
 
     @Test

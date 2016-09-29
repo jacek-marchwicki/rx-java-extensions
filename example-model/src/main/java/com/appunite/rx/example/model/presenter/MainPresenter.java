@@ -85,7 +85,7 @@ public class MainPresenter {
                         return Strings.nullToEmpty(postsResponse.title());
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+                .replay(1).refCount();
 
         itemsObservable = postsObservable
                 .compose(ResponseOrError.map(new Func1<PostsResponse, List<BaseAdapterItem>>() {
@@ -101,7 +101,7 @@ public class MainPresenter {
                         }).toList();
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<List<BaseAdapterItem>>>behaviorRefCount());
+                .replay(1).refCount();
     }
 
     @Nonnull

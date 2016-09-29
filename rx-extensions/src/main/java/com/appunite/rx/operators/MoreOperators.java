@@ -45,8 +45,6 @@ import rx.functions.FuncN;
 import rx.internal.util.RxRingBuffer;
 import rx.subscriptions.Subscriptions;
 
-import static com.appunite.rx.ObservableExtensions.behavior;
-
 public class MoreOperators {
 
     @Nonnull
@@ -97,7 +95,7 @@ public class MoreOperators {
             long keepTime,
             @Nonnull TimeUnit timeUnit) {
         return OnSubscribeRefCountDelayed.create(
-                behavior(observable), keepTime, timeUnit, scheduler);
+                observable.replay(1), keepTime, timeUnit, scheduler);
     }
 
     @Nonnull
