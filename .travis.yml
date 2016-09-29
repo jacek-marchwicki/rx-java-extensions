@@ -1,6 +1,9 @@
 sudo: false
 language: android
 
+jdk:
+  - oraclejdk8
+
 # https://github.com/travis-ci/travis-ci/issues/3695
 env:
   global:
