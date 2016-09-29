@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    compile "io.reactivex:rxjava:1.0.14"
+    compile "io.reactivex:rxjava:1.2.0"
     compile 'javax.inject:javax.inject:1'
     compile 'com.google.code.findbugs:jsr305:3.0.1'
 
