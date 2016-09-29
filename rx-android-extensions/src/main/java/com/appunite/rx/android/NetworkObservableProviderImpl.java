@@ -66,7 +66,7 @@ public class NetworkObservableProviderImpl implements NetworkObservableProvider 
                     }
                 })
                 .distinctUntilChanged()
-                .compose(ObservableExtensions.<NetworkStatus>behaviorRefCount());
+                .replay(1).refCount();
     }
 
     private NetworkStatus getActiveNetworkStatus() {

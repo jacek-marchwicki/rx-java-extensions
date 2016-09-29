@@ -27,35 +27,48 @@ import rx.subjects.Subject;
 
 public class ObservableExtensions {
 
+    /**
+     * Use {@link Observable#replay(int)}  with value 1
+     * @param observable observable
+     * @param <T> type
+     * @return ConnectableObservable
+     */
+    @Deprecated
     @Nonnull
     public static <T> ConnectableObservable<T> behavior(@Nonnull Observable<T> observable) {
-        return new OperatorMulticast<>(observable, new Func0<Subject<? super T, ? extends T>>() {
-
-            @Override
-            public Subject<? super T, ? extends T> call() {
-                return BehaviorSubject.<T>create();
-            }
-        });
+        return observable.replay(1);
     }
 
+    /**
+     * Use {@link Observable#replay(int)}  .replay(1).refCount()
+     * @param <T> type
+     * @return ConnectableObservable
+     */
+    @Deprecated
     @Nonnull
     public static <T> Observable.Transformer<T, T> behaviorRefCount() {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> tObservable) {
-                return behavior(tObservable).refCount();
+                return tObservable.replay(1).refCount();
             }
         };
     }
 
+    /**
+     * Use {@link Observable#replay(int)}  .replay(1).connect().subscribe()
+     * @param <T> type
+     * @return ConnectableObservable
+     */
+    @Deprecated
     @Nonnull
     public static <T> Observable.Transformer<T, T> behaviorConnected() {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(Observable<T> tObservable) {
-                final ConnectableObservable<T> behavior = behavior(tObservable);
-                behavior.connect();
-                return behavior;
+                final ConnectableObservable<T> replay = tObservable.replay(1);
+                replay.connect();
+                return replay;
             }
         };
     }

@@ -44,7 +44,7 @@ public class DetailsPresenters {
                         return Strings.nullToEmpty(item.name());
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+                .replay(1).refCount();
 
         bodyObservable = postWithBodyObservable
                 .compose(ResponseOrError.map(new Func1<PostWithBody, String>() {
@@ -53,7 +53,7 @@ public class DetailsPresenters {
                         return Strings.nullToEmpty(item.body());
                     }
                 }))
-                .compose(ObservableExtensions.<ResponseOrError<String>>behaviorRefCount());
+                .replay(1).refCount();
     }
 
     @Nonnull
