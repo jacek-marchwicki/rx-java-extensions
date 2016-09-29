@@ -8,7 +8,6 @@ jdk:
 env:
   global:
       MALLOC_ARENA_MAX=2
-    - ANDROID_SDK=${TRAVIS_BUILD_DIR}/android-sdk
 
 android:
   components:
@@ -16,8 +15,9 @@ android:
     - android-23
     - extra-google-m2repository
     - extra-android-m2repository
+  licenses:
+      - android-sdk-preview-license-52d11cd2
+      - android-sdk-license-.+
+      - google-gdk-license-.+
 script:
-- mkdir -p "$ANDROID_SDK/licenses" || true
-- echo -e "\n8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_SDK/licenses/android-sdk-license"
-- echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_SDK/licenses/android-sdk-preview-license"
 - ./gradlew build
