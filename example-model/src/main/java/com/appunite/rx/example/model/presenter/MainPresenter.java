@@ -49,7 +49,7 @@ public class MainPresenter {
         this.postsDao = postsDao;
 
         // Two solutions - you can choose one
-        if (false) {
+        if (true) {
             final Observable<ResponseOrError<PostsResponse>> postsObservable = postsDao.postsObservable()
                     .observeOn(uiScheduler)
                     .replay(1)
