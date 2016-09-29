@@ -8,6 +8,7 @@ jdk:
 env:
   global:
       MALLOC_ARENA_MAX=2
+    - ANDROID_SDK=${TRAVIS_BUILD_DIR}/android-sdk
 
 android:
   components:
