@@ -34,8 +34,10 @@ import javax.annotation.Nullable;
 
 import rx.Observable;
 import rx.Observer;
+import rx.internal.util.RxRingBuffer;
 import rx.subjects.BehaviorSubject;
 
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -47,8 +49,6 @@ public class MoreOperatorsCombineAllTest {
 
     @Mock
     Observer<? super List<String>> stringListObserver;
-    @Mock
-    Observer<? super List<Integer>> integerListObserver;
 
     @Before
     public void setUp() throws Exception {
@@ -96,7 +96,21 @@ public class MoreOperatorsCombineAllTest {
     @Test
     public void testVeryLargeSubscriptionsSet_notifyAll() throws Exception {
         // range have to be grater than 128 to find potential an issue
-        final ImmutableList<Integer> largeItemsSet = ImmutableList.copyOf(ContiguousSet.create(Range.closed(0, 1000), DiscreteDomain.integers()));
+        checkForSize(1000);
+        checkForSize(2 * RxRingBuffer.SIZE);
+        checkForSize(2 * RxRingBuffer.SIZE+1);
+        checkForSize(2 * RxRingBuffer.SIZE-1);
+        checkForSize(RxRingBuffer.SIZE * RxRingBuffer.SIZE);
+        checkForSize(RxRingBuffer.SIZE * RxRingBuffer.SIZE+1);
+        checkForSize(RxRingBuffer.SIZE * RxRingBuffer.SIZE-1);
+    }
+
+    private void checkForSize(int size) {
+        final ContiguousSet<Integer> elements = ContiguousSet.create(Range.closed(0, size), DiscreteDomain.integers());
+        final Observer<? super List<Integer>> integerListObserver = mock(Observer.class);
+
+        // range have to be grater than 128 to find potential an issue
+        final ImmutableList<Integer> largeItemsSet = ImmutableList.copyOf(elements);
         final ImmutableList<Observable<Integer>> of = FluentIterable
                 .from(largeItemsSet)
                 .transform(new Function<Integer, Observable<Integer>>() {

@@ -374,6 +374,10 @@ public class MoreOperators {
         };
     }
 
+    private static int divCailing(int x, int y) {
+        return (x+y-1)/y;
+    }
+
     @Nonnull
     public static <T> Observable<List<T>> newCombineAll(@Nonnull List<Observable<T>> observables) {
         if (observables.isEmpty()) {
@@ -384,19 +388,34 @@ public class MoreOperators {
             // Additionally on android there is a bug so this limit is cut to 16 arguments - on
             // android we will not get any throw so rxjava fail sailent
             final int size = observables.size();
-            final int left = size / 2;
-            return Observable.combineLatest(
-                    newCombineAll(observables.subList(0, left)),
-                    newCombineAll(observables.subList(left, size)),
-                    new Func2<List<T>, List<T>, List<T>>() {
-                        @Override
-                        public List<T> call(final List<T> ts, final List<T> ts2) {
-                            final ArrayList<T> ret = new ArrayList<>(ts.size() + ts2.size());
-                            ret.addAll(ts);
-                            ret.addAll(ts2);
-                            return Collections.unmodifiableList(ret);
-                        }
-                    });
+            // we divide to multiple buckets
+            // i.e. for RxRingBuffer.SIZE = 3 and observables.size() == 10
+            //               10
+            //     3         3         4
+            //   1 1 1     1 1 1     2   2
+            //                      1 1 1 1
+            final int buckets = Math.min(RxRingBuffer.SIZE, divCailing(size, RxRingBuffer.SIZE));
+            final List<Observable<List<T>>> observableList = new ArrayList<>();
+            final int bucketSize = divCailing(size, buckets);
+            for (int bucket = 0; bucket < buckets; bucket++) {
+                int start = bucket * bucketSize;
+                int end = Math.min(size, start + bucketSize);
+                final Observable<List<T>> observable = newCombineAll(observables.subList(start, end))
+                        // use onBackpressureLatest to be safe if we are not fast enough consuming events
+                        .onBackpressureLatest();
+                observableList.add(observable);
+            }
+            return Observable.combineLatest(observableList, new FuncN<List<T>>() {
+                @Override
+                public List<T> call(Object... args) {
+                    final ArrayList<T> ret = new ArrayList<>(args.length);
+                    for (Object arg : args) {
+                        //noinspection unchecked
+                        ret.addAll((List<T>) arg);
+                    }
+                    return Collections.unmodifiableList(ret);
+                }
+            });
         }
         return Observable.combineLatest(observables, new FuncN<List<T>>() {
             @Override
