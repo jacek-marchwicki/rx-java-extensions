@@ -526,7 +526,7 @@ public class MoreOperators {
     }
 
     /**
-     * Operator use func to covert T element in to list of R bye applying Observable
+     * Operator use func to covert T element in to list of R by applying Observable
      * @param func fuc that convert T to Observable of R
      * @param <T> input type
      * @param <R> output type
