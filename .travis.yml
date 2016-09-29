@@ -1,6 +1,9 @@
 sudo: false
 language: android
 
+jdk:
+  - oraclejdk8
+
 # https://github.com/travis-ci/travis-ci/issues/3695
 env:
   global:
@@ -8,8 +11,13 @@ env:
 
 android:
   components:
-    - build-tools-23.0.1
+    - build-tools-23.0.3
     - android-23
     - extra-google-m2repository
     - extra-android-m2repository
-script: ./gradlew build
+  licenses:
+      - android-sdk-preview-license-52d11cd2
+      - android-sdk-license-.+
+      - google-gdk-license-.+
+script:
+- ./gradlew build
