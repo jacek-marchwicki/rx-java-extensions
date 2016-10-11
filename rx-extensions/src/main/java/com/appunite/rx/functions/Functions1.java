@@ -38,6 +38,16 @@ public class Functions1 {
     }
 
     @Nonnull
+    public static Func1<? super Boolean, Boolean> isFalse() {
+        return new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                return !aBoolean;
+            }
+        };
+    }
+
+    @Nonnull
     public static <T> Func1<T, Boolean> neg(@Nonnull final Func1<T, Boolean> func1) {
         return new Func1<T, Boolean>() {
             @Override
@@ -73,6 +83,17 @@ public class Functions1 {
     }
 
     @Nonnull
+    public static Func1<? super Object, Boolean> instanceOf(@Nonnull final Class clazz) {
+        checkNotNull(clazz);
+        return new Func1<Object, Boolean>() {
+            @Override
+            public Boolean call(Object o) {
+                return clazz.isInstance(o);
+            }
+        };
+    }
+
+    @Nonnull
     public static Func1<? super Object, ?> toObject() {
         return new Func1<Object, Object>() {
             @Override
@@ -97,16 +118,6 @@ public class Functions1 {
         return new Func1<Boolean, Boolean>() {
             @Override
             public Boolean call(final Boolean aBoolean) {
-                return !aBoolean;
-            }
-        };
-    }
-
-    @Nonnull
-    public static Func1<? super Boolean, Boolean> isFalse() {
-        return new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
                 return !aBoolean;
             }
         };
