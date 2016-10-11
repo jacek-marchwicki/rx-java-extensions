@@ -91,4 +91,15 @@ public class Functions1Test {
 
         assert_().that(toStringFunctionResult.getOnNextEvents()).containsExactly("{a=1, b=4, c=7}");
     }
+
+    @Test
+    public void testInstanceOf_StringFiltered() throws Exception {
+        final TestSubscriber<Object> testSubscriber = new TestSubscriber<>();
+
+        Observable.just(1, "hello", 3d)
+                .filter(Functions1.instanceOf(String.class))
+                .subscribe(testSubscriber);
+
+        assert_().that(testSubscriber.getOnNextEvents()).containsExactly("hello");
+    }
 }
