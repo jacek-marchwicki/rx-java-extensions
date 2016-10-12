@@ -5,6 +5,8 @@ import android.support.annotation.NonNull;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
+import com.appunite.login.CurrentLoggedInUserDao;
+import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
@@ -29,6 +31,7 @@ import retrofit.RestAdapter;
 import retrofit.android.AndroidLog;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
+import rx.Observable;
 
 /**
  * Normally we rather use dagger instead of static, but for testing purposes is ok
@@ -37,11 +40,28 @@ public class FakeDagger {
 
     private static final Object LOCK = new Object();
     private static PostsDao postsDao;
+    private static CurrentLoggedInUserDao currentLoggedInUserDao;
 
     private static class SyncExecutor implements Executor {
         @Override
         public void execute(@Nonnull final Runnable command) {
             command.run();
+        }
+    }
+
+    public static CurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
+        synchronized (LOCK) {
+            if (currentLoggedInUserDao != null) {
+                return currentLoggedInUserDao;
+            }
+            currentLoggedInUserDao = new CurrentLoggedInUserDao() {
+                @Nonnull
+                @Override
+                public Observable<ResponseOrError<LoggedInUserDao>> currentLoggedInUserObservable() {
+                    return null;
+                }
+            };
+            return currentLoggedInUserDao;
         }
     }
 
@@ -56,7 +76,7 @@ public class FakeDagger {
             final RestAdapter restAdapter = getRestAdapter(gson, client);
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
             final CacheProvider cacheProvider = getCacheProvider(context, gson);
-            postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), guestbookService, cacheProvider);
+            postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), guestbookService, cacheProvider, getCurrentLoggedInUserDaoInstance());
             return postsDao;
         }
     }

@@ -23,6 +23,9 @@ import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 import javax.annotation.Nonnull;
 
 import rx.Observable;
@@ -122,7 +125,7 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
-        final UniversalAdapter mainAdapter = new UniversalAdapter(ImmutableList.of(
+        final UniversalAdapter mainAdapter = new UniversalAdapter(Arrays.asList(
                 new AdapterItemManager(),
                 new ErrorItemManager()));
 
