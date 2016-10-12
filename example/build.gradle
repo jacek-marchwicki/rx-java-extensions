@@ -16,7 +16,7 @@ dependencies {
     compile 'com.android.support:cardview-v7:23.0.1'
 
     // Firebase
-    compile 'com.firebaseui:firebase-ui-auth:0.4.2'
+    compile 'com.firebaseui:firebase-ui-auth:0.6.0'
 
     compile 'com.jakewharton.rxbinding:rxbinding:0.2.0'
     compile 'com.jakewharton.rxbinding:rxbinding-support-v4:0.2.0'

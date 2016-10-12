@@ -16,8 +16,10 @@
 
 package com.appunite.rx.example.model.presenter;
 
+import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
@@ -39,6 +41,7 @@ import rx.schedulers.TestScheduler;
 import rx.subjects.TestSubject;
 
 import static com.google.common.truth.Truth.assert_;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.when;
 
 
@@ -46,6 +49,10 @@ public class MainPresenterTest {
 
     @Mock
     PostsDao postsDao;
+    @Mock
+    MyCurrentLoggedInUserDao myCurrentLoggedInUserDao;
+    @Mock
+    CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao;
 
 
     private MainPresenter mainPresenter;
@@ -58,8 +65,14 @@ public class MainPresenterTest {
 
         when(postsDao.postsObservable()).thenReturn(postsSubject);
         when(postsDao.postsIdsObservable()).thenReturn(Observable.<ResponseOrError<PostsIdsResponse>>never());
+        when(myCurrentLoggedInUserDao.currentLoggedInUserObservable())
+                .thenReturn(
+                        Observable.just(ResponseOrError.fromData(loggedInUserDao))
+                                .mergeWith(Observable.<ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao>>never()));
+        when(loggedInUserDao.authTokenObservable(anyBoolean()))
+                .thenReturn(Observable.just("auth_token"));
 
-        mainPresenter = new MainPresenter(postsDao, scheduler);
+        mainPresenter = new MainPresenter(postsDao, myCurrentLoggedInUserDao, scheduler);
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.appunite.rx.example.model.presenter;
 import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
@@ -45,7 +46,7 @@ public class MainPresenter {
     @Nonnull
     private final PostsDao postsDao;
     @Nonnull
-    private final CurrentLoggedInUserDao currentLoggedInUserDao;
+    private final MyCurrentLoggedInUserDao currentLoggedInUserDao;
     @Nonnull
     private final Scheduler uiScheduler;
     @Nonnull
@@ -56,7 +57,7 @@ public class MainPresenter {
     private final PublishSubject<Object> clickLoginSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull final PostsDao postsDao,
-                         @Nonnull final CurrentLoggedInUserDao currentLoggedInUserDao,
+                         @Nonnull final MyCurrentLoggedInUserDao currentLoggedInUserDao,
                          @Nonnull Scheduler uiScheduler) {
         this.postsDao = postsDao;
         this.currentLoggedInUserDao = currentLoggedInUserDao;
