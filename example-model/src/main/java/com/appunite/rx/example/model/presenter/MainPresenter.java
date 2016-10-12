@@ -15,6 +15,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -77,11 +78,16 @@ public class MainPresenter {
                     });
 
             itemsObservable = postsObservable
-                    .compose(ResponseOrError.<PostsResponse>onlySuccess())
-                    .switchMap(new Func1<PostsResponse, Observable<? extends List<BaseAdapterItem>>>() {
+                    .map(new Func1<ResponseOrError<PostsResponse>, List<Post>>() {
                         @Override
-                        public Observable<? extends List<BaseAdapterItem>> call(PostsResponse postsResponse) {
-                            return Observable.from(postsResponse.items())
+                        public List<Post> call(ResponseOrError<PostsResponse> responseOrError) {
+                            return responseOrError.isError() ? Collections.<Post>emptyList() : responseOrError.data().items();
+                        }
+                    })
+                    .switchMap(new Func1<List<Post>, Observable<? extends List<BaseAdapterItem>>>() {
+                        @Override
+                        public Observable<? extends List<BaseAdapterItem>> call(List<Post> items) {
+                            return Observable.from(items)
                                     .map(new Func1<Post, BaseAdapterItem>() {
                                         @Override
                                         public BaseAdapterItem call(Post post) {
@@ -110,9 +116,12 @@ public class MainPresenter {
                             return postsIdsResponse.items();
                         }
                     }))
-                    .replay(1)
-                    .refCount()
-                    .compose(ResponseOrError.<List<PostId>>onlySuccess())
+                    .map(new Func1<ResponseOrError<List<PostId>>, List<PostId>>() {
+                        @Override
+                        public List<PostId> call(ResponseOrError<List<PostId>> responseOrError) {
+                            return responseOrError.isError() ? Collections.<PostId>emptyList() : responseOrError.data();
+                        }
+                    })
                     .compose(MoreOperators.observableSwitch(new Func1<PostId, Observable<BaseAdapterItem>>() {
                         @Override
                         public Observable<BaseAdapterItem> call(final PostId postId) {
