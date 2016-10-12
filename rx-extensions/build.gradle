@@ -1,9 +1,3 @@
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-}
-
 apply plugin: 'java'
 apply plugin: 'maven'
 
@@ -12,10 +6,6 @@ group='com.github.jacek-marchwicki.rx-java-extensions'
 version='1.0.4'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
-
-repositories {
-    mavenCentral()
-}
 
 dependencies {
     compile "io.reactivex:rxjava:1.2.0"

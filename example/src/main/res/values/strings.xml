@@ -4,7 +4,6 @@
 
     <string name="create_post_title">Create Post</string>
     <string name="create_post_accept_button_content_description">Button for adding new post</string>
-    <string name="create_post_error_message">Check your internet connection</string>
     <string name="create_post_name_hint">Title</string>
     <string name="create_post_body_hint">Body</string>
     <string name="create_post_empty_body_error">Body should be set</string>

@@ -8,6 +8,7 @@ import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
+import com.appunite.rx.example.auth.FirebaseCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.helpers.CacheProvider;
@@ -54,13 +55,7 @@ public class FakeDagger {
             if (currentLoggedInUserDao != null) {
                 return currentLoggedInUserDao;
             }
-            currentLoggedInUserDao = new CurrentLoggedInUserDao() {
-                @Nonnull
-                @Override
-                public Observable<ResponseOrError<LoggedInUserDao>> currentLoggedInUserObservable() {
-                    return null;
-                }
-            };
+            currentLoggedInUserDao = new FirebaseCurrentLoggedInUserDao();
             return currentLoggedInUserDao;
         }
     }

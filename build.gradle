@@ -1,4 +1,25 @@
+buildscript {
+    repositories {
+        maven { url 'https://commondatastorage.googleapis.com/maven-repository/' }
+        jcenter()
+        mavenCentral()
+        maven { url 'http://download.crashlytics.com/maven' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.0'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.5'
+        classpath 'com.google.gms:google-services:3.0.0'
+    }
+}
+
+allprojects {
+    repositories {
+        maven { url 'https://commondatastorage.googleapis.com/maven-repository/' }
+        jcenter()
+        mavenCentral()
+    }
+}
 
 task wrapper(type: Wrapper) {
-        gradleVersion = '2.4'
+    gradleVersion = '2.4'
 }
