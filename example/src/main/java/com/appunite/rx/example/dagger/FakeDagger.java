@@ -5,10 +5,9 @@ import android.support.annotation.NonNull;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
-import com.appunite.login.CurrentLoggedInUserDao;
-import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
 import com.appunite.rx.example.auth.FirebaseCurrentLoggedInUserDao;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.helpers.CacheProvider;
@@ -32,7 +31,6 @@ import retrofit.RestAdapter;
 import retrofit.android.AndroidLog;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
-import rx.Observable;
 
 /**
  * Normally we rather use dagger instead of static, but for testing purposes is ok
@@ -41,7 +39,7 @@ public class FakeDagger {
 
     private static final Object LOCK = new Object();
     private static PostsDao postsDao;
-    private static CurrentLoggedInUserDao currentLoggedInUserDao;
+    private static MyCurrentLoggedInUserDao currentLoggedInUserDao;
 
     private static class SyncExecutor implements Executor {
         @Override
@@ -50,7 +48,7 @@ public class FakeDagger {
         }
     }
 
-    public static CurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
+    public static MyCurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
         synchronized (LOCK) {
             if (currentLoggedInUserDao != null) {
                 return currentLoggedInUserDao;

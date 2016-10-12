@@ -2,8 +2,8 @@ package com.appunite.rx.example.auth;
 
 import android.support.annotation.NonNull;
 
-import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.common.base.Objects;
@@ -20,9 +20,10 @@ import rx.Subscriber;
 import rx.functions.Action0;
 import rx.subscriptions.Subscriptions;
 
-public class FirebaseCurrentLoggedInUserDao implements CurrentLoggedInUserDao {
+public class FirebaseCurrentLoggedInUserDao implements MyCurrentLoggedInUserDao {
 
     private final Observable<ResponseOrError<LoggedInUserDao>> currentLoggedInUserObservable;
+
 
     private static class FirebaseLoggedInUserDao implements LoggedInUserDao {
 

@@ -1,5 +1,6 @@
 package com.appunite.rx.example.model.presenter;
 
+import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.model.dao.PostsDao;
@@ -7,6 +8,7 @@ import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
+import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.functions.FunctionsN;
 import com.appunite.rx.operators.MoreOperators;
 import com.google.common.base.Objects;
@@ -42,11 +44,22 @@ public class MainPresenter {
     @Nonnull
     private final PostsDao postsDao;
     @Nonnull
+    private final CurrentLoggedInUserDao currentLoggedInUserDao;
+    @Nonnull
+    private final Scheduler uiScheduler;
+    @Nonnull
     private final PublishSubject<Object> clickOnFabSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> clickLogoutSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> clickLoginSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull final PostsDao postsDao,
+                         @Nonnull final CurrentLoggedInUserDao currentLoggedInUserDao,
                          @Nonnull Scheduler uiScheduler) {
         this.postsDao = postsDao;
+        this.currentLoggedInUserDao = currentLoggedInUserDao;
+        this.uiScheduler = uiScheduler;
 
         // Two solutions - you can choose one
         if (true) {
@@ -177,6 +190,53 @@ public class MainPresenter {
     @Nonnull
     public Observable<Object> startCreatePostActivityObservable() {
         return clickOnFabSubject;
+    }
+
+    @Nonnull
+    public Observer<Object> clickLoginObserver() {
+        return clickLoginSubject;
+    }
+
+    @Nonnull
+    public Observer<Object> clickLogoutObserver() {
+        return clickLogoutSubject;
+    }
+
+    @Nonnull
+    public Observable<Boolean> loginVisibleObservable() {
+        return currentLoggedInUserDao.currentLoggedInUserObservable()
+                .map(new Func1<ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao>, Boolean>() {
+                    @Override
+                    public Boolean call(ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao> loggedInUserDaoResponseOrError) {
+                        return loggedInUserDaoResponseOrError.isError()
+                                && loggedInUserDaoResponseOrError.error() instanceof CurrentLoggedInUserDao.NotAuthorizedException;
+                    }
+                })
+                .observeOn(uiScheduler)
+                .startWith(false);
+    }
+
+    @Nonnull
+    public Observable<Boolean> logoutVisibleObservable() {
+        return currentLoggedInUserDao.currentLoggedInUserObservable()
+                .map(new Func1<ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao>, Boolean>() {
+                    @Override
+                    public Boolean call(ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao> loggedInUserDaoResponseOrError) {
+                        return loggedInUserDaoResponseOrError.isData();
+                    }
+                })
+                .observeOn(uiScheduler)
+                .startWith(false);
+    }
+
+    @Nonnull
+    public Observable<Object> startFirebaseLoginActivity() {
+        return clickLoginSubject;
+    }
+
+    @Nonnull
+    public Observable<Object> logoutUserObservable() {
+        return clickLogoutSubject;
     }
 
     public static class ErrorAdapterItem implements BaseAdapterItem {

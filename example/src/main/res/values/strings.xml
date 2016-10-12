@@ -8,4 +8,7 @@
     <string name="create_post_body_hint">Body</string>
     <string name="create_post_empty_body_error">Body should be set</string>
     <string name="create_post_empty_name_error">Name should be set</string>
+
+    <string name="main_activity_login">Login</string>
+    <string name="main_activity_logout">Logout</string>
 </resources>
