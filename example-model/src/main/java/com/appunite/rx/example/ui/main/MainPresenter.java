@@ -10,9 +10,8 @@ import com.appunite.rx.example.dao.posts.model.PostId;
 import com.appunite.rx.example.dao.posts.model.PostsIdsResponse;
 import com.appunite.rx.example.dao.posts.model.PostsResponse;
 import com.appunite.rx.functions.FunctionsN;
+import com.appunite.rx.example.internal.Objects;
 import com.appunite.rx.operators.MoreOperators;
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,11 +97,11 @@ class MainPresenter {
                         }
                     });
 
-            errorObservable = ResponseOrError.combineErrorsObservable(ImmutableList.of(
+            errorObservable = ResponseOrError.combineErrorsObservable(Collections.singletonList(
                     ResponseOrError.transform(postsObservable)))
                     .distinctUntilChanged();
 
-            progressObservable = ResponseOrError.combineProgressObservable(ImmutableList.of(
+            progressObservable = ResponseOrError.combineProgressObservable(Collections.singletonList(
                     ResponseOrError.transform(postsObservable)));
         } else {
             final Observable<ResponseOrError<PostsIdsResponse>> postIds = postsDao.postsIdsObservable()
@@ -151,7 +150,7 @@ class MainPresenter {
                     });
 
 
-            errorObservable = ResponseOrError.combineErrorsObservable(ImmutableList.of(
+            errorObservable = ResponseOrError.combineErrorsObservable(Collections.singletonList(
                     ResponseOrError.transform(postIds)))
                     .distinctUntilChanged();
 

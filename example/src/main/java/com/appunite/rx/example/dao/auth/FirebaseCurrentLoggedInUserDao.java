@@ -3,9 +3,9 @@ package com.appunite.rx.example.dao.auth;
 import android.support.annotation.NonNull;
 
 import com.appunite.rx.ResponseOrError;
+import com.appunite.rx.example.internal.Objects;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.common.base.Objects;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
@@ -70,7 +70,7 @@ public class FirebaseCurrentLoggedInUserDao implements MyCurrentLoggedInUserDao 
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof FirebaseLoggedInUserDao)) return false;
-            FirebaseLoggedInUserDao that = (FirebaseLoggedInUserDao) o;
+            final FirebaseLoggedInUserDao that = (FirebaseLoggedInUserDao) o;
             return Objects.equal(firebaseUser.getUid(), that.firebaseUser.getUid());
         }
 

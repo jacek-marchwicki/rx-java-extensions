@@ -4,9 +4,9 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.dao.posts.PostsDao;
 import com.appunite.rx.example.dao.posts.model.AddPost;
 import com.appunite.rx.example.dao.posts.model.PostWithBody;
+import com.appunite.rx.example.internal.Strings;
 import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.operators.OperatorSampleWithLastWithObservable;
-import com.google.common.base.Strings;
 
 import javax.annotation.Nonnull;
 
@@ -133,7 +133,7 @@ class CreatePostPresenter {
     }
 
     @Nonnull
-    public Observable<Boolean> progressObservable() {
+    Observable<Boolean> progressObservable() {
         return showProgress;
     }
 
