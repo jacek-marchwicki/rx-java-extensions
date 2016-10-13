@@ -1,14 +1,13 @@
 package com.appunite.rx.example.dagger;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
 import com.appunite.rx.example.auth.FirebaseCurrentLoggedInUserDao;
-import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.api.GuestbookService;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.helpers.CacheProvider;
 import com.appunite.rx.example.model.helpers.DiskCacheCreator;
@@ -16,21 +15,17 @@ import com.appunite.rx.subjects.CacheSubject;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.squareup.okhttp.Cache;
-import com.squareup.okhttp.OkHttpClient;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Type;
-import java.util.concurrent.Executor;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-import retrofit.RestAdapter;
-import retrofit.android.AndroidLog;
-import retrofit.client.OkClient;
-import retrofit.converter.GsonConverter;
+import okhttp3.Cache;
+import okhttp3.OkHttpClient;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * Normally we rather use dagger instead of static, but for testing purposes is ok
@@ -41,13 +36,7 @@ public class FakeDagger {
     private static PostsDao postsDao;
     private static MyCurrentLoggedInUserDao currentLoggedInUserDao;
 
-    private static class SyncExecutor implements Executor {
-        @Override
-        public void execute(@Nonnull final Runnable command) {
-            command.run();
-        }
-    }
-
+    @Nonnull
     public static MyCurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
         synchronized (LOCK) {
             if (currentLoggedInUserDao != null) {
@@ -58,15 +47,15 @@ public class FakeDagger {
         }
     }
 
+    @Nonnull
     public static PostsDao getPostsDaoInstance(@Nonnull final Context context) {
         synchronized (LOCK) {
             if (postsDao != null) {
                 return postsDao;
             }
             final Gson gson = getGson();
-
             final OkHttpClient client = getOkHttpClient(context);
-            final RestAdapter restAdapter = getRestAdapter(gson, client);
+            final Retrofit restAdapter = getRestAdapter(gson, client);
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
             final CacheProvider cacheProvider = getCacheProvider(context, gson);
             postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), guestbookService, cacheProvider, getCurrentLoggedInUserDaoInstance());
@@ -74,26 +63,26 @@ public class FakeDagger {
         }
     }
 
-    @NonNull
+    @Nonnull
     private static OkHttpClient getOkHttpClient(@Nonnull Context context) {
-        final OkHttpClient client = new OkHttpClient();
-        client.setCache(getCacheOrNull(new File(context.getCacheDir(), "ok-http")));
-        return client;
-    }
-
-    private static RestAdapter getRestAdapter(Gson gson, OkHttpClient client) {
-        return new RestAdapter.Builder()
-                .setClient(new OkClient(client))
-                .setEndpoint("https://atlantean-field-90117.appspot.com/_ah/api/guestbook/")
-                .setExecutors(new SyncExecutor(), new SyncExecutor())
-                .setConverter(new GsonConverter(gson))
-                .setLogLevel(RestAdapter.LogLevel.FULL)
-                .setLog(new AndroidLog("Retrofit"))
+        final File cacheDirectory = new File(context.getCacheDir(), "ok-http");
+        return new OkHttpClient.Builder()
+                .cache(getCache(cacheDirectory))
                 .build();
     }
 
-    @NonNull
-    private static CacheProvider getCacheProvider(@Nonnull final Context context, final Gson gson) {
+    @Nonnull
+    private static Retrofit getRestAdapter(@Nonnull Gson gson, @Nonnull OkHttpClient client) {
+        return new Retrofit.Builder()
+                .baseUrl("https://atlantean-field-90117.appspot.com/_ah/api/guestbook/")
+                .client(client)
+                .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+    }
+
+    @Nonnull
+    private static CacheProvider getCacheProvider(@Nonnull final Context context,  @Nonnull final Gson gson) {
         return new CacheProvider() {
                     @Nonnull
                     @Override
@@ -103,7 +92,7 @@ public class FakeDagger {
                 };
     }
 
-    @NonNull
+    @Nonnull
     private static Gson getGson() {
         return new GsonBuilder()
                         .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
@@ -111,13 +100,9 @@ public class FakeDagger {
                         .create();
     }
 
-    @Nullable
-    private static Cache getCacheOrNull(@Nonnull File cacheDirectory) {
-        int cacheSize = 10 * 1024 * 1024; // 10 MiB
-        try {
-            return new Cache(cacheDirectory, cacheSize);
-        } catch (IOException e) {
-            return null;
-        }
+    @Nonnull
+    private static Cache getCache(@Nonnull File cacheDirectory) {
+        long cacheSize = 10L * 1024L * 1024L; // 10 MiB
+        return new Cache(cacheDirectory, cacheSize);
     }
 }
