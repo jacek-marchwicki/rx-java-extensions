@@ -1,7 +1,6 @@
 package com.appunite.rx.example.dagger;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
@@ -37,6 +36,7 @@ public class FakeDagger {
     private static PostsDao postsDao;
     private static MyCurrentLoggedInUserDao currentLoggedInUserDao;
 
+    @Nonnull
     public static MyCurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
         synchronized (LOCK) {
             if (currentLoggedInUserDao != null) {
@@ -47,6 +47,7 @@ public class FakeDagger {
         }
     }
 
+    @Nonnull
     public static PostsDao getPostsDaoInstance(@Nonnull final Context context) {
         synchronized (LOCK) {
             if (postsDao != null) {
@@ -62,7 +63,7 @@ public class FakeDagger {
         }
     }
 
-    @NonNull
+    @Nonnull
     private static OkHttpClient getOkHttpClient(@Nonnull Context context) {
         final File cacheDirectory = new File(context.getCacheDir(), "ok-http");
         return new OkHttpClient.Builder()
@@ -80,8 +81,8 @@ public class FakeDagger {
                 .build();
     }
 
-    @NonNull
-    private static CacheProvider getCacheProvider(@Nonnull final Context context, final Gson gson) {
+    @Nonnull
+    private static CacheProvider getCacheProvider(@Nonnull final Context context,  @Nonnull final Gson gson) {
         return new CacheProvider() {
                     @Nonnull
                     @Override
@@ -91,7 +92,7 @@ public class FakeDagger {
                 };
     }
 
-    @NonNull
+    @Nonnull
     private static Gson getGson() {
         return new GsonBuilder()
                         .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
