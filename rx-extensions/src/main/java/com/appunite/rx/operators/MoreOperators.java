@@ -44,7 +44,6 @@ import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
 import rx.functions.FuncN;
-import rx.internal.operators.OperatorSwitchThenUnsubscribe;
 import rx.internal.util.RxRingBuffer;
 import rx.subscriptions.Subscriptions;
 
