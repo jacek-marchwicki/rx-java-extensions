@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,7 +34,6 @@ import rx.Observable;
 import rx.Observer;
 import rx.exceptions.*;
 import rx.functions.*;
-import rx.internal.operators.OperatorSwitchThenUnsubscribe;
 import rx.internal.util.UtilityFunctions;
 import rx.observers.TestSubscriber;
 import rx.schedulers.*;

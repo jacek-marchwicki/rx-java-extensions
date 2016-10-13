@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright 2014 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package rx.internal.operators;
+package com.appunite.rx.operators;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,13 +23,14 @@ import rx.Observable;
 import rx.Observable.Operator;
 import rx.exceptions.CompositeException;
 import rx.functions.Action0;
+import rx.internal.operators.NotificationLite;
 import rx.internal.util.RxRingBuffer;
 import rx.internal.util.atomic.SpscLinkedArrayQueue;
 import rx.plugins.RxJavaHooks;
 import rx.subscriptions.*;
 
 /**
- * Operator differ from {@link OperatorSwitch} only that it first subscribe to for new values,
+ * Operator differ from {@link rx.internal.operators.OperatorSwitch} only that it first subscribe to for new values,
  * then unsubscribe from previous. Code changes are marked as "Was: xyz, Now: xyz"
  *
  * Transforms an Observable that emits Observables into a single Observable that
@@ -276,7 +277,7 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
             Producer p;
             synchronized (this) {
                 p = producer;
-                requested = BackpressureUtils.addCap(requested, n);
+                requested = addCap(requested, n);
             }
             if (p != null) {
                 p.request(n);
@@ -429,6 +430,21 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
         public void onCompleted() {
             parent.complete(id);
         }
+    }
+
+    /**
+     * From BackpressureUtils
+     * Adds two positive longs and caps the result at Long.MAX_VALUE.
+     * @param a the first value
+     * @param b the second value
+     * @return the capped sum of a and b
+     */
+    private static long addCap(long a, long b) {
+        long u = a + b;
+        if (u < 0L) {
+            u = Long.MAX_VALUE;
+        }
+        return u;
     }
 
 }
