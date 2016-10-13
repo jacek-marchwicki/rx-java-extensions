@@ -21,21 +21,48 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+/**
+ * In memory cache that stores values by key using provider - it never free memory
+ * @param <K> key of cache
+ * @param <V> value of cache
+ */
 public class Cache<K, V> {
     @Nonnull
     private final CacheProvider<K, V> provider;
     @Nonnull
     private final Map<K, V> cached = new HashMap<>();
 
+    /**
+     * Cache providers, it should generate values for given key
+     *
+     * @param <K> key
+     * @param <V> value
+     */
     public interface CacheProvider<K, V> {
+        /**
+         * Generate value for key
+         *
+         * @param key key
+         * @return value
+         */
         @Nonnull
         V load(@Nonnull K key);
     }
 
+    /**
+     * Create cache
+     *
+     * @param provider generator for keys
+     */
     public Cache(@Nonnull  CacheProvider<K, V> provider) {
         this.provider = provider;
     }
 
+    /**
+     * Get value from cache
+     * @param key key
+     * @return value
+     */
     @Nonnull
     public V get(@Nonnull K key) {
         synchronized (cached) {
