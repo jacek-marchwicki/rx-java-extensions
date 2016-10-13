@@ -3,7 +3,6 @@ package com.appunite.rx.example.application.dagger;
 import android.content.Context;
 
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
-import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
 import com.appunite.rx.example.dao.auth.FirebaseCurrentLoggedInUserDao;
 import com.appunite.rx.example.dao.internal.helpers.CacheProviderImpl;
@@ -11,7 +10,6 @@ import com.appunite.rx.example.dao.posts.PostsService;
 import com.appunite.rx.example.dao.auth.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.dao.posts.PostsDao;
 import com.appunite.rx.example.dao.internal.helpers.CacheProvider;
-import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -87,9 +85,8 @@ public class FakeDagger {
     @Nonnull
     private static Gson getGson() {
         return new GsonBuilder()
-                        .registerTypeAdapter(ImmutableList.class, new ImmutableListDeserializer())
-                        .setFieldNamingStrategy(new AndroidUnderscoreNamingStrategy())
-                        .create();
+                .setFieldNamingStrategy(new AndroidUnderscoreNamingStrategy())
+                .create();
     }
 
     @Nonnull

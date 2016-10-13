@@ -4,10 +4,10 @@ import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.dagger.UiScheduler;
 import com.appunite.rx.example.dao.posts.PostsDao;
 import com.appunite.rx.example.dao.posts.model.PostWithBody;
+import com.appunite.rx.example.internal.Strings;
 import com.appunite.rx.functions.Functions1;
-import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableList;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Nonnull;
@@ -69,14 +69,14 @@ class DetailsPresenters {
 
     @Nonnull
     Observable<Boolean> progressObservable() {
-        return ResponseOrError.combineProgressObservable(ImmutableList.of(
+        return ResponseOrError.combineProgressObservable(Arrays.asList(
                 ResponseOrError.transform(nameObservable),
                 ResponseOrError.transform(bodyObservable)));
     }
 
     @Nonnull
     Observable<Throwable> errorObservable() {
-        return ResponseOrError.combineErrorsObservable(ImmutableList.of(
+        return ResponseOrError.combineErrorsObservable(Arrays.asList(
                 ResponseOrError.transform(nameObservable),
                 ResponseOrError.transform(bodyObservable)));
     }

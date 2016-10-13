@@ -1,22 +1,21 @@
 package com.appunite.rx.example.dao.posts;
 
+import com.appunite.cache.Cache;
 import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.dao.internal.helpers.CacheProvider;
 import com.appunite.rx.example.dao.internal.helpers.RequestHelper;
 import com.appunite.rx.example.dao.posts.model.AddPost;
 import com.appunite.rx.example.dao.posts.model.Post;
-import com.appunite.rx.example.dao.posts.model.PostId;
 import com.appunite.rx.example.dao.posts.model.PostWithBody;
 import com.appunite.rx.example.dao.posts.model.PostsIdsResponse;
 import com.appunite.rx.example.dao.posts.model.PostsResponse;
 import com.appunite.rx.operators.MoreOperators;
 import com.appunite.rx.operators.OperatorMergeNextToken;
 import com.appunite.rx.subjects.CacheSubject;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -38,7 +37,7 @@ public class PostsDao {
     @Nonnull
     private final PublishSubject<Object> refreshSubject = PublishSubject.create();
     @Nonnull
-    private final LoadingCache<String, PostDao> cache;
+    private final Cache<String, PostDao> cache;
     @Nonnull
     private final Scheduler networkScheduler;
     @Nonnull
@@ -89,13 +88,13 @@ public class PostsDao {
                     }
                 }));
 
-        cache = CacheBuilder.newBuilder()
-                .build(new CacheLoader<String, PostDao>() {
-                    @Override
-                    public PostDao load(@Nonnull final String id) throws Exception {
-                        return new PostDao(id);
-                    }
-                });
+        cache = new Cache<>(new Cache.CacheProvider<String, PostDao>() {
+            @Nonnull
+            @Override
+            public PostDao load(@Nonnull String id) {
+                return new PostDao(id);
+            }
+        });
     }
 
     @Nonnull
@@ -124,11 +123,10 @@ public class PostsDao {
                         return new Func1<PostsIdsResponse, PostsIdsResponse>() {
                             @Override
                             public PostsIdsResponse call(PostsIdsResponse moreData) {
-                                final ImmutableList<PostId> posts = ImmutableList.<PostId>builder()
-                                        .addAll(previous.items())
-                                        .addAll(moreData.items())
-                                        .build();
-                                return new PostsIdsResponse(moreData.title(), posts, moreData.nextToken());
+                                return new PostsIdsResponse(
+                                        moreData.title(),
+                                        concatTwoLists(previous.items(), moreData.items()),
+                                        moreData.nextToken());
                             }
                         };
                     }
@@ -172,11 +170,10 @@ public class PostsDao {
                         return new Func1<PostsResponse, PostsResponse>() {
                             @Override
                             public PostsResponse call(PostsResponse moreData) {
-                                final ImmutableList<Post> posts = ImmutableList.<Post>builder()
-                                        .addAll(previous.items())
-                                        .addAll(moreData.items())
-                                        .build();
-                                return new PostsResponse(moreData.title(), posts, moreData.nextToken());
+                                return new PostsResponse(
+                                        moreData.title(),
+                                        concatTwoLists(previous.items(), moreData.items()),
+                                        moreData.nextToken());
                             }
                         };
                     }
@@ -196,7 +193,7 @@ public class PostsDao {
 
     @Nonnull
     public PostDao postDao(@Nonnull final String id) {
-        return cache.getUnchecked(id);
+        return cache.get(id);
     }
 
     @Nonnull
@@ -298,4 +295,12 @@ public class PostsDao {
         }
     }
 
+
+    @Nonnull
+    private static <T> List<T> concatTwoLists(@Nonnull List<T> firstList, @Nonnull List<T> secondList) {
+        final ArrayList<T> posts = new ArrayList<>(firstList.size() + secondList.size());
+        posts.addAll(firstList);
+        posts.addAll(secondList);
+        return posts;
+    }
 }

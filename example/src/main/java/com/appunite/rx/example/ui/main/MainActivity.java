@@ -38,7 +38,7 @@ import rx.functions.Action1;
 import rx.subscriptions.SerialSubscription;
 import rx.subscriptions.Subscriptions;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static com.appunite.rx.example.internal.Preconditions.checkNotNull;
 
 public class MainActivity extends BaseActivity {
 
