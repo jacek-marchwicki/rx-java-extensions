@@ -29,15 +29,17 @@
                 android:layout_width="0dip"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:layout_gravity="center_vertical"
                 android:background="@android:color/transparent"
                 android:hint="@string/create_post_name_hint"
                 android:maxLines="1" />
 
             <ImageButton
+                style="?attr/borderlessButtonStyle"
                 android:id="@+id/accept_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
+                android:layout_gravity="center_vertical|end"
                 android:background="?android:attr/selectableItemBackground"
                 android:contentDescription="@string/create_post_accept_button_content_description"
                 android:src="@drawable/ic_check_white_24dp" />

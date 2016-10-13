@@ -1,18 +1,22 @@
 package com.appunite.rx.example.model.presenter;
 
+import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.android.adapter.BaseAdapterItem;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
 import com.appunite.rx.example.model.model.PostsIdsResponse;
 import com.appunite.rx.example.model.model.PostsResponse;
+import com.appunite.rx.functions.Functions1;
 import com.appunite.rx.functions.FunctionsN;
 import com.appunite.rx.operators.MoreOperators;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.Nonnull;
@@ -42,11 +46,22 @@ public class MainPresenter {
     @Nonnull
     private final PostsDao postsDao;
     @Nonnull
+    private final MyCurrentLoggedInUserDao currentLoggedInUserDao;
+    @Nonnull
+    private final Scheduler uiScheduler;
+    @Nonnull
     private final PublishSubject<Object> clickOnFabSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> clickLogoutSubject = PublishSubject.create();
+    @Nonnull
+    private final PublishSubject<Object> clickLoginSubject = PublishSubject.create();
 
     public MainPresenter(@Nonnull final PostsDao postsDao,
+                         @Nonnull final MyCurrentLoggedInUserDao currentLoggedInUserDao,
                          @Nonnull Scheduler uiScheduler) {
         this.postsDao = postsDao;
+        this.currentLoggedInUserDao = currentLoggedInUserDao;
+        this.uiScheduler = uiScheduler;
 
         // Two solutions - you can choose one
         if (true) {
@@ -64,11 +79,16 @@ public class MainPresenter {
                     });
 
             itemsObservable = postsObservable
-                    .compose(ResponseOrError.<PostsResponse>onlySuccess())
-                    .switchMap(new Func1<PostsResponse, Observable<? extends List<BaseAdapterItem>>>() {
+                    .map(new Func1<ResponseOrError<PostsResponse>, List<Post>>() {
                         @Override
-                        public Observable<? extends List<BaseAdapterItem>> call(PostsResponse postsResponse) {
-                            return Observable.from(postsResponse.items())
+                        public List<Post> call(ResponseOrError<PostsResponse> responseOrError) {
+                            return responseOrError.isError() ? Collections.<Post>emptyList() : responseOrError.data().items();
+                        }
+                    })
+                    .switchMap(new Func1<List<Post>, Observable<? extends List<BaseAdapterItem>>>() {
+                        @Override
+                        public Observable<? extends List<BaseAdapterItem>> call(List<Post> items) {
+                            return Observable.from(items)
                                     .map(new Func1<Post, BaseAdapterItem>() {
                                         @Override
                                         public BaseAdapterItem call(Post post) {
@@ -97,9 +117,12 @@ public class MainPresenter {
                             return postsIdsResponse.items();
                         }
                     }))
-                    .replay(1)
-                    .refCount()
-                    .compose(ResponseOrError.<List<PostId>>onlySuccess())
+                    .map(new Func1<ResponseOrError<List<PostId>>, List<PostId>>() {
+                        @Override
+                        public List<PostId> call(ResponseOrError<List<PostId>> responseOrError) {
+                            return responseOrError.isError() ? Collections.<PostId>emptyList() : responseOrError.data();
+                        }
+                    })
                     .compose(MoreOperators.observableSwitch(new Func1<PostId, Observable<BaseAdapterItem>>() {
                         @Override
                         public Observable<BaseAdapterItem> call(final PostId postId) {
@@ -177,6 +200,53 @@ public class MainPresenter {
     @Nonnull
     public Observable<Object> startCreatePostActivityObservable() {
         return clickOnFabSubject;
+    }
+
+    @Nonnull
+    public Observer<Object> clickLoginObserver() {
+        return clickLoginSubject;
+    }
+
+    @Nonnull
+    public Observer<Object> clickLogoutObserver() {
+        return clickLogoutSubject;
+    }
+
+    @Nonnull
+    public Observable<Boolean> loginVisibleObservable() {
+        return currentLoggedInUserDao.currentLoggedInUserObservable()
+                .map(new Func1<ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao>, Boolean>() {
+                    @Override
+                    public Boolean call(ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao> loggedInUserDaoResponseOrError) {
+                        return loggedInUserDaoResponseOrError.isError()
+                                && loggedInUserDaoResponseOrError.error() instanceof CurrentLoggedInUserDao.NotAuthorizedException;
+                    }
+                })
+                .observeOn(uiScheduler)
+                .startWith(false);
+    }
+
+    @Nonnull
+    public Observable<Boolean> logoutVisibleObservable() {
+        return currentLoggedInUserDao.currentLoggedInUserObservable()
+                .map(new Func1<ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao>, Boolean>() {
+                    @Override
+                    public Boolean call(ResponseOrError<CurrentLoggedInUserDao.LoggedInUserDao> loggedInUserDaoResponseOrError) {
+                        return loggedInUserDaoResponseOrError.isData();
+                    }
+                })
+                .observeOn(uiScheduler)
+                .startWith(false);
+    }
+
+    @Nonnull
+    public Observable<Object> startFirebaseLoginActivity() {
+        return clickLoginSubject;
+    }
+
+    @Nonnull
+    public Observable<Object> logoutUserObservable() {
+        return clickLogoutSubject;
     }
 
     public static class ErrorAdapterItem implements BaseAdapterItem {

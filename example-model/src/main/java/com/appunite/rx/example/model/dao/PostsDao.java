@@ -1,8 +1,10 @@
 package com.appunite.rx.example.model.dao;
 
+import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.helpers.CacheProvider;
+import com.appunite.rx.example.model.helpers.RequestHelper;
 import com.appunite.rx.example.model.model.AddPost;
 import com.appunite.rx.example.model.model.Post;
 import com.appunite.rx.example.model.model.PostId;
@@ -44,81 +46,151 @@ public class PostsDao {
     private final GuestbookService guestbookService;
     @Nonnull
     private final PublishSubject<Object> loadMoreSubject = PublishSubject.create();
+    @Nonnull
+    private final CurrentLoggedInUserDao currentLoggedInUserDao;
 
     public PostsDao(@Nonnull final Scheduler networkScheduler,
                     @Nonnull final GuestbookService guestbookService,
-                    @Nonnull final CacheProvider cacheProvider) {
+                    @Nonnull final CacheProvider cacheProvider,
+                    @Nonnull final CurrentLoggedInUserDao currentLoggedInUserDao) {
         this.networkScheduler = networkScheduler;
         this.guestbookService = guestbookService;
+        this.currentLoggedInUserDao = currentLoggedInUserDao;
 
-        final OperatorMergeNextToken<PostsResponse, Object> mergePostsNextToken =
-                OperatorMergeNextToken
-                .create(new Func1<PostsResponse, Observable<PostsResponse>>() {
+        posts = currentLoggedInUserDao
+                .currentLoggedInUserObservable()
+                .compose(ResponseOrError.switchMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Observable<ResponseOrError<PostsResponse>>>() {
                     @Override
-                    public Observable<PostsResponse> call(@Nullable final PostsResponse response) {
-                        if (response == null) {
-                            return guestbookService.listPosts(null)
-                                    .subscribeOn(networkScheduler);
-                        } else {
-                            final String nextToken = response.nextToken();
-                            if (nextToken == null) {
-                                return Observable.never();
-                            }
-                            final Observable<PostsResponse> apiRequest = guestbookService
-                                    .listPosts(nextToken)
-                                    .subscribeOn(networkScheduler);
-                            return Observable.just(response)
-                                    .zipWith(apiRequest,
-                                            new MergeTwoResponses());
-                        }
-
+                    public Observable<ResponseOrError<PostsResponse>> call(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+                        return loadMoreSubject.startWith((Object) null)
+                                .lift(loadMorePosts(networkScheduler, guestbookService, loggedInUserDao))
+                                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("user: " + loggedInUserDao.userId() +", posts", PostsResponse.class)))
+                                .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
+                                .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
+                                .subscribeOn(networkScheduler)
+                                .unsubscribeOn(networkScheduler)
+                                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
+                                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
                     }
-                });
+                }));
 
-        posts = loadMoreSubject.startWith((Object) null)
-                .lift(mergePostsNextToken)
-                .compose(CacheSubject.behaviorRefCount(cacheProvider.<PostsResponse>getCacheCreatorForKey("posts", PostsResponse.class)))
-                .compose(ResponseOrError.<PostsResponse>toResponseOrErrorObservable())
-                .compose(MoreOperators.<PostsResponse>repeatOnError(networkScheduler))
-                .subscribeOn(networkScheduler)
-                .unsubscribeOn(networkScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>refresh(refreshSubject))
-                .compose(MoreOperators.<ResponseOrError<PostsResponse>>cacheWithTimeout(networkScheduler));
-
-        final OperatorMergeNextToken<PostsIdsResponse, Object> mergePostsIdsNextToken = OperatorMergeNextToken
-                .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
+        postsIds = currentLoggedInUserDao
+                .currentLoggedInUserObservable()
+                .compose(ResponseOrError.switchMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Observable<ResponseOrError<PostsIdsResponse>>>() {
                     @Override
-                    public Observable<PostsIdsResponse> call(@Nullable final PostsIdsResponse response) {
-                        if (response == null) {
-                            return guestbookService.listPostsIds(null)
-                                    .subscribeOn(networkScheduler);
-                        } else {
-                            final String nextToken = response.nextToken();
-                            if (nextToken == null) {
-                                return Observable.never();
-                            }
-                            final Observable<PostsIdsResponse> apiRequest = guestbookService.listPostsIds(nextToken)
-                                    .subscribeOn(networkScheduler);
-                            return Observable.just(response).zipWith(apiRequest, new MergeTwoPostsIdsResponses());
-                        }
-
+                    public Observable<ResponseOrError<PostsIdsResponse>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+                        return loadMoreSubject.startWith((Object) null)
+                                .lift(loadMorePostsIds(networkScheduler, guestbookService, loggedInUserDao))
+                                .compose(ResponseOrError.<PostsIdsResponse>toResponseOrErrorObservable())
+                                .compose(MoreOperators.<PostsIdsResponse>repeatOnError(networkScheduler))
+                                .subscribeOn(networkScheduler)
+                                .unsubscribeOn(networkScheduler)
+                                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
+                                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(networkScheduler));
                     }
-                });
-
-        postsIds = loadMoreSubject.startWith((Object) null)
-                .lift(mergePostsIdsNextToken)
-                .compose(ResponseOrError.<PostsIdsResponse>toResponseOrErrorObservable())
-                .compose(MoreOperators.<PostsIdsResponse>repeatOnError(networkScheduler))
-                .subscribeOn(networkScheduler)
-                .unsubscribeOn(networkScheduler)
-                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>refresh(refreshSubject))
-                .compose(MoreOperators.<ResponseOrError<PostsIdsResponse>>cacheWithTimeout(networkScheduler));
+                }));
 
         cache = CacheBuilder.newBuilder()
                 .build(new CacheLoader<String, PostDao>() {
                     @Override
                     public PostDao load(@Nonnull final String id) throws Exception {
                         return new PostDao(id);
+                    }
+                });
+    }
+
+    @Nonnull
+    private OperatorMergeNextToken<PostsIdsResponse, Object> loadMorePostsIds(@Nonnull final Scheduler networkScheduler,
+                                                                              @Nonnull final GuestbookService guestbookService,
+                                                                              @Nonnull final CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+        return OperatorMergeNextToken
+                .create(new Func1<PostsIdsResponse, Observable<PostsIdsResponse>>() {
+                    @Override
+                    public Observable<PostsIdsResponse> call(@Nullable final PostsIdsResponse previous) {
+                        if (previous == null) {
+                            return createRequest(null);
+                        } else {
+                            final String nextToken = previous.nextToken();
+                            if (nextToken == null) {
+                                return Observable.never();
+                            }
+                            return createRequest(nextToken)
+                                    .map(joinWithPreviousResponse(previous));
+                        }
+
+                    }
+
+                    @Nonnull
+                    private Func1<PostsIdsResponse, PostsIdsResponse> joinWithPreviousResponse(@Nonnull final PostsIdsResponse previous) {
+                        return new Func1<PostsIdsResponse, PostsIdsResponse>() {
+                            @Override
+                            public PostsIdsResponse call(PostsIdsResponse moreData) {
+                                final ImmutableList<PostId> posts = ImmutableList.<PostId>builder()
+                                        .addAll(previous.items())
+                                        .addAll(moreData.items())
+                                        .build();
+                                return new PostsIdsResponse(moreData.title(), posts, moreData.nextToken());
+                            }
+                        };
+                    }
+
+                    @Nonnull
+                    private Observable<PostsIdsResponse> createRequest(@Nullable final String nextToken) {
+                        return RequestHelper.request(loggedInUserDao, networkScheduler,
+                                new Func1<String, Observable<PostsIdsResponse>>() {
+                                    @Override
+                                    public Observable<PostsIdsResponse> call(String authorization) {
+                                        return guestbookService.listPostsIds(authorization, nextToken);
+                                    }
+                                });
+                    }
+                });
+    }
+
+    @Nonnull
+    private OperatorMergeNextToken<PostsResponse, Object> loadMorePosts(@Nonnull final Scheduler networkScheduler,
+                                                                        @Nonnull final GuestbookService guestbookService,
+                                                                        @Nonnull final CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+        return OperatorMergeNextToken
+                .create(new Func1<PostsResponse, Observable<PostsResponse>>() {
+                    @Override
+                    public Observable<PostsResponse> call(@Nullable final PostsResponse previous) {
+                        if (previous == null) {
+                            return createRequest(null);
+                        } else {
+                            final String nextToken = previous.nextToken();
+                            if (nextToken == null) {
+                                return Observable.never();
+                            }
+                            return createRequest(nextToken)
+                                    .map(joinWithPreviousResponse(previous));
+                        }
+
+                    }
+
+                    @Nonnull
+                    private Func1<PostsResponse, PostsResponse> joinWithPreviousResponse(@Nonnull final PostsResponse previous) {
+                        return new Func1<PostsResponse, PostsResponse>() {
+                            @Override
+                            public PostsResponse call(PostsResponse moreData) {
+                                final ImmutableList<Post> posts = ImmutableList.<Post>builder()
+                                        .addAll(previous.items())
+                                        .addAll(moreData.items())
+                                        .build();
+                                return new PostsResponse(moreData.title(), posts, moreData.nextToken());
+                            }
+                        };
+                    }
+
+                    @Nonnull
+                    private Observable<PostsResponse> createRequest(@Nullable final String nextToken) {
+                        return RequestHelper.request(loggedInUserDao, networkScheduler,
+                                new Func1<String, Observable<PostsResponse>>() {
+                                    @Override
+                                    public Observable<PostsResponse> call(String authorization) {
+                                        return guestbookService.listPosts(authorization, nextToken);
+                                    }
+                                });
                     }
                 });
     }
@@ -149,9 +221,27 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull AddPost post) {
-        return guestbookService.createPost(post)
-                .subscribeOn(networkScheduler)
+    public Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull final AddPost post) {
+        return currentLoggedInUserDao.currentLoggedInUserObservable()
+                .first()
+                .compose(ResponseOrError.flatMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Observable<ResponseOrError<PostWithBody>>>() {
+                    @Override
+                    public Observable<ResponseOrError<PostWithBody>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+                        return postRequestObserver(loggedInUserDao, post);
+                    }
+                }));
+    }
+
+
+    @Nonnull
+    private Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao, @Nonnull final AddPost post) {
+        return RequestHelper.request(loggedInUserDao, networkScheduler,
+                new Func1<String, Observable<PostWithBody>>() {
+                    @Override
+                    public Observable<PostWithBody> call(String authorization) {
+                        return guestbookService.createPost(authorization, post);
+                    }
+                })
                 .doOnNext(new Action1<PostWithBody>() {
                     @Override
                     public void call(PostWithBody postWithBody) {
@@ -167,14 +257,24 @@ public class PostsDao {
         @Nonnull
         private final Observable<ResponseOrError<PostWithBody>> postWithBodyObservable;
 
-        public PostDao(@Nonnull String id) {
-            postWithBodyObservable = guestbookService.getPost(id)
-                    .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
-                    .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
-                    .subscribeOn(networkScheduler)
-                    .unsubscribeOn(networkScheduler)
-                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
-                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
+        PostDao(@Nonnull final String id) {
+            postWithBodyObservable = currentLoggedInUserDao.currentLoggedInUserObservable()
+                    .compose(ResponseOrError.switchMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Observable<ResponseOrError<PostWithBody>>>() {
+                        @Override
+                        public Observable<ResponseOrError<PostWithBody>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+                            return RequestHelper.request(loggedInUserDao, networkScheduler,
+                                    new Func1<String, Observable<PostWithBody>>() {
+                                        @Override
+                                        public Observable<PostWithBody> call(String authorization) {
+                                            return guestbookService.getPost(authorization, id);
+                                        }
+                                    })
+                                    .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
+                                    .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
+                                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
+                                    .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
+                        }
+                    }));
         }
 
         @Nonnull
@@ -199,26 +299,4 @@ public class PostsDao {
         }
     }
 
-    private static class MergeTwoResponses implements rx.functions.Func2<PostsResponse, PostsResponse, PostsResponse> {
-        @Override
-        public PostsResponse call(PostsResponse previous, PostsResponse moreData) {
-            final ImmutableList<Post> posts = ImmutableList.<Post>builder()
-                    .addAll(previous.items())
-                    .addAll(moreData.items())
-                    .build();
-            return new PostsResponse(moreData.title(), posts, moreData.nextToken());
-        }
-    }
-
-
-    private class MergeTwoPostsIdsResponses implements rx.functions.Func2<PostsIdsResponse, PostsIdsResponse, PostsIdsResponse> {
-        @Override
-        public PostsIdsResponse call(PostsIdsResponse previous, PostsIdsResponse moreData) {
-            final ImmutableList<PostId> posts = ImmutableList.<PostId>builder()
-                    .addAll(previous.items())
-                    .addAll(moreData.items())
-                    .build();
-            return new PostsIdsResponse(moreData.title(), posts, moreData.nextToken());
-        }
-    }
 }

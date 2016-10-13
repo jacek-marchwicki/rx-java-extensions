@@ -6,6 +6,8 @@ import android.support.annotation.NonNull;
 import com.appunite.gson.AndroidUnderscoreNamingStrategy;
 import com.appunite.gson.ImmutableListDeserializer;
 import com.appunite.rx.android.MyAndroidNetworkSchedulers;
+import com.appunite.rx.example.auth.FirebaseCurrentLoggedInUserDao;
+import com.appunite.rx.example.model.dao.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.model.api.GuestbookService;
 import com.appunite.rx.example.model.dao.PostsDao;
 import com.appunite.rx.example.model.helpers.CacheProvider;
@@ -37,11 +39,22 @@ public class FakeDagger {
 
     private static final Object LOCK = new Object();
     private static PostsDao postsDao;
+    private static MyCurrentLoggedInUserDao currentLoggedInUserDao;
 
     private static class SyncExecutor implements Executor {
         @Override
         public void execute(@Nonnull final Runnable command) {
             command.run();
+        }
+    }
+
+    public static MyCurrentLoggedInUserDao getCurrentLoggedInUserDaoInstance() {
+        synchronized (LOCK) {
+            if (currentLoggedInUserDao != null) {
+                return currentLoggedInUserDao;
+            }
+            currentLoggedInUserDao = new FirebaseCurrentLoggedInUserDao();
+            return currentLoggedInUserDao;
         }
     }
 
@@ -56,7 +69,7 @@ public class FakeDagger {
             final RestAdapter restAdapter = getRestAdapter(gson, client);
             final GuestbookService guestbookService = restAdapter.create(GuestbookService.class);
             final CacheProvider cacheProvider = getCacheProvider(context, gson);
-            postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), guestbookService, cacheProvider);
+            postsDao = new PostsDao(MyAndroidNetworkSchedulers.networkScheduler(), guestbookService, cacheProvider, getCurrentLoggedInUserDaoInstance());
             return postsDao;
         }
     }

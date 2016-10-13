@@ -56,10 +56,11 @@ public class CreatePostActivity extends BaseActivity {
                 presenter.finishActivityObservable()
                         .subscribe(RxActivityMore.finish(this)),
                 presenter.postErrorObservable()
-                        .subscribe(new Action1<Throwable>() {
+                        .map(ErrorHelper.mapThrowableToStringError())
+                        .subscribe(new Action1<String>() {
                             @Override
-                            public void call(Throwable throwable) {
-                                Toast.makeText(getApplicationContext(), R.string.create_post_error_message, Toast.LENGTH_SHORT).show();
+                            public void call(String error) {
+                                Toast.makeText(getApplicationContext(), error, Toast.LENGTH_SHORT).show();
                             }
                         }),
                 presenter.progressObservable()
