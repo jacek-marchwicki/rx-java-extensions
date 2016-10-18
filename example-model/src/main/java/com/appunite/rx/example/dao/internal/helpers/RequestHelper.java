@@ -22,21 +22,21 @@ import javax.annotation.Nonnull;
 
 import rx.Observable;
 import rx.Scheduler;
+import rx.Single;
 import rx.functions.Func1;
 
 public class RequestHelper {
 
     @Nonnull
-    public static <T> Observable<T> request(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao,
-                                            @Nonnull final Scheduler networkScheduler,
-                                            @Nonnull final Func1<String, Observable<T>> request) {
+    public static <T> Single<T> request(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao,
+                                        @Nonnull final Scheduler networkScheduler,
+                                        @Nonnull final Func1<String, Single<T>> request) {
         return loggedInUserDao.authTokenObservable(false)
-                .flatMap(new Func1<String, Observable<T>>() {
+                .flatMap(new Func1<String, Single<T>>() {
                     @Override
-                    public Observable<T> call(String s) {
+                    public Single<T> call(String s) {
                         return request.call(s)
-                                .subscribeOn(networkScheduler)
-                                .unsubscribeOn(networkScheduler);
+                                .subscribeOn(networkScheduler);
                     }
                 });
 

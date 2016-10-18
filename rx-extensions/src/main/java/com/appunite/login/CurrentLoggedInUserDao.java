@@ -21,6 +21,7 @@ import com.appunite.rx.ResponseOrError;
 import javax.annotation.Nonnull;
 
 import rx.Observable;
+import rx.Single;
 
 /**
  * Dao that contain currently logged in user
@@ -71,7 +72,7 @@ public interface CurrentLoggedInUserDao {
          * @return observable with auth token or error
          */
         @Nonnull
-        Observable<String> authTokenObservable(boolean forceRefresh);
+        Single<String> authTokenObservable(boolean forceRefresh);
 
     }
 

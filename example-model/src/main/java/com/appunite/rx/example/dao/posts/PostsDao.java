@@ -40,6 +40,7 @@ import javax.inject.Singleton;
 import rx.Observable;
 import rx.Observer;
 import rx.Scheduler;
+import rx.Single;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subjects.PublishSubject;
@@ -122,14 +123,16 @@ public class PostsDao {
                     @Override
                     public Observable<PostsIdsResponse> call(@Nullable final PostsIdsResponse previous) {
                         if (previous == null) {
-                            return createRequest(null);
+                            return createRequest(null)
+                                    .toObservable();
                         } else {
                             final String nextToken = previous.nextToken();
                             if (nextToken == null) {
                                 return Observable.never();
                             }
                             return createRequest(nextToken)
-                                    .map(joinWithPreviousResponse(previous));
+                                    .map(joinWithPreviousResponse(previous))
+                                    .toObservable();
                         }
 
                     }
@@ -148,11 +151,11 @@ public class PostsDao {
                     }
 
                     @Nonnull
-                    private Observable<PostsIdsResponse> createRequest(@Nullable final String nextToken) {
+                    private Single<PostsIdsResponse> createRequest(@Nullable final String nextToken) {
                         return RequestHelper.request(loggedInUserDao, networkScheduler,
-                                new Func1<String, Observable<PostsIdsResponse>>() {
+                                new Func1<String, Single<PostsIdsResponse>>() {
                                     @Override
-                                    public Observable<PostsIdsResponse> call(String authorization) {
+                                    public Single<PostsIdsResponse> call(String authorization) {
                                         return postsService.listPostsIds(authorization, nextToken);
                                     }
                                 });
@@ -169,14 +172,15 @@ public class PostsDao {
                     @Override
                     public Observable<PostsResponse> call(@Nullable final PostsResponse previous) {
                         if (previous == null) {
-                            return createRequest(null);
+                            return createRequest(null).toObservable();
                         } else {
                             final String nextToken = previous.nextToken();
                             if (nextToken == null) {
                                 return Observable.never();
                             }
                             return createRequest(nextToken)
-                                    .map(joinWithPreviousResponse(previous));
+                                    .map(joinWithPreviousResponse(previous))
+                                    .toObservable();
                         }
 
                     }
@@ -195,11 +199,11 @@ public class PostsDao {
                     }
 
                     @Nonnull
-                    private Observable<PostsResponse> createRequest(@Nullable final String nextToken) {
+                    private Single<PostsResponse> createRequest(@Nullable final String nextToken) {
                         return RequestHelper.request(loggedInUserDao, networkScheduler,
-                                new Func1<String, Observable<PostsResponse>>() {
+                                new Func1<String, Single<PostsResponse>>() {
                                     @Override
-                                    public Observable<PostsResponse> call(String authorization) {
+                                    public Single<PostsResponse> call(String authorization) {
                                         return postsService.listPosts(authorization, nextToken);
                                     }
                                 });
@@ -233,12 +237,13 @@ public class PostsDao {
     }
 
     @Nonnull
-    public Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull final AddPost post) {
+    public Single<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull final AddPost post) {
         return currentLoggedInUserDao.currentLoggedInUserObservable()
                 .first()
-                .compose(ResponseOrError.flatMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Observable<ResponseOrError<PostWithBody>>>() {
+                .toSingle()
+                .compose(ResponseOrError.singleFlatMap(new Func1<CurrentLoggedInUserDao.LoggedInUserDao, Single<ResponseOrError<PostWithBody>>>() {
                     @Override
-                    public Observable<ResponseOrError<PostWithBody>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
+                    public Single<ResponseOrError<PostWithBody>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
                         return postRequestObserver(loggedInUserDao, post);
                     }
                 }));
@@ -246,21 +251,21 @@ public class PostsDao {
 
 
     @Nonnull
-    private Observable<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao, @Nonnull final AddPost post) {
+    private Single<ResponseOrError<PostWithBody>> postRequestObserver(@Nonnull CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao, @Nonnull final AddPost post) {
         return RequestHelper.request(loggedInUserDao, networkScheduler,
-                new Func1<String, Observable<PostWithBody>>() {
+                new Func1<String, Single<PostWithBody>>() {
                     @Override
-                    public Observable<PostWithBody> call(String authorization) {
+                    public Single<PostWithBody> call(String authorization) {
                         return postsService.createPost(authorization, post);
                     }
                 })
-                .doOnNext(new Action1<PostWithBody>() {
+                .doOnSuccess(new Action1<PostWithBody>() {
                     @Override
                     public void call(PostWithBody postWithBody) {
                         refreshSubject.doOnNext(null);
                     }
                 })
-                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable());
+                .compose(ResponseOrError.<PostWithBody>toResponseOrErrorSingle());
     }
 
     public class PostDao {
@@ -275,13 +280,14 @@ public class PostsDao {
                         @Override
                         public Observable<ResponseOrError<PostWithBody>> call(CurrentLoggedInUserDao.LoggedInUserDao loggedInUserDao) {
                             return RequestHelper.request(loggedInUserDao, networkScheduler,
-                                    new Func1<String, Observable<PostWithBody>>() {
+                                    new Func1<String, Single<PostWithBody>>() {
                                         @Override
-                                        public Observable<PostWithBody> call(String authorization) {
+                                        public Single<PostWithBody> call(String authorization) {
                                             return postsService.getPost(authorization, id);
                                         }
                                     })
-                                    .compose(ResponseOrError.<PostWithBody>toResponseOrErrorObservable())
+                                    .compose(ResponseOrError.<PostWithBody>toResponseOrErrorSingle())
+                                    .toObservable()
                                     .compose(MoreOperators.<PostWithBody>repeatOnError(networkScheduler))
                                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>refresh(refreshSubject))
                                     .compose(MoreOperators.<ResponseOrError<PostWithBody>>cacheWithTimeout(networkScheduler));
