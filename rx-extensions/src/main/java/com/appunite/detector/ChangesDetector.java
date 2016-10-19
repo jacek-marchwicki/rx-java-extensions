@@ -31,6 +31,11 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
  */
 public class ChangesDetector<T, H> {
 
+    private static final int ACTION_NONE = 0;
+    private static final int ACTION_INSERT = 1;
+    private static final int ACTION_REMOVE = 2;
+    private static final int ACTION_CHANGED = 3;
+
     /**
      * Interface that is already implemented by RecyclerView
      */
@@ -47,9 +52,9 @@ public class ChangesDetector<T, H> {
 
     @SuppressWarnings("unchecked")
     @Nonnull
-    public H[] mItems = (H[])new Object[0];
+    private H[] mItems = (H[])new Object[0];
     @Nonnull
-    public final Detector<T, H> mDetector;
+    private final Detector<T, H> mDetector;
 
     /**
      * Created {@link ChangesDetector} with {@link ChangesDetector.Detector}
@@ -98,16 +103,20 @@ public class ChangesDetector<T, H> {
         final LinkedList<H> objects = new LinkedList<>();
         Collections.addAll(objects, mItems);
 
+        clearState();
+
         int successPosition = 0;
         for (; successPosition < list.length;) {
             final H item = list[successPosition];
             final int i = indexOfItem(objects, item);
             if (i < 0) {
-                adapter.notifyItemRangeInserted(successPosition, 1);
+                executeAction(adapter, ACTION_INSERT, successPosition);
                 successPosition += 1;
             } else if (i == 0) {
                 if (force || !mDetector.same(item, objects.get(0))) {
-                    adapter.notifyItemRangeChanged(successPosition, 1);
+                    executeAction(adapter, ACTION_CHANGED, successPosition);
+                } else {
+                    executeAction(adapter, ACTION_NONE, successPosition);
                 }
                 objects.remove(0);
                 successPosition += 1;
@@ -118,22 +127,53 @@ public class ChangesDetector<T, H> {
                     adapter.notifyItemMoved(i + successPosition, successPosition);
 
                     if (force || !mDetector.same(item, objects.get(i))) {
-                        adapter.notifyItemRangeChanged(successPosition, 1);
+                        executeAction(adapter, ACTION_CHANGED, successPosition);
+                    } else {
+                        executeAction(adapter, ACTION_NONE, successPosition);
                     }
                     objects.remove(i);
                     successPosition += 1;
                 } else {
-                    adapter.notifyItemRangeRemoved(successPosition, 1);
+                    executeAction(adapter, ACTION_REMOVE, successPosition);
                     objects.remove(0);
                 }
             }
         }
+        executeAction(adapter, ACTION_NONE, successPosition);
         if (objects.size() > 0) {
             adapter.notifyItemRangeRemoved(successPosition, objects.size());
             objects.clear();
         }
 
         mItems = list;
+    }
+
+
+    private int lastPosition;
+    private int count;
+    private int lastAction;
+
+    private void clearState() {
+        lastPosition = 0;
+        count = 0;
+        lastAction = ACTION_NONE;
+    }
+
+    private void executeAction(@Nonnull ChangesAdapter adapter, int currentAction, int currentPosition) {
+        if (lastAction != currentAction) {
+            if (lastAction == ACTION_REMOVE) {
+                adapter.notifyItemRangeRemoved(lastPosition, count);
+            } else if (lastAction == ACTION_CHANGED) {
+                adapter.notifyItemRangeChanged(lastPosition, count);
+            } else if (lastAction == ACTION_INSERT) {
+                adapter.notifyItemRangeInserted(lastPosition, count);
+            }
+            lastAction = currentAction;
+            lastPosition = currentPosition;
+            count = 1;
+        } else {
+            count += 1;
+        }
     }
 
     private boolean existInList(H[] list, int start, H search) {
