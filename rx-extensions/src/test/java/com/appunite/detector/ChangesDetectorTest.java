@@ -35,7 +35,7 @@ public class ChangesDetectorTest {
     private ChangesDetector<Cat, Cat> detector;
     private ChangesDetector.ChangesAdapter adapter;
 
-    public static class Cat {
+    private static class Cat {
         private final int id;
         private final String name;
 
@@ -44,12 +44,12 @@ public class ChangesDetectorTest {
             this.name = name;
         }
 
-        public Cat(int id) {
+        Cat(int id) {
             this.id = id;
             name = generateName(id);
         }
 
-        public Cat withName(String name) {
+        Cat withName(String name) {
             return new Cat(id, name);
         }
 
@@ -66,17 +66,11 @@ public class ChangesDetectorTest {
                     return "tree";
                 case 4:
                     return "four";
+                case 5:
+                    return "five";
                 default:
                     throw new RuntimeException("Unknown id: " + id);
             }
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
         }
 
         @Override
@@ -235,11 +229,27 @@ public class ChangesDetectorTest {
     }
 
     @Test
+    public void testAddTwoItemsAtTheEnd() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1)), false);
+        reset(adapter);
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3)), false);
+        verify(adapter).notifyItemRangeInserted(1, 2);
+    }
+
+    @Test
     public void testAddItemAtTheBegining() throws Exception {
         detector.newData(adapter, ImmutableList.of(new Cat(2)), false);
         reset(adapter);
         detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2)), false);
         verify(adapter).notifyItemRangeInserted(0, 1);
+    }
+
+    @Test
+    public void testAddTwoItemsAtTheBegining() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(3)), false);
+        reset(adapter);
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3)), false);
+        verify(adapter).notifyItemRangeInserted(0, 2);
     }
 
     @Test
@@ -251,12 +261,47 @@ public class ChangesDetectorTest {
     }
 
     @Test
+    public void testAddTwoItemsInTheMiddle() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(4)), false);
+        reset(adapter);
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3), new Cat(4)), false);
+        verify(adapter).notifyItemRangeInserted(1, 2);
+    }
+
+    @Test
     public void testItemChanged() throws Exception {
         detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(3)), false);
         reset(adapter);
 
         detector.newData(adapter, ImmutableList.of(new Cat(1).withName("one1"), new Cat(3)), false);
         verify(adapter).notifyItemRangeChanged(0, 1);
+    }
+
+    @Test
+    public void testTwoItemsChangedAtStart() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(1).withName("one1"), new Cat(2).withName("two1"), new Cat(3)), false);
+        verify(adapter).notifyItemRangeChanged(0, 2);
+    }
+
+    @Test
+    public void testTwoItemsChangedInMiddle() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3), new Cat(4)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2).withName("two1"), new Cat(3).withName("tree1"), new Cat(4)), false);
+        verify(adapter).notifyItemRangeChanged(1, 2);
+    }
+
+    @Test
+    public void testTwoItemsChangedAtTheEnd() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2).withName("two1"), new Cat(3).withName("tree1")), false);
+        verify(adapter).notifyItemRangeChanged(1, 2);
     }
 
     @Test
@@ -275,6 +320,33 @@ public class ChangesDetectorTest {
 
         detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(3)), false);
         verify(adapter).notifyItemRangeRemoved(1, 1);
+    }
+
+    @Test
+    public void testItemDeleted4() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3), new Cat(4)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(3), new Cat(4)), false);
+        verify(adapter).notifyItemRangeRemoved(0, 2);
+    }
+
+    @Test
+    public void testItemDeleted5() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3), new Cat(4)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(4)), false);
+        verify(adapter).notifyItemRangeRemoved(1, 2);
+    }
+
+    @Test
+    public void testItemDeleted6() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(3), new Cat(4)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2)), false);
+        verify(adapter).notifyItemRangeRemoved(2, 2);
     }
 
     @Test
@@ -298,14 +370,24 @@ public class ChangesDetectorTest {
     }
 
     @Test
+    public void testItemSwappedTwo() throws Exception {
+        detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(2), new Cat(5)), false);
+        reset(adapter);
+
+        detector.newData(adapter, ImmutableList.of(new Cat(3), new Cat(4), new Cat(5)), false);
+        final InOrder inOrder = inOrder(adapter);
+        inOrder.verify(adapter).notifyItemRangeInserted(0, 2); // 3, 4, 1, 2, 5
+        inOrder.verify(adapter).notifyItemRangeRemoved(2, 2); // 3, 4, 5
+    }
+
+    @Test
     public void testItemRemovedAndAdded() throws Exception {
         detector.newData(adapter, ImmutableList.of(new Cat(1), new Cat(4)), false);
         reset(adapter);
 
         detector.newData(adapter, ImmutableList.of(new Cat(2), new Cat(3), new Cat(4)), false);
         final InOrder inOrder = inOrder(adapter);
-        inOrder.verify(adapter).notifyItemRangeInserted(0, 1); // 2, 1, 4
-        inOrder.verify(adapter).notifyItemRangeInserted(1, 1); // 2, 3, 1, 4
+        inOrder.verify(adapter).notifyItemRangeInserted(0, 2); // 2, 1, 4, than // 2, 3, 1, 4
         inOrder.verify(adapter).notifyItemRangeRemoved(2, 1); // 2, 3, 4
     }
 }
