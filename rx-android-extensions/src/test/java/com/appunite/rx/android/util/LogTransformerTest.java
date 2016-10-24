@@ -16,6 +16,8 @@
 
 package com.appunite.rx.android.util;
 
+import com.appunite.rx.util.LogTransformer;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -48,8 +50,8 @@ public class LogTransformerTest {
 
         subscription.unsubscribe();
 
-        verify(logger).logSubscribe(matches("tag"), anyString());
-        verify(logger).logUnsubscribe(matches("tag"), anyString());
+        verify(logger).logOnSubscribe(matches("tag"), anyString());
+        verify(logger).logOnUnsubscribe(matches("tag"), anyString());
     }
 
     @Test
@@ -57,8 +59,8 @@ public class LogTransformerTest {
         Observable.just(1)
                 .compose(LogTransformer.transformer("tag", "test", logger))
                 .subscribe();
-        verify(logger).logNext(matches("tag"), anyString(), eq(1));
-        verify(logger).logCompleted(matches("tag"), anyString());
+        verify(logger).logOnNext(matches("tag"), anyString(), eq(1));
+        verify(logger).logOnCompleted(matches("tag"), anyString());
     }
 
     @Test
@@ -79,6 +81,6 @@ public class LogTransformerTest {
 
                             }
                         });
-        verify(logger).logError(matches("tag"), anyString(), eq(exception));
+        verify(logger).logOnError(matches("tag"), anyString(), eq(exception));
     }
 }
