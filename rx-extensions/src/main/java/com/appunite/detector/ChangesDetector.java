@@ -26,9 +26,9 @@ import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 
 /**
- * Detector for adapter items that can find what was changed and call recycler adapter methods
- * @param <T> type of items to detect
+ * Use: com.jacekmarchwicki.changesdetector.ChangesDetector from https://github.com/jacek-marchwicki/recyclerview-changes-detector
  */
+@Deprecated
 public class ChangesDetector<T, H> {
 
     private static final int ACTION_NONE = 0;
@@ -64,6 +64,10 @@ public class ChangesDetector<T, H> {
         mDetector = checkNotNull(detector);
     }
 
+    /**
+     * Use: com.jacekmarchwicki.changesdetector.ChangesDetector#Detector from https://github.com/jacek-marchwicki/recyclerview-changes-detector
+     */
+    @Deprecated
     public interface Detector<T, H> {
 
         @Nonnull

@@ -18,12 +18,17 @@ package com.appunite.detector;
 
 import java.lang.Override;import javax.annotation.Nonnull;
 
+
 /**
- * Detector for adapter items that can find what was changed and call recycler adapter methods
- * @param <T> type of items to detect
+ * Use: com.jacekmarchwicki.changesdetector.SimpleDetector from https://github.com/jacek-marchwicki/recyclerview-changes-detector
  */
+@Deprecated
 public class SimpleDetector<T extends SimpleDetector.Detectable<T>> implements ChangesDetector.Detector<T, T> {
 
+    /**
+     * Use: com.jacekmarchwicki.changesdetector.SimpleDetector#Detectable from https://github.com/jacek-marchwicki/recyclerview-changes-detector
+     */
+    @Deprecated
     public interface Detectable<T> {
 
         /**

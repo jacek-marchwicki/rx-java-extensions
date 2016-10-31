@@ -16,6 +16,7 @@ allprojects {
     repositories {
         maven { url 'https://commondatastorage.googleapis.com/maven-repository/' }
         jcenter()
+        maven { url "https://jitpack.io" }
         mavenCentral()
     }
 }

@@ -24,8 +24,9 @@ import android.view.ViewGroup;
 import javax.annotation.Nonnull;
 
 /**
- * Manager that managing of creation {@link ViewHolderManager.BaseViewHolder}
+ * Use: com.jacekmarchwicki.universaladapter.ViewHolderManager from https://github.com/jacek-marchwicki/recyclerview-changes-detector
  */
+@Deprecated
 public interface ViewHolderManager {
 
     /**

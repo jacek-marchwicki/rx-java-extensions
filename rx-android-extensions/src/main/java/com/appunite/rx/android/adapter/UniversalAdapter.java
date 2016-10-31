@@ -31,8 +31,10 @@ import javax.annotation.Nonnull;
 import rx.functions.Action1;
 
 /**
- * Universal adapter for {@link RecyclerView}
+ * Use: com.jacekmarchwicki.universaladapter.RxUniversalAdapter from https://github.com/jacek-marchwicki/recyclerview-changes-detector
+ * Use: com.jacekmarchwicki.universaladapter.UniversalAdapter from https://github.com/jacek-marchwicki/recyclerview-changes-detector
  */
+@Deprecated
 public class UniversalAdapter extends RecyclerView.Adapter<ViewHolderManager.BaseViewHolder>
         implements Action1<List<BaseAdapterItem>>, ChangesDetector.ChangesAdapter {
     @Nonnull
