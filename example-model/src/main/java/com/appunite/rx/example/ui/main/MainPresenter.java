@@ -18,7 +18,6 @@ package com.appunite.rx.example.ui.main;
 
 import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.dao.auth.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.dao.posts.PostsDao;
 import com.appunite.rx.example.dao.posts.model.Post;
@@ -28,6 +27,7 @@ import com.appunite.rx.example.dao.posts.model.PostsResponse;
 import com.appunite.rx.functions.FunctionsN;
 import com.appunite.rx.example.internal.Objects;
 import com.appunite.rx.operators.MoreOperators;
+import com.jacekmarchwicki.universaladapter.BaseAdapterItem;
 
 import java.util.Arrays;
 import java.util.Collections;

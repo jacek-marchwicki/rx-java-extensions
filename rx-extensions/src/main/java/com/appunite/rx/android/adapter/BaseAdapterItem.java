@@ -18,6 +18,10 @@ package com.appunite.rx.android.adapter;
 
 import com.appunite.detector.SimpleDetector;
 
+/**
+ * Use: com.jacekmarchwicki.universaladapter.BaseAdapterItem from https://github.com/jacek-marchwicki/recyclerview-changes-detector
+ */
+@Deprecated
 public interface BaseAdapterItem extends SimpleDetector.Detectable<BaseAdapterItem> {
 
     /**

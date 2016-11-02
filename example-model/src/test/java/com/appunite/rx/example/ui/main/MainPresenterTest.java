@@ -18,13 +18,13 @@ package com.appunite.rx.example.ui.main;
 
 import com.appunite.login.CurrentLoggedInUserDao;
 import com.appunite.rx.ResponseOrError;
-import com.appunite.rx.android.adapter.BaseAdapterItem;
 import com.appunite.rx.example.dao.auth.MyCurrentLoggedInUserDao;
 import com.appunite.rx.example.dao.posts.PostsDao;
 import com.appunite.rx.example.dao.posts.model.Post;
 import com.appunite.rx.example.dao.posts.model.PostsIdsResponse;
 import com.appunite.rx.example.dao.posts.model.PostsResponse;
 import com.google.common.collect.ImmutableList;
+import com.jacekmarchwicki.universaladapter.BaseAdapterItem;
 
 import org.junit.Before;
 import org.junit.Test;

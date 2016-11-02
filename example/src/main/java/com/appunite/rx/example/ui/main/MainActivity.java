@@ -30,9 +30,6 @@ import android.widget.TextView;
 
 import com.appunite.rx.android.MyAndroidSchedulers;
 import com.appunite.rx.android.widget.RxToolbarMore;
-import com.appunite.rx.android.adapter.BaseAdapterItem;
-import com.appunite.rx.android.adapter.UniversalAdapter;
-import com.appunite.rx.android.adapter.ViewHolderManager;
 import com.appunite.rx.example.ui.posts.create.CreatePostActivity;
 import com.appunite.rx.example.ui.posts.item.DetailsActivity;
 import com.appunite.rx.example.R;
@@ -41,6 +38,9 @@ import com.appunite.rx.example.ui.internal.BaseActivity;
 import com.appunite.rx.example.ui.internal.ErrorHelper;
 import com.appunite.rx.example.ui.internal.LoadMoreHelper;
 import com.firebase.ui.auth.AuthUI;
+import com.jacekmarchwicki.universaladapter.BaseAdapterItem;
+import com.jacekmarchwicki.universaladapter.ViewHolderManager;
+import com.jacekmarchwicki.universaladapter.rx.RxUniversalAdapter;
 import com.jakewharton.rxbinding.support.v7.widget.RxRecyclerView;
 import com.jakewharton.rxbinding.view.RxView;
 import com.jakewharton.rxbinding.widget.RxTextView;
@@ -146,7 +146,8 @@ public class MainActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
-        final UniversalAdapter mainAdapter = new UniversalAdapter(Arrays.asList(
+        final RxUniversalAdapter mainAdapter = new RxUniversalAdapter(Arrays.asList(
+                new AdapterItemManager(),
                 new AdapterItemManager(),
                 new ErrorItemManager()));
 
