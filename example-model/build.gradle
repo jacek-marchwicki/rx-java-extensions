@@ -12,7 +12,7 @@ dependencies {
     compile "org.json:json:20131018"
 
     // Recycler view helpers
-    compile 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter-java:-SNAPSHOT'
+    compile 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter-java:1.0.0'
 
     compile "io.reactivex:rxjava:1.0.14"
     compile "javax.annotation:javax.annotation-api:1.2"

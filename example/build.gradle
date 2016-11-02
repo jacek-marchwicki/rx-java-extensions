@@ -16,7 +16,7 @@ dependencies {
     compile 'com.android.support:cardview-v7:24.2.1'
 
     // Recycler view helpers
-    compile 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter-rx:-SNAPSHOT'
+    compile 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter-rx:1.0.0'
 
     // Firebase
     compile 'com.firebaseui:firebase-ui-auth:0.6.0'
