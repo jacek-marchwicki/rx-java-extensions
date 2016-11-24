@@ -239,7 +239,7 @@ public class NotificationObservableTest {
     }
 
     @Test
-    public void testApiRefresh_counterIsOverridenByApi() throws Exception {
+    public void testApiRefresh_counterIsOverriddenByApi() throws Exception {
         userObservable.subscribe(userObserver1);
         apiResponse.onNext(User.create("franek", 10));
         incrementSubject.onNext(null);
