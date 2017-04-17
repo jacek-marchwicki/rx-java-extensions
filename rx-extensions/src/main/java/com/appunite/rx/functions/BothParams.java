@@ -18,6 +18,8 @@ package com.appunite.rx.functions;
 
 import javax.annotation.Nonnull;
 
+import rx.functions.Func1;
+
 public class BothParams<T1, T2> {
     private final T1 param1;
     private final T2 param2;
@@ -40,6 +42,25 @@ public class BothParams<T1, T2> {
         return param2;
     }
 
+    @Nonnull
+    public static <T, T1> Func1<BothParams<T, T1>, T> firstParam() {
+        return new Func1<BothParams<T, T1>, T>() {
+            @Override
+            public T call(BothParams<T, T1> bothParams) {
+                return bothParams.param1();
+            }
+        };
+    }
+
+    @Nonnull
+    public static <T, T1> Func1<BothParams<T, T1>, T1> secondParam() {
+        return new Func1<BothParams<T, T1>, T1>() {
+            @Override
+            public T1 call(BothParams<T, T1> bothParams) {
+                return bothParams.param2();
+            }
+        };
+    }
 
     @Override
     public boolean equals(Object o) {
