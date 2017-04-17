@@ -16,7 +16,9 @@
 
 package com.appunite.rx.android.widget;
 
+import android.support.v4.view.OnApplyWindowInsetsListener;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.view.WindowInsetsCompat;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
@@ -34,6 +36,7 @@ import rx.functions.Func1;
 import static com.appunite.rx.internal.Preconditions.checkNotNull;
 
 public class RxViewMore {
+
     @Nonnull
     public static Action1<? super Number> translateX(@Nonnull final View view) {
         checkNotNull(view);
@@ -98,6 +101,7 @@ public class RxViewMore {
     }
 
     public static class ViewSize extends Size {
+
         @Nonnull
         private final View view;
 
@@ -117,7 +121,7 @@ public class RxViewMore {
             if (!(o instanceof ViewSize)) return false;
             if (!super.equals(o)) return false;
 
-            ViewSize viewSize = (ViewSize) o;
+            final ViewSize viewSize = (ViewSize) o;
 
             return view.equals(viewSize.view);
 
@@ -139,6 +143,7 @@ public class RxViewMore {
     }
 
     private static class OnViewSize implements Observable.OnSubscribe<ViewSize> {
+
         private View view;
 
         public OnViewSize(@Nonnull View view) {
@@ -173,6 +178,63 @@ public class RxViewMore {
                 subscriber.onNext(new ViewSize(view, width, height));
             }
         }
+    }
 
+    @Nonnull
+    public static Observable<Integer> statusBarHeight(@Nonnull final View view) {
+        return onApplyWindowInsets(view)
+                .map(new Func1<WindowInsetsCompat, Integer>() {
+                    @Override
+                    public Integer call(final WindowInsetsCompat windowInsetsCompat) {
+                        return windowInsetsCompat.getSystemWindowInsetTop();
+                    }
+                })
+                .distinctUntilChanged();
+    }
+
+    @Nonnull
+    public static Observable<Integer> navigationBarHeight(@Nonnull final View view) {
+        return onApplyWindowInsets(view)
+                .map(new Func1<WindowInsetsCompat, Integer>() {
+                    @Override
+                    public Integer call(final WindowInsetsCompat windowInsetsCompat) {
+                        return windowInsetsCompat.getSystemWindowInsetBottom();
+                    }
+                })
+                .distinctUntilChanged();
+    }
+
+    @Nonnull
+    public static Observable<WindowInsetsCompat> onApplyWindowInsets(@Nonnull final View view) {
+        return Observable.create(new OnApplyWindowInsets(view))
+                .distinctUntilChanged();
+    }
+
+    private static class OnApplyWindowInsets implements Observable.OnSubscribe<WindowInsetsCompat> {
+
+        private View view;
+
+        public OnApplyWindowInsets(@Nonnull View view) {
+            this.view = view;
+        }
+
+        @Override
+        public void call(final Subscriber<? super WindowInsetsCompat> subscriber) {
+            Preconditions.checkUiThread();
+
+            ViewCompat.setOnApplyWindowInsetsListener(view, new OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsetsCompat onApplyWindowInsets(final View v, final WindowInsetsCompat insets) {
+                    subscriber.onNext(insets);
+                    return insets;
+                }
+            });
+
+            subscriber.add(new MainThreadSubscription() {
+                @Override protected void onUnsubscribe() {
+                    ViewCompat.setOnApplyWindowInsetsListener(view, null);
+                }
+            });
+        }
     }
 }
