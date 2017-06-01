@@ -93,7 +93,6 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
         final boolean delayError;
         final AtomicLong index;
         final SpscLinkedArrayQueue<Object> queue;
-        final NotificationLite<T> nl;
 
         boolean emitting;
 
@@ -117,7 +116,6 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
             this.delayError = delayError;
             this.index = new AtomicLong();
             this.queue = new SpscLinkedArrayQueue<Object>(RxRingBuffer.SIZE);
-            this.nl = NotificationLite.instance();
         }
 
         void init() {
@@ -222,7 +220,7 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
                     return;
                 }
 
-                queue.offer(inner, nl.next(value));
+                queue.offer(inner, NotificationLite.next(value));
             }
             drain();
         }
@@ -330,7 +328,7 @@ public final class OperatorSwitchThenUnsubscribe<T> implements Operator<T, Obser
 
                     @SuppressWarnings("unchecked")
                     InnerSubscriber<T> inner = (InnerSubscriber<T>)localQueue.poll();
-                    T value = nl.getValue(localQueue.poll());
+                    T value = NotificationLite.getValue(localQueue.poll());
 
                     if (localIndex.get() == inner.id) {
                         localChild.onNext(value);
