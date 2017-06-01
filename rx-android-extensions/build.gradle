@@ -14,7 +14,7 @@ dependencies {
     compile 'com.android.support:recyclerview-v7:24.2.1'
 
     compile 'com.google.code.findbugs:jsr305:3.0.1'
-    compile "io.reactivex:rxjava:1.0.8"
+    compile "io.reactivex:rxjava:1.2.3"
 
     testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-all:1.9.5'

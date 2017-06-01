@@ -14,7 +14,7 @@ dependencies {
     // Recycler view helpers
     compile 'com.github.jacek-marchwicki.recyclerview-changes-detector:universal-adapter-java:1.0.0'
 
-    compile "io.reactivex:rxjava:1.0.14"
+    compile "io.reactivex:rxjava:1.2.3"
     compile "javax.annotation:javax.annotation-api:1.2"
 
     testCompile "org.hamcrest:hamcrest-all:1.3"
