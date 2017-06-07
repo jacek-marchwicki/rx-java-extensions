@@ -31,6 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
 import rx.Observable;
+import rx.Single;
+import rx.SingleSubscriber;
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.subscriptions.Subscriptions;
@@ -57,23 +59,22 @@ public class FirebaseCurrentLoggedInUserDao implements MyCurrentLoggedInUserDao 
 
         @Nonnull
         @Override
-        public Observable<String> authTokenObservable(final boolean forceRefresh) {
-            return Observable.create(new Observable.OnSubscribe<String>() {
+        public Single<String> authTokenObservable(final boolean forceRefresh) {
+            return Single.create(new Single.OnSubscribe<String>() {
                 @Override
-                public void call(final Subscriber<? super String> subscriber) {
+                public void call(final SingleSubscriber<? super String> singleSubscriber) {
                     final Task<GetTokenResult> token = firebaseUser.getToken(forceRefresh);
                     final OnCompleteListener<GetTokenResult> listener = new OnCompleteListener<GetTokenResult>() {
                         @Override
                         public void onComplete(@NonNull Task<GetTokenResult> task) {
-                            if (subscriber.isUnsubscribed()) {
+                            if (singleSubscriber.isUnsubscribed()) {
                                 return;
                             }
                             final Exception exception = task.getException();
                             if (exception != null) {
-                                subscriber.onError(exception);
+                                singleSubscriber.onError(exception);
                             } else {
-                                subscriber.onNext(task.getResult().getToken());
-                                subscriber.onCompleted();
+                                singleSubscriber.onSuccess(task.getResult().getToken());
                             }
                         }
                     };

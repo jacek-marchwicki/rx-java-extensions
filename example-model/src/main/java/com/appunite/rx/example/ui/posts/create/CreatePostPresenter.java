@@ -84,12 +84,13 @@ class CreatePostPresenter {
                                         showProgress.onNext(true);
                                     }
                                 })
-                                .doOnNext(new Action1<ResponseOrError<PostWithBody>>() {
+                                .doOnUnsubscribe(new Action0() {
                                     @Override
-                                    public void call(ResponseOrError<PostWithBody> postWithBodyResponseOrError) {
+                                    public void call() {
                                         showProgress.onNext(false);
                                     }
-                                });
+                                })
+                                .toObservable();
                     }
                 })
                 .publish();

@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import rx.Observable;
+import rx.Single;
 import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.functions.Func3;
@@ -218,6 +219,26 @@ public class ResponseOrError<T> {
         };
     }
 
+    /**
+     * Convert {@link Single} that can throw error to {@link Observable<ResponseOrError>}
+     *
+     * If source Observable returns obj, result observable will return ResponseOrError.fromData(obj)
+     * If source Observable throws err, result observable will return ResponseOrError.fromError(err)
+     *
+     * @param <T> type of data
+     * @return observable
+     */
+    @Nonnull
+    public static <T> Single.Transformer<T, ResponseOrError<T>> toResponseOrErrorSingle() {
+        return new Single.Transformer<T, ResponseOrError<T>>() {
+
+            @Override
+            public Single<ResponseOrError<T>> call(final Single<T> single) {
+                return toResponseOrErrorSingle(single);
+            }
+        };
+    }
+
     @Nonnull
     private static <T> Observable<ResponseOrError<T>> toResponseOrErrorObservable(@Nonnull Observable<T> observable) {
         return observable
@@ -231,6 +252,24 @@ public class ResponseOrError<T> {
                     @Override
                     public Observable<? extends ResponseOrError<T>> call(final Throwable throwable) {
                         return Observable.just(ResponseOrError.<T>fromError(throwable));
+                    }
+                });
+
+    }
+
+    @Nonnull
+    private static <T> Single<ResponseOrError<T>> toResponseOrErrorSingle(@Nonnull Single<T> single) {
+        return single
+                .map(new Func1<T, ResponseOrError<T>>() {
+                    @Override
+                    public ResponseOrError<T> call(final T t) {
+                        return ResponseOrError.fromData(t);
+                    }
+                })
+                .onErrorResumeNext(new Func1<Throwable, Single<? extends ResponseOrError<T>>>() {
+                    @Override
+                    public Single<? extends ResponseOrError<T>> call(final Throwable throwable) {
+                        return Single.just(ResponseOrError.<T>fromError(throwable));
                     }
                 });
 
@@ -312,6 +351,36 @@ public class ResponseOrError<T> {
         };
     }
 
+    /**
+     * Flat map only success response ignoring error
+     *
+     * <pre>
+     * {@code
+     *  Single<ResponseOrError<Boolean>> output =
+     *      Single.just(ResponseOrError.fromData("text")
+     *      .compose(ResponseOrError.map(new Func<String, Single<Boolean>) {
+     *          Single<Boolean> call(String in) {
+     *             return Single.just(in != null);
+     *          }
+     *      });
+     * }
+     * </pre>
+     *
+     * @param func that maps data of ResponseOrError to Single
+     * @param <T> type of source object
+     * @param <K> type of destination object
+     * @return single
+     */
+    @Nonnull
+    public static <T, K> Single.Transformer<ResponseOrError<T>, ResponseOrError<K>> singleFlatMap(@Nonnull final Func1<T, Single<ResponseOrError<K>>> func) {
+        return new Single.Transformer<ResponseOrError<T>, ResponseOrError<K>>() {
+            @Override
+            public Single<ResponseOrError<K>> call(final Single<ResponseOrError<T>> observableObservable) {
+                return flatMap(observableObservable, func);
+            }
+        };
+    }
+
     @Nonnull
     private static <T, K> Observable<ResponseOrError<K>> flatMap(@Nonnull final Observable<ResponseOrError<T>> observable,
                                                             @Nonnull final Func1<T, Observable<ResponseOrError<K>>> func) {
@@ -322,6 +391,23 @@ public class ResponseOrError<T> {
             public Observable<ResponseOrError<K>> call(final ResponseOrError<T> response) {
                 if (response.isError()) {
                     return Observable.just(ResponseOrError.<K>fromError(response.error()));
+                } else {
+                    return func.call(response.data());
+                }
+            }
+        });
+    }
+
+    @Nonnull
+    private static <T, K> Single<ResponseOrError<K>> flatMap(@Nonnull final Single<ResponseOrError<T>> single,
+                                                                 @Nonnull final Func1<T, Single<ResponseOrError<K>>> func) {
+        checkNotNull(single);
+        checkNotNull(func);
+        return single.flatMap(new Func1<ResponseOrError<T>, Single<ResponseOrError<K>>>() {
+            @Override
+            public Single<ResponseOrError<K>> call(final ResponseOrError<T> response) {
+                if (response.isError()) {
+                    return Single.just(ResponseOrError.<K>fromError(response.error()));
                 } else {
                     return func.call(response.data());
                 }
